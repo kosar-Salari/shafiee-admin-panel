@@ -1,0 +1,56 @@
+// src/components/Sidebar.jsx
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Home, FileText, BookOpen, MessageSquare } from 'lucide-react';
+
+const menuItems = [
+  { id: 'dashboard', label: 'داشبورد', icon: Home,      path: '/' },
+  { id: 'Pages',     label: 'صفحات',   icon: FileText,  path: '/pages' },
+  { id: 'Articles',  label: 'مقالات',  icon: BookOpen,  path: '/articles' },
+  { id: 'Comments',  label: 'دیدگاه ها',icon: MessageSquare, path: '/comments' },
+];
+
+const Sidebar = ({ activeTab, setActiveTab, onItemClick, className = '', isMobile = false }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleClick = (item) => {
+    setActiveTab?.(item.id);
+    navigate(item.path);
+    onItemClick?.();
+  };
+
+  const isActive = (item) =>
+    location.pathname === item.path ||
+    (item.path !== '/' && location.pathname.startsWith(item.path));
+
+  return (
+    <aside className={`fixed right-0 top-0 h-screen w-64 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 text-white shadow-2xl ${isMobile ? 'z-50' : 'z-40'} ${className}`}>
+      <div className="p-6 border-b border-slate-700">
+        <h1 className="text-2xl font-bold">پنل مدیریت</h1>
+        <p className="text-sm text-slate-300 mt-1">خوش آمدید</p>
+      </div>
+      <nav className="p-4">
+        {menuItems.map(item => {
+          const Icon = item.icon;
+          const active = isActive(item);
+          return (
+            <button
+              key={item.id}
+              onClick={() => handleClick(item)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all ${
+                active
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="font-medium">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+};
+
+export default Sidebar;
