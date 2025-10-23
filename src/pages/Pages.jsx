@@ -1,38 +1,38 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Pencil, Trash2, CheckCircle2, Circle, Plus } from 'lucide-react';
+import React, { useMemo, useState } from "react";
+import { Search, Pencil, Trash2, CheckCircle2, Circle, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom"; 
 
 // Badge وضعیت
 const StatusBadge = ({ active }) => (
   <span
     className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border ${
-      active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'
+      active ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-600 border-gray-200"
     }`}
   >
     {active ? <CheckCircle2 className="w-3 h-3" /> : <Circle className="w-3 h-3" />}
-    {active ? 'فعال' : 'غیرفعال'}
+    {active ? "فعال" : "غیرفعال"}
   </span>
 );
 
-// سوییچ وضعیت با UI بهتر
+// سوییچ وضعیت
 const Toggle = ({ checked, onChange }) => (
   <button
     type="button"
     onClick={() => onChange?.(!checked)}
     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-      checked ? 'bg-green-500' : 'bg-gray-300'
+      checked ? "bg-green-500" : "bg-gray-300"
     }`}
     aria-pressed={checked}
   >
     <span
       className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-        checked ? 'translate-x-5' : 'translate-x-1'
+        checked ? "translate-x-5" : "translate-x-1"
       }`}
     />
   </button>
 );
 
-// نوار جستجو (سمت چپ هدر)
+// نوار جستجو
 const SearchBar = ({ value, onChange }) => (
   <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-xl shadow-sm">
     <Search className="w-4 h-4 text-gray-500" />
@@ -48,32 +48,31 @@ const SearchBar = ({ value, onChange }) => (
 const formatDateFA = (iso) => {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return d.toLocaleDateString("fa-IR", { year: "numeric", month: "2-digit", day: "2-digit" });
   } catch {
     return iso;
   }
 };
 
 export default function Pages() {
-  const navigate = useNavigate();
-
+  const navigate = useNavigate(); // 👈
   const [pages, setPages] = useState([
-    { id: '1', slug: 'landing',  title: 'صفحه لندینگ', createdAt: '2025-10-10T12:00:00Z', active: true },
-    { id: '2', slug: 'pricing',  title: 'قیمت‌ها',      createdAt: '2025-10-12T09:30:00Z', active: false },
-    { id: '3', slug: 'about-us', title: 'درباره ما',    createdAt: '2025-10-15T18:20:00Z', active: true },
+    { id: "1", slug: "landing",  title: "صفحه لندینگ", createdAt: "2025-10-10T12:00:00Z", active: true },
+    { id: "2", slug: "pricing",  title: "قیمت‌ها",      createdAt: "2025-10-12T09:30:00Z", active: false },
+    { id: "3", slug: "about-us", title: "درباره ما",    createdAt: "2025-10-15T18:20:00Z", active: true },
   ]);
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [newSlug, setNewSlug] = useState('');
-  const [newTitle, setNewTitle] = useState('');
+  const [newSlug, setNewSlug] = useState("");
+  const [newTitle, setNewTitle] = useState("");
   const [creating, setCreating] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return pages;
     return pages.filter(
-      (p) => p.slug.toLowerCase().includes(q) || (p.title ?? '').toLowerCase().includes(q)
+      (p) => p.slug.toLowerCase().includes(q) || (p.title ?? "").toLowerCase().includes(q)
     );
   }, [pages, query]);
 
@@ -81,33 +80,36 @@ export default function Pages() {
     const ok = confirm(`صفحه «${page.title || page.slug}» حذف شود؟`);
     if (!ok) return;
     setPages((prev) => prev.filter((x) => x.id !== page.id));
+    localStorage.removeItem(`page-${page.slug}`);
   };
 
   const handleToggleActive = (page, next) => {
     setPages((prev) => prev.map((x) => (x.id === page.id ? { ...x, active: next } : x)));
   };
 
-  const goEdit = (slug) => navigate(`/builder/${slug}`);
-
   const handleCreate = async () => {
-    if (!newSlug.trim()) return alert('آدرس صفحه را وارد کنید');
-    if (!/^[a-z0-9-]+$/.test(newSlug)) return alert('آدرس فقط با حروف کوچک انگلیسی، عدد و خط تیره');
+    if (!newSlug.trim()) return alert("آدرس صفحه را وارد کنید");
+    if (!/^[a-z0-9-]+$/.test(newSlug)) return alert("آدرس فقط با حروف کوچک انگلیسی، عدد و خط تیره");
 
     setCreating(true);
     try {
-      const payload = { slug: newSlug.trim(), title: newTitle.trim() || newSlug.trim() };
+      const slug = newSlug.trim();
+      const title = (newTitle.trim() || slug);
       const local = {
         id: crypto.randomUUID?.() || String(Date.now()),
-        slug: payload.slug,
-        title: payload.title,
+        slug,
+        title,
         createdAt: new Date().toISOString(),
         active: true,
       };
+
       setPages((prev) => [local, ...prev]);
       setShowModal(false);
-      setNewSlug('');
-      setNewTitle('');
-      goEdit(local.slug);
+      setNewSlug("");
+      setNewTitle("");
+
+      // 👇 برو به /builder با کوئری‌ها
+      navigate(`/builder?slug=${encodeURIComponent(slug)}&title=${encodeURIComponent(title)}`);
     } finally {
       setCreating(false);
     }
@@ -116,7 +118,7 @@ export default function Pages() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* هدر: عنوان راست، سرچ + افزودن چپ */}
+        {/* هدر */}
         <div className="grid grid-cols-1 sm:grid-cols-2 items-center mb-6 gap-3">
           <h1 className="text-xl font-bold text-gray-800 sm:justify-self-start">صفحات من</h1>
           <div className="flex items-center gap-2 justify-self-start sm:justify-self-end w-full sm:w-auto">
@@ -128,7 +130,7 @@ export default function Pages() {
               className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              افزودن صفحه جدید
+              افزودن
             </button>
           </div>
         </div>
@@ -151,7 +153,7 @@ export default function Pages() {
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-gray-500">عنوان:</span>
-                    <span className="font-medium text-gray-800">{p.title || '—'}</span>
+                    <span className="font-medium text-gray-800">{p.title || "—"}</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-gray-500">تاریخ ایجاد:</span>
@@ -159,7 +161,7 @@ export default function Pages() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">وضعیت:</span>
                     <StatusBadge active={p.active} />
@@ -167,7 +169,9 @@ export default function Pages() {
                   </div>
 
                   <button
-                    onClick={() => goEdit(p.slug)}
+                    onClick={() =>
+                      navigate(`/builder?slug=${encodeURIComponent(p.slug)}&title=${encodeURIComponent(p.title || p.slug)}`)
+                    }
                     className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
                   >
                     <Pencil className="w-4 h-4" />
@@ -187,7 +191,7 @@ export default function Pages() {
         </div>
       </div>
 
-      {/* Modal ساخت صفحه جدید */}
+      {/* Modal ساخت صفحه */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => !creating && setShowModal(false)} />
@@ -198,7 +202,7 @@ export default function Pages() {
                 <label className="block text-sm mb-1 text-gray-700">آدرس (Slug)</label>
                 <input
                   value={newSlug}
-                  onChange={(e) => setNewSlug(e.target.value.replace(/\s+/g, '-').toLowerCase())}
+                  onChange={(e) => setNewSlug(e.target.value.replace(/\s+/g, "-").toLowerCase())}
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="مثال: landing-page"
                   dir="ltr"
@@ -228,7 +232,7 @@ export default function Pages() {
                 disabled={creating}
                 className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60"
               >
-                {creating ? 'در حال ساخت…' : 'ساخت'}
+                {creating ? "در حال ساخت…" : "ساخت"}
               </button>
             </div>
           </div>

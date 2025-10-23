@@ -19,7 +19,7 @@ export default function App() {
         </Route>
 
         {/* بیلدر بدون سایدبار */}
-        <Route path="/builder/:slug" element={<PageBuilder />} />
+        <Route path="/builder" element={<PageBuilder />} />
 
         {/* 404 */}
         <Route path="*" element={<div className="p-6">یافت نشد</div>} />
