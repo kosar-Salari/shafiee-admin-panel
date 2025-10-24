@@ -1,5 +1,75 @@
-/* ./src/index.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 📦 فونت لحظه - تمام وزن‌ها */
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lahzeh';
+  src: url('/fonts/Lahzeh-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 🌍 اعمال فونت روی کل سایت */
+@layer base {
+  html, body {
+    @apply font-lahzeh;
+  }
+}

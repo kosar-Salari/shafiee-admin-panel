@@ -116,7 +116,7 @@ export default function Pages() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 font-lahzeh" dir="rtl">
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* هدر */}
         <div className="grid grid-cols-1 sm:grid-cols-2 items-center mb-6 gap-3">

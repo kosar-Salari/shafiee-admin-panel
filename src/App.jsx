@@ -4,7 +4,7 @@ import LayoutShell from './components/LayoutShell';
 import MyPages from './pages/Pages';
 import Articles from './pages/Articles';
 import Comments from './pages/Comments';
-import PageBuilder from './pages/PageBuilder';
+import PageBuilder from './pageBuilder/PageBuilder';
 
 export default function App() {
   return (
