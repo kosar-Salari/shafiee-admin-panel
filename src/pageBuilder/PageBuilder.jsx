@@ -47,6 +47,33 @@ export default function PageBuilder({ slug, onBack }) {
       initialCss: saved?.css,
     });
 
+    // فورس کردن RTL برای iframe
+    e.on('load', () => {
+      const frame = e.Canvas.getFrameEl();
+      if (frame && frame.contentDocument) {
+        const doc = frame.contentDocument;
+        if (doc.documentElement) {
+          doc.documentElement.setAttribute('dir', 'rtl');
+        }
+        if (doc.body) {
+          doc.body.setAttribute('dir', 'rtl');
+          doc.body.style.direction = 'rtl';
+          doc.body.style.textAlign = 'right';
+          // padding پیش‌فرض 20px از همه طرف
+          doc.body.style.padding = '20px';
+          doc.body.style.boxSizing = 'border-box';
+        }
+      }
+    });
+
+    // اضافه کردن تنظیم padding به Body در Style Manager
+    e.on('component:selected', (component) => {
+      if (component.get('tagName') === 'body') {
+        // این اجازه میده body رو انتخاب کنی و padding-ش رو تغییر بدی
+        component.set('stylable', ['padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'background-color', 'margin']);
+      }
+    });
+
     setEditor(e);
 
     return () => {
@@ -70,16 +97,12 @@ export default function PageBuilder({ slug, onBack }) {
     }
   };
 
-  // ⬇️ پیش‌نمایش با فونت لحظه - با مسیر absolute
   const handlePreview = () => {
     if (!editor) return;
     const html = editor.getHtml();
     const css = editor.getCss();
-
-    // گرفتن URL پایه سایت
     const baseUrl = window.location.origin;
 
-    // اضافه کردن استایل فونت لحظه با مسیر کامل
     const lahzehFont = `@font-face {
   font-family: 'Lahzeh';
   src: url('${baseUrl}/fonts/Lahzeh-Thin.ttf') format('truetype');
@@ -175,34 +198,16 @@ ${html}
     setShowCode(true);
   };
 
-  // ⬇️ دانلود با فونت لحظه - با مسیر absolute
   const handleDownload = () => {
     if (!editor) return;
     const html = editor.getHtml();
     const css = editor.getCss();
-
-    // گرفتن URL پایه سایت
     const baseUrl = window.location.origin;
 
-    // اضافه کردن استایل فونت لحظه با مسیر کامل
     const lahzehFont = `@font-face {
   font-family: 'Lahzeh';
   src: url('${baseUrl}/fonts/Lahzeh-Thin.ttf') format('truetype');
   font-weight: 100;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-ExtraLight.ttf') format('truetype');
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-Light.ttf') format('truetype');
-  font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
@@ -215,36 +220,8 @@ ${html}
 }
 @font-face {
   font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
   src: url('${baseUrl}/fonts/Lahzeh-Bold.ttf') format('truetype');
   font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-ExtraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-Black.ttf') format('truetype');
-  font-weight: 900;
   font-style: normal;
   font-display: swap;
 }`;
@@ -280,7 +257,7 @@ ${html}
   const changeDevice = (device) => editor?.setDevice(device);
 
   return (
-    <div className="h-screen flex flex-col font-lahzeh" dir="rtl">
+    <div className="h-screen flex flex-col font-lahzeh" style={{ margin: 0, padding: 0, overflow: 'hidden' }}>
       <TopBar
         slug={slug}
         onBack={onBack}
@@ -293,7 +270,7 @@ ${html}
         Icons={{ ArrowLeft, Save, Eye, Code, Download, Monitor, Tablet, Smartphone }}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden" style={{ minHeight: 0, margin: 0, padding: 0 }} dir="rtl">
         {!scriptsLoaded ? (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
             <div className="text-center">
@@ -303,15 +280,18 @@ ${html}
           </div>
         ) : (
           <>
-            {/* صفحه اصلی طراحی */}
-            <div className="flex-1 bg-gray-100 overflow-hidden" dir="ltr" style={{ paddingRight: '40px' }}>
-              <div id="gjs" ref={editorRef} style={{ height: '100%', width: '100%' }} />
-            </div>
-
-            {/* سایدبار راست با تب‌ها */}
-            <div className="w-80 bg-white border-r border-gray-200 flex flex-col flex-shrink-0" dir="rtl">
+            {/* 🎯 سایدبار راست - اول قرار می‌گیره */}
+            <div 
+              className="bg-white border-l border-gray-200 flex flex-col" 
+              dir="rtl"
+              style={{ 
+                width: '320px',
+                flexShrink: 0,
+                minHeight: 0
+              }}
+            >
               {/* تب‌های بالا */}
-              <div className="flex border-b border-gray-200 bg-gray-50">
+              <div className="flex border-b border-gray-200 bg-gray-50" style={{ flexShrink: 0 }}>
                 <button
                   onClick={() => setActiveTab('blocks')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${
@@ -348,7 +328,10 @@ ${html}
               </div>
 
               {/* محتوای تب‌ها */}
-              <div className="flex-1 overflow-y-auto">
+              <div 
+                className="flex-1 overflow-y-auto" 
+                style={{ minHeight: 0 }}
+              >
                 <div id="blocks-panel" style={{ display: activeTab === 'blocks' ? 'block' : 'none' }} className="p-4" />
                 <div style={{ display: activeTab === 'styles' ? 'block' : 'none' }}>
                   <div id="styles-panel" className="p-4" />
@@ -356,6 +339,36 @@ ${html}
                 </div>
                 <div id="layers-panel" style={{ display: activeTab === 'layers' ? 'block' : 'none' }} className="p-4" />
               </div>
+            </div>
+
+            {/* 🎯 بادی - کانواس اصلی - بعد از سایدبار */}
+            <div 
+              className="flex-1" 
+              dir="ltr"
+              style={{ 
+                position: 'relative',
+                minWidth: 0,
+                margin: 0,
+                padding: 0,
+                overflow: 'hidden',
+                background: '#f9fafb'
+              }}
+            >
+              <div 
+                id="gjs" 
+                ref={editorRef} 
+                style={{ 
+                  height: '100%', 
+                  width: '100%',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  margin: 0,
+                  padding: 0
+                }} 
+              />
             </div>
           </>
         )}
@@ -370,11 +383,66 @@ ${html}
 
       {/* استایل‌های GrapesJS سفارشی */}
       <style>{`
+        /* Reset کامل */
+        * {
+          box-sizing: border-box;
+        }
+        
+        #gjs, .gjs-cv-canvas {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        /* 🎨 رنگ‌های عمومی */
         .gjs-one-bg { background-color: #f8f9fa; }
         .gjs-two-color { color: #4f46e5; }
         .gjs-three-bg { background-color: #4f46e5; color: white; }
         .gjs-four-color, .gjs-four-color-h:hover { color: #4f46e5; }
 
+        /* 🎯 کانواس - FIX اصلی */
+        .gjs-cv-canvas {
+          background: #f9fafb !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: flex-start !important;
+          overflow: auto !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+
+        .gjs-cv-canvas__frames {
+          margin: 40px auto !important;
+          padding: 0 !important;
+        }
+
+        .gjs-frame {
+          background: #fff !important;
+          border-radius: 8px !important;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.08) !important;
+          border: 1px solid #e5e7eb !important;
+        }
+
+        /* 🎯 padding پیش‌فرض برای body داخل iframe */
+        #gjs iframe[id^="gjs-frame-"] body {
+          padding: 20px !important;
+          box-sizing: border-box !important;
+        }
+
+        /* 🎯 فورس کردن RTL داخل iframe برای المان‌ها */
+        .gjs-frame-wrapper iframe {
+          direction: rtl !important;
+        }
+        
+        /* المان‌های داخل body در حالت ویرایش */
+        #gjs iframe[id^="gjs-frame-"] {
+          direction: rtl !important;
+        }
+
+        /* بلوک‌ها */
         .gjs-block {
           min-height: 80px; 
           padding: 16px; 
@@ -405,6 +473,7 @@ ${html}
           font-size: 28px; 
         }
         
+        /* دسته‌بندی */
         .gjs-block-category { 
           border-bottom: 2px solid #e5e7eb; 
           padding: 12px 0; 
@@ -421,22 +490,7 @@ ${html}
           font-family: 'Lahzeh', sans-serif;
         }
         
-        .gjs-cv-canvas { 
-          background: #f3f4f6 !important;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: flex-start !important;
-          padding: 40px !important;
-          padding-right: 60px !important;
-          overflow: auto !important;
-        }
-        .gjs-cv-canvas__frames {
-          margin: 0 auto !important;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
-          border-radius: 8px !important;
-          overflow: hidden !important;
-        }
-        
+        /* استایل منیجر */
         .gjs-sm-sector { 
           text-align: right; 
           margin-bottom: 24px; 
@@ -444,42 +498,89 @@ ${html}
           padding-bottom: 20px; 
         }
         .gjs-sm-sector .gjs-sm-title {
-          font-size: 14px; 
-          font-weight: 700; 
-          color: #1f2937; 
+          font-size: 16px !important;
+          font-weight: 800 !important;
+          color: #111827 !important;
           padding: 12px 0; 
           border-bottom: 2px solid #4f46e5;
           margin-bottom: 16px; 
           background: linear-gradient(90deg, #eef2ff 0%, transparent 100%); 
           padding-right: 12px; 
           border-radius: 6px;
+          font-family: 'Lahzeh', sans-serif !important;
         }
         .gjs-sm-property { 
           margin-bottom: 18px; 
         }
-        .gjs-sm-label, .gjs-trt-trait__label { 
-          font-size: 13px; 
-          color: #6b7280; 
+        
+        /* لیبل‌ها - فونت بولد و سیاه */
+        .gjs-sm-label, 
+        .gjs-trt-trait__label,
+        .gjs-sm-property .gjs-sm-label,
+        .gjs-label {
+          font-size: 14px !important;
+          color: #111827 !important;
           margin-bottom: 8px; 
           display: block; 
-          font-weight: 600; 
-        }
-        .gjs-field, .gjs-trt-trait input, .gjs-trt-trait select, .gjs-trt-trait textarea {
-          direction: ltr; 
-          width: 100%; 
-          border: 1px solid #d1d5db; 
-          border-radius: 8px; 
-          padding: 10px 12px; 
-          font-size: 14px; 
-          transition: all .2s;
-          background: white;
-        }
-        .gjs-field:focus, .gjs-trt-trait input:focus, .gjs-trt-trait select:focus, .gjs-trt-trait textarea:focus {
-          outline: none; 
-          border-color: #4f46e5; 
-          box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+          font-weight: 800 !important;
+          font-family: 'Lahzeh', sans-serif !important;
         }
         
+        /* همه فیلدها - متن سیاه و بولد */
+        .gjs-field, 
+        .gjs-field input,
+        .gjs-field select,
+        .gjs-field-integer input,
+        .gjs-field-number input,
+        .gjs-trt-trait input, 
+        .gjs-trt-trait select, 
+        .gjs-trt-trait textarea,
+        .gjs-sm-property input,
+        .gjs-sm-property select,
+        input.gjs-field,
+        select.gjs-field {
+          direction: ltr !important;
+          width: 100% !important;
+          border: 2px solid #d1d5db !important;
+          border-radius: 8px !important;
+          padding: 10px 12px !important;
+          font-size: 15px !important;
+          transition: all .2s !important;
+          background: white !important;
+          color: #111827 !important;
+          font-weight: 700 !important;
+          font-family: 'Lahzeh', monospace !important;
+        }
+        
+        .gjs-field:focus, 
+        .gjs-trt-trait input:focus, 
+        .gjs-trt-trait select:focus, 
+        .gjs-trt-trait textarea:focus {
+          outline: none !important;
+          border-color: #4f46e5 !important;
+          box-shadow: 0 0 0 3px rgba(79,70,229,.1) !important;
+        }
+
+        /* اینپوت های color - اضافه کردن پالت */
+        input[type="color"].gjs-field,
+        .gjs-field-color-picker,
+        .gjs-clm-picker {
+          width: 60px !important;
+          height: 40px !important;
+          border: 2px solid #d1d5db !important;
+          border-radius: 8px !important;
+          cursor: pointer !important;
+          padding: 4px !important;
+          background: white !important;
+        }
+        
+        /* Container رنگ */
+        .gjs-field-color-picker {
+          display: inline-block !important;
+          vertical-align: middle !important;
+        }
+        
+        /* لایه‌ها */
         .gjs-layers { text-align: right; }
         .gjs-layer { 
           padding: 12px; 
@@ -492,6 +593,7 @@ ${html}
         .gjs-layer.gjs-selected { background: #eef2ff; border-right: 4px solid #4f46e5; }
         .gjs-layer-title { font-size: 13px; color: #374151; font-weight: 600; }
         
+        /* تولبار */
         .gjs-toolbar { 
           background: white; 
           border-radius: 10px; 
