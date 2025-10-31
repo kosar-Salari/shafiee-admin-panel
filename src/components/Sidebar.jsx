@@ -4,8 +4,8 @@ import { Home, FileText, BookOpen, MessageSquare } from 'lucide-react';
 
 const menuItems = [
   { id: 'dashboard', label: 'داشبورد', icon: Home,      path: '/' },
-  { id: 'Pages',     label: 'صفحات',   icon: FileText,  path: '/pages' },
-  { id: 'Articles',  label: 'مقالات',  icon: BookOpen,  path: '/articles' },
+  { id: 'Pages',     label: 'مدیریت صفحات',   icon: FileText,  path: '/pages' },
+  { id: 'MainPage',  label: 'صفحه اصلی',  icon: BookOpen,  path: '/mainPage' },
   { id: 'Comments',  label: 'دیدگاه ها',icon: MessageSquare, path: '/comments' },
 ];
 

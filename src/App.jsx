@@ -2,7 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LayoutShell from './components/LayoutShell';
 import MyPages from './pages/Pages';
-import Articles from './pages/Articles';
+import MainPage from './pages/MainPage';
 import Comments from './pages/Comments';
 import PageBuilder from './pageBuilder/PageBuilder';
 
@@ -14,15 +14,13 @@ export default function App() {
         <Route element={<LayoutShell />}>
           <Route path="/" element={<Navigate to="/pages" replace />} />
           <Route path="/pages" element={<MyPages />} />
-          <Route path="/articles" element={<Articles />} />
+          <Route path="/mainPage" element={<MainPage />} />
           <Route path="/comments" element={<Comments />} />
         </Route>
 
-        {/* بیلدر بدون سایدبار */}
         <Route path="/builder" element={<PageBuilder />} />
 
-        {/* 404 */}
-        <Route path="*" element={<div className="p-6">یافت نشد</div>} />
+        <Route path="*" element={<div className="p-6 text-center font-lahzeh font-bold text-xl">!یافت نشد</div>} />
       </Routes>
     </BrowserRouter>
   );

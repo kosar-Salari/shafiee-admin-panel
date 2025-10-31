@@ -9,7 +9,7 @@ export default function LayoutShell() {
 
   // سنک کردن تب فعال با مسیر فعلی
   useEffect(() => {
-    if (location.pathname.startsWith('/articles')) setActiveTab('Articles');
+    if (location.pathname.startsWith('/mainPage')) setActiveTab('MainPage');
     else if (location.pathname.startsWith('/comments')) setActiveTab('Comments');
     else setActiveTab('Pages');
   }, [location.pathname]);
