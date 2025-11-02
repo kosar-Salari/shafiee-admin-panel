@@ -1,0 +1,554 @@
+// src/components/admin/HeaderMenuManagement.jsx
+import React, { useState } from "react";
+import { Plus, ChevronDown, ChevronUp, Menu, Link2, Pencil, Trash2, CheckCircle2, Circle, Image as ImageIcon, Upload, X } from "lucide-react";
+
+const StatusBadge = ({ active }) => (
+  <span
+    className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border ${
+      active ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-600 border-gray-200"
+    }`}
+  >
+    {active ? <CheckCircle2 className="w-3 h-3" /> : <Circle className="w-3 h-3" />}
+    {active ? "فعال" : "غیرفعال"}
+  </span>
+);
+
+const Toggle = ({ checked, onChange }) => (
+  <button
+    type="button"
+    onClick={() => onChange?.(!checked)}
+    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+      checked ? "bg-green-500" : "bg-gray-300"
+    }`}
+    aria-pressed={checked}
+  >
+    <span
+      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+        checked ? "translate-x-5" : "translate-x-1"
+      }`}
+    />
+  </button>
+);
+
+const MenuItem = ({ item, level = 0, parentId = null, onEdit, onDelete, onToggle, onMove, pages, siblings }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  
+  const getPagePath = (slug) => {
+    const page = pages.find(p => p.slug === slug);
+    return page ? `/${slug}` : '#';
+  };
+
+  const itemIndex = siblings.findIndex(s => s.id === item.id);
+  const canMoveUp = itemIndex > 0;
+  const canMoveDown = itemIndex < siblings.length - 1;
+
+  return (
+    <div className="mb-2">
+      <div 
+        className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm"
+        style={{ marginRight: `${level * 24}px` }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => onMove(item.id, 'up', parentId)}
+                disabled={!canMoveUp}
+                className={`p-0.5 rounded ${canMoveUp ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              >
+                <ChevronUp className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => onMove(item.id, 'down', parentId)}
+                disabled={!canMoveDown}
+                className={`p-0.5 rounded ${canMoveDown ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              >
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </div>
+            
+            {item.children && item.children.length > 0 && (
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+            )}
+            
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-semibold text-gray-800">{item.label}</span>
+                <StatusBadge active={item.active} />
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Link2 className="w-3 h-3" />
+                <span dir="ltr">{getPagePath(item.pageSlug)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Toggle checked={item.active} onChange={(next) => onToggle(item.id, next)} />
+            
+            <button
+              onClick={() => onEdit(item)}
+              className="p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            
+            <button
+              onClick={() => onDelete(item.id)}
+              className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {isOpen && item.children && item.children.length > 0 && (
+        <div className="mt-2">
+          {item.children.map(child => (
+            <MenuItem
+              key={child.id}
+              item={child}
+              level={level + 1}
+              parentId={item.id}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onToggle={onToggle}
+              onMove={onMove}
+              pages={pages}
+              siblings={item.children}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+export default function HeaderMenuManagement({ menuItems, setMenuItems, pages, logo, setLogo }) {
+    const [showMenuModal, setShowMenuModal] = useState(false);
+    const [menuLabel, setMenuLabel] = useState("");
+    const [menuPageSlug, setMenuPageSlug] = useState("");
+    const [menuParentId, setMenuParentId] = useState("");
+    const [editingMenuItem, setEditingMenuItem] = useState(null);
+    const [tempLogo, setTempLogo] = useState(null);
+    const [showLogoModal, setShowLogoModal] = useState(false);
+
+    const handleLogoUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('لطفاً یک فایل تصویری انتخاب کنید');
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            alert('حجم فایل نباید بیشتر از 10 مگابایت باشد');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setTempLogo(event.target.result);
+            setShowLogoModal(true);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleConfirmLogo = () => {
+        setLogo(tempLogo);
+        setShowLogoModal(false);
+        setTempLogo(null);
+    };
+
+    const handleCancelLogo = () => {
+        setShowLogoModal(false);
+        setTempLogo(null);
+    };
+
+    const handleRemoveLogo = () => {
+        const ok = confirm('لوگو حذف شود؟');
+        if (ok) setLogo(null);
+    };
+
+    const handleDeleteMenuItem = (itemId) => {
+        const deleteFromTree = (items) => {
+            return items.filter(item => {
+                if (item.id === itemId) return false;
+                if (item.children) {
+                    item.children = deleteFromTree(item.children);
+                }
+                return true;
+            });
+        };
+
+        const ok = confirm("این آیتم منو حذف شود؟");
+        if (!ok) return;
+
+        setMenuItems(prev => deleteFromTree([...prev]));
+    };
+
+    const handleToggleMenuItem = (itemId, active) => {
+        const updateInTree = (items) => {
+            return items.map(item => {
+                if (item.id === itemId) {
+                    return { ...item, active };
+                }
+                if (item.children) {
+                    return { ...item, children: updateInTree(item.children) };
+                }
+                return item;
+            });
+        };
+
+        setMenuItems(prev => updateInTree([...prev]));
+    };
+
+    const handleEditMenuItem = (item) => {
+        setEditingMenuItem(item);
+        setMenuLabel(item.label);
+        setMenuPageSlug(item.pageSlug);
+        setMenuParentId("");
+        setShowMenuModal(true);
+    };
+
+    const handleSaveMenuItem = () => {
+        if (!menuLabel.trim()) return alert("عنوان منو را وارد کنید");
+        if (!menuPageSlug) return alert("صفحه مورد نظر را انتخاب کنید");
+
+        const newItem = {
+            id: editingMenuItem?.id || `m-${Date.now()}`,
+            label: menuLabel.trim(),
+            pageSlug: menuPageSlug,
+            active: true,
+            order: editingMenuItem?.order || Date.now(),
+            children: editingMenuItem?.children || []
+        };
+
+        if (editingMenuItem) {
+            const updateInTree = (items) => {
+                return items.map(item => {
+                    if (item.id === editingMenuItem.id) {
+                        return newItem;
+                    }
+                    if (item.children) {
+                        return { ...item, children: updateInTree(item.children) };
+                    }
+                    return item;
+                });
+            };
+            setMenuItems(prev => updateInTree([...prev]));
+        } else {
+            if (menuParentId) {
+                const addToTree = (items) => {
+                    return items.map(item => {
+                        if (item.id === menuParentId) {
+                            return {
+                                ...item,
+                                children: [...(item.children || []), newItem]
+                            };
+                        }
+                        if (item.children) {
+                            return { ...item, children: addToTree(item.children) };
+                        }
+                        return item;
+                    });
+                };
+                setMenuItems(prev => addToTree([...prev]));
+            } else {
+                setMenuItems(prev => [...prev, newItem]);
+            }
+        }
+
+        setShowMenuModal(false);
+        setMenuLabel("");
+        setMenuPageSlug("");
+        setMenuParentId("");
+        setEditingMenuItem(null);
+    };
+
+    const openNewMenuModal = () => {
+        setEditingMenuItem(null);
+        setMenuLabel("");
+        setMenuPageSlug("");
+        setMenuParentId("");
+        setShowMenuModal(true);
+    };
+
+    const getAllMenuItems = (items, level = 0) => {
+        let result = [];
+        items.forEach(item => {
+            result.push({ ...item, level });
+            if (item.children && item.children.length > 0) {
+                result = [...result, ...getAllMenuItems(item.children, level + 1)];
+            }
+        });
+        return result;
+    };
+
+    const allMenuItemsFlat = getAllMenuItems(menuItems);
+
+    const moveMenuItem = (itemId, direction, parentId = null) => {
+        const moveInArray = (items) => {
+            const idx = items.findIndex(item => item.id === itemId);
+            if (idx === -1) return items;
+
+            if (direction === 'up' && idx === 0) return items;
+            if (direction === 'down' && idx === items.length - 1) return items;
+
+            const newArr = [...items];
+            const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+            [newArr[idx], newArr[targetIdx]] = [newArr[targetIdx], newArr[idx]];
+
+            return newArr.map((item, i) => ({ ...item, order: i + 1 }));
+        };
+
+        if (!parentId) {
+            setMenuItems(prev => moveInArray(prev));
+        } else {
+            setMenuItems(prev => prev.map(item => {
+                if (item.id === parentId) {
+                    return { ...item, children: moveInArray(item.children) };
+                }
+                if (item.children) {
+                    return {
+                        ...item, children: item.children.map(child => {
+                            if (child.id === parentId) {
+                                return { ...child, children: moveInArray(child.children) };
+                            }
+                            return child;
+                        })
+                    };
+                }
+                return item;
+            }));
+        }
+    };
+
+    return (
+        <>
+            {/* بخش مدیریت لوگو */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold text-gray-700">لوگوی هدر</h2>
+                </div>
+
+                <div className="flex items-start gap-6">
+                    {/* پیش‌نمایش لوگو */}
+                    <div className="flex-shrink-0">
+                        {logo ? (
+                            <div className="relative group">
+                                <div className="w-40 h-40 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                                    <img
+                                        src={logo}
+                                        alt="Logo"
+                                        className="max-w-full max-h-full object-contain"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleRemoveLogo}
+                                    className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="w-40 h-40 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-gray-400">
+                                <ImageIcon className="w-12 h-12 mb-2" />
+                                <span className="text-sm">بدون لوگو</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* دکمه‌ها و راهنما */}
+                    <div className="flex-1">
+                        <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer transition-colors shadow-sm">
+                            <Upload className="w-4 h-4" />
+                            <span>{logo ? 'تغییر لوگو' : 'آپلود لوگو'}</span>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleLogoUpload}
+                                className="hidden"
+                            />
+                        </label>
+
+                        <div className="mt-4 space-y-2 text-sm text-gray-600">
+                            <p className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                                فرمت‌های مجاز: PNG, JPG, SVG
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                                حداکثر حجم: 10 مگابایت
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                                سایز پیشنهادی: 200x60 پیکسل
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal پیش‌نمایش و تایید لوگو */}
+            {showLogoModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/40" onClick={handleCancelLogo} />
+                    <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-xl p-6">
+                        <h3 className="text-lg font-bold mb-4 text-gray-800">پیش‌نمایش لوگو</h3>
+                        
+                        <div className="bg-gray-50 rounded-xl p-8 mb-5 flex items-center justify-center border-2 border-gray-200">
+                            <img
+                                src={tempLogo}
+                                alt="پیش‌نمایش لوگو"
+                                className="max-w-full max-h-60 object-contain"
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={handleCancelLogo}
+                                className="px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium"
+                            >
+                                انصراف
+                            </button>
+                            <button
+                                onClick={handleConfirmLogo}
+                                className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-medium shadow-sm"
+                            >
+                                تایید و ذخیره
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* بخش مدیریت منو */}
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-gray-700">آیتم‌های منوی هدر</h2>
+                <button
+                    onClick={openNewMenuModal}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
+                >
+                    <Plus className="w-4 h-4" />
+                    افزودن آیتم منو
+                </button>
+            </div>
+
+            <div className="bg-indigo-50 rounded-xl p-4 mb-4">
+                <div className="flex items-center gap-2 text-sm text-indigo-700 mb-2">
+                    <Menu className="w-4 h-4" />
+                    <span className="font-semibold">نکات مهم:</span>
+                </div>
+                <ul className="text-sm text-gray-700 space-y-1 mr-6">
+                    <li>• هر آیتم منو به یک صفحه از صفحات شما لینک می‌شود</li>
+                    <li>• می‌توانید زیرمنو (منوی آبشاری) ایجاد کنید</li>
+                    <li>• آدرس زیرصفحات به صورت خودکار از صفحه اصلی ساخته می‌شود</li>
+                </ul>
+            </div>
+
+            <div className="space-y-2">
+                {menuItems.length === 0 && (
+                    <div className="p-6 bg-white border border-gray-200 rounded-xl text-center text-gray-500">
+                        هنوز آیتمی به منو اضافه نشده است.
+                    </div>
+                )}
+
+                {menuItems.map(item => (
+                    <MenuItem
+                        key={item.id}
+                        item={item}
+                        onEdit={handleEditMenuItem}
+                        onDelete={handleDeleteMenuItem}
+                        onToggle={handleToggleMenuItem}
+                        onMove={moveMenuItem}
+                        pages={pages}
+                        siblings={menuItems}
+                    />
+                ))}
+            </div>
+
+            {/* Modal افزودن/ویرایش آیتم منو */}
+            {showMenuModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setShowMenuModal(false)} />
+                    <div className="relative bg-white w-full max-w-md rounded-2xl shadow-xl p-5">
+                        <h3 className="text-lg font-bold mb-4">
+                            {editingMenuItem ? "ویرایش آیتم منو" : "افزودن آیتم منو"}
+                        </h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm mb-1 text-gray-700">عنوان منو</label>
+                                <input
+                                    value={menuLabel}
+                                    onChange={(e) => setMenuLabel(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="مثال: خانه"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm mb-1 text-gray-700">صفحه مقصد</label>
+                                <select
+                                    value={menuPageSlug}
+                                    onChange={(e) => setMenuPageSlug(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                                >
+                                    <option value="">انتخاب کنید</option>
+                                    {pages.map(page => (
+                                        <option key={page.id} value={page.slug}>
+                                            {page.title} (/{page.slug})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {!editingMenuItem && (
+                                <div>
+                                    <label className="block text-sm mb-1 text-gray-700">منوی والد (اختیاری)</label>
+                                    <select
+                                        value={menuParentId}
+                                        onChange={(e) => setMenuParentId(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                                    >
+                                        <option value="">بدون والد (منوی اصلی)</option>
+                                        {allMenuItemsFlat.map(item => (
+                                            <option key={item.id} value={item.id}>
+                                                {"—".repeat(item.level)} {item.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        برای ایجاد زیرمنو، منوی والد را انتخاب کنید
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="mt-5 flex items-center justify-end gap-2">
+                            <button
+                                onClick={() => setShowMenuModal(false)}
+                                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+                            >
+                                انصراف
+                            </button>
+                            <button
+                                onClick={handleSaveMenuItem}
+                                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                            >
+                                {editingMenuItem ? "ذخیره تغییرات" : "افزودن"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
