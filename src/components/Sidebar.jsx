@@ -1,12 +1,14 @@
+
 // src/components/Sidebar.jsx
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, FileText, BookOpen, MessageSquare } from 'lucide-react';
+import { Home, FileText, BookOpen, MessageSquare, Newspaper, BookMarked } from 'lucide-react';
 
 const menuItems = [
-  { id: 'dashboard', label: 'داشبورد', icon: Home,      path: '/' },
-  { id: 'Pages',     label: 'مدیریت صفحات',   icon: FileText,  path: '/pages' },
-  { id: 'MainPage',  label: 'صفحه اصلی',  icon: BookOpen,  path: '/mainPage' },
-  { id: 'Comments',  label: 'دیدگاه ها',icon: MessageSquare, path: '/comments' },
+  { id: 'Pages', label: 'مدیریت صفحات', icon: FileText, path: '/pages' },
+  { id: 'MainPage', label: 'صفحه اصلی', icon: BookOpen, path: '/mainPage' },
+  { id: 'News', label: 'مدیریت اخبار', icon: Newspaper, path: '/news' },
+  { id: 'Articles', label: 'مدیریت مقالات', icon: BookMarked, path: '/articles' },
+  { id: 'Comments', label: 'دیدگاه ها', icon: MessageSquare, path: '/comments' },
 ];
 
 const Sidebar = ({ activeTab, setActiveTab, onItemClick, className = '', isMobile = false }) => {
@@ -29,6 +31,7 @@ const Sidebar = ({ activeTab, setActiveTab, onItemClick, className = '', isMobil
         <h1 className="text-2xl font-bold">پنل مدیریت</h1>
         <p className="text-sm text-slate-300 mt-1">خوش آمدید</p>
       </div>
+
       <nav className="p-4">
         {menuItems.map(item => {
           const Icon = item.icon;

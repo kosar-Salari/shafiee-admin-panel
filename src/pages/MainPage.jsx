@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, Plus, Trash2, GripVertical } from 'lucide-react';
 import NewsArticlesSettings from '../components/NewsArticlesSettings';
-
+import LinkedImagesSettings from '../components/LinkImageManager';
 const AdminMainPage = () => {
   const [bannerImage, setBannerImage] = useState(null);
   const [bannerSideCards, setBannerSideCards] = useState([
@@ -380,10 +380,8 @@ const AdminMainPage = () => {
             </div>
           </div>
         </div>
-
         <NewsArticlesSettings />
-
-
+        <LinkedImagesSettings/>        
       </div>
     </div>
   );

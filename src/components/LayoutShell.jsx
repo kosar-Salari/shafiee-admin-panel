@@ -11,6 +11,8 @@ export default function LayoutShell() {
   useEffect(() => {
     if (location.pathname.startsWith('/mainPage')) setActiveTab('MainPage');
     else if (location.pathname.startsWith('/comments')) setActiveTab('Comments');
+    else if (location.pathname.startsWith('/news')) setActiveTab('News');
+    else if (location.pathname.startsWith('/articles')) setActiveTab('Articles');
     else setActiveTab('Pages');
   }, [location.pathname]);
 

@@ -4,6 +4,8 @@ import LayoutShell from './components/LayoutShell';
 import MyPages from './pages/Pages';
 import MainPage from './pages/MainPage';
 import Comments from './pages/Comments';
+import News from './pages/News';
+import Articles from './pages/Articles';
 import PageBuilder from './pageBuilder/PageBuilder';
 
 export default function App() {
@@ -16,6 +18,8 @@ export default function App() {
           <Route path="/pages" element={<MyPages />} />
           <Route path="/mainPage" element={<MainPage />} />
           <Route path="/comments" element={<Comments />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/articles" element={<Articles />} />
         </Route>
 
         <Route path="/builder" element={<PageBuilder />} />
