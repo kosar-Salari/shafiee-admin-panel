@@ -77,7 +77,7 @@ export default function PageBuilder({ slug, onBack }) {
     setEditor(e);
 
     return () => {
-      try { e?.destroy(); } catch {}
+      try { e?.destroy(); } catch { }
     };
   }, [scriptsLoaded, slug]);
 
@@ -281,10 +281,10 @@ ${html}
         ) : (
           <>
             {/* 🎯 سایدبار راست - اول قرار می‌گیره */}
-            <div 
-              className="bg-white border-l border-gray-200 flex flex-col" 
+            <div
+              className="bg-white border-l border-gray-200 flex flex-col"
               dir="rtl"
-              style={{ 
+              style={{
                 width: '320px',
                 flexShrink: 0,
                 minHeight: 0
@@ -294,33 +294,30 @@ ${html}
               <div className="flex border-b border-gray-200 bg-gray-50" style={{ flexShrink: 0 }}>
                 <button
                   onClick={() => setActiveTab('blocks')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${
-                    activeTab === 'blocks'
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${activeTab === 'blocks'
                       ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <Box size={18} />
                   <span>بلوک‌ها</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('styles')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${
-                    activeTab === 'styles'
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${activeTab === 'styles'
                       ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <Settings size={18} />
                   <span>استایل</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('layers')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${
-                    activeTab === 'layers'
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${activeTab === 'layers'
                       ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <Layers size={18} />
                   <span>لایه‌ها</span>
@@ -328,8 +325,8 @@ ${html}
               </div>
 
               {/* محتوای تب‌ها */}
-              <div 
-                className="flex-1 overflow-y-auto" 
+              <div
+                className="flex-1 overflow-y-auto"
                 style={{ minHeight: 0 }}
               >
                 <div id="blocks-panel" style={{ display: activeTab === 'blocks' ? 'block' : 'none' }} className="p-4" />
@@ -342,10 +339,10 @@ ${html}
             </div>
 
             {/* 🎯 بادی - کانواس اصلی - بعد از سایدبار */}
-            <div 
-              className="flex-1" 
+            <div
+              className="flex-1"
               dir="ltr"
-              style={{ 
+              style={{
                 position: 'relative',
                 minWidth: 0,
                 margin: 0,
@@ -354,11 +351,11 @@ ${html}
                 background: '#f9fafb'
               }}
             >
-              <div 
-                id="gjs" 
-                ref={editorRef} 
-                style={{ 
-                  height: '100%', 
+              <div
+                id="gjs"
+                ref={editorRef}
+                style={{
+                  height: '100%',
                   width: '100%',
                   position: 'absolute',
                   top: 0,
@@ -367,7 +364,7 @@ ${html}
                   bottom: 0,
                   margin: 0,
                   padding: 0
-                }} 
+                }}
               />
             </div>
           </>
@@ -741,6 +738,125 @@ ${html}
           border: 2px solid #e5e7eb !important;
           margin-top: 12px !important;
         }
+          /* --- Soften Sidebar Typography (Overrides) --- */
+
+/* تیترهای سکشن‌های Style Manager */
+.gjs-sm-sector .gjs-sm-title {
+  font-weight: 600 !important; /* قبلاً 800 بود */
+}
+
+/* لیبل‌ها (Style/Traits/Layers) */
+.gjs-sm-label,
+.gjs-trt-trait__label,
+.gjs-sm-property .gjs-sm-label,
+.gjs-label {
+  font-weight: 600 !important; /* قبلاً 800 بود */
+  color: #1f2937 !important;   /* کمی نرم‌تر از #111827 */
+}
+
+/* تیتر آیتم‌های لایه‌ها */
+.gjs-layer-title {
+  font-weight: 500 !important; /* قبلاً 600 بود */
+}
+
+/* لیبل بلوک‌ها در تب Blocks */
+.gjs-block-label {
+  font-weight: 500 !important; /* قبلاً 600 بود */
+}
+
+/* متن و اعداد داخل فیلدها */
+.gjs-field,
+.gjs-field input,
+.gjs-field select,
+.gjs-field-integer input,
+.gjs-field-number input,
+.gjs-trt-trait input,
+.gjs-trt-trait select,
+.gjs-trt-trait textarea,
+.gjs-sm-property input,
+.gjs-sm-property select,
+input.gjs-field,
+select.gjs-field,
+.gjs-field-colorp-c input[type="text"] {
+  font-weight: 500 !important; /* قبلاً 700 بود */
+  font-family: 'Lahzeh', ui-sans-serif, system-ui, sans-serif !important; /* از monospace برگردونیم به sans */
+}
+
+/* خود آیکون/متن ابزارک تولبار ویرایش هم نرم‌تر شود */
+.gjs-toolbar-item {
+  font-weight: 500 !important;
+}
+
+/* اگر سرتیترها هنوز زیاد بولدن، این یکی هم کمک می‌کند */
+.gjs-two-color,
+.gjs-four-color,
+.gjs-four-color-h:hover {
+  font-weight: 500 !important;
+}
+
+  /* --- Styles tab only: make titles/labels bolder --- */
+#styles-panel .gjs-sm-sector .gjs-sm-title {
+  font-weight: 700 !important;        /* قبلاً 600 بود */
+  color: #1f2937 !important;
+}
+
+#styles-panel .gjs-sm-label,
+#styles-panel .gjs-label,
+#styles-panel .gjs-trt-trait__label {
+  font-weight: 600 !important;        /* کمی بولدتر از حالت فعلی */
+  color: #111827 !important;
+}
+
+#traits-panel .gjs-trt-trait__label {
+  font-weight: 600 !important;
+}
+
+/* خود مقادیر داخل اینپوت‌ها سبک‌تر بماند تا کنتراست تیتر/لیبل حفظ شود */
+#styles-panel .gjs-sm-property input,
+#styles-panel .gjs-sm-property select,
+#traits-panel .gjs-trt-trait input,
+#traits-panel .gjs-trt-trait select,
+#traits-panel .gjs-trt-trait textarea {
+  font-weight: 500 !important;
+}
+
+/* اگر به‌خاطر رندرینگ فونت نازک می‌افتد، اسمودینگ را برای این تب‌ها تغییر بده */
+#styles-panel, #styles-panel * ,
+#traits-panel, #traits-panel * {
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
+  text-rendering: optimizeLegibility !important;
+}
+/* ---------- Make Style tab section titles clearly bolder ---------- */
+/* === FORCE: Style tab sector titles heavier === */
+#styles-panel .gjs-sm-sector .gjs-sm-title,
+#styles-panel .gjs-sm-sector .gjs-sm-title .gjs-sm-title__label,
+#styles-panel .gjs-sm-sector .gjs-sm-title * {
+  font-family: 'Lahzeh', ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 800 !important; /* اگر زیاد شد 700 کن */
+  color: #1f2937 !important;
+  letter-spacing: 0 !important;
+}
+
+/* بعضی تم‌ها رنگ/وزن رو با این کلاس‌ها دوباره عوض می‌کنن؛ خنثی‌شون کن */
+#styles-panel .gjs-two-color,
+#styles-panel .gjs-four-color,
+#styles-panel .gjs-four-color-h:hover {
+  color: #1f2937 !important;
+  font-weight: 800 !important;
+}
+
+/* موقع باز/بسته بودن سکشن هم همین وزن حفظ شود */
+#styles-panel .gjs-sm-sector.gjs-open > .gjs-sm-title,
+#styles-panel .gjs-sm-sector:not(.gjs-open) > .gjs-sm-title {
+  font-weight: 800 !important;
+}
+
+/* اگر فونت‌وریشن روی وزن اثر می‌گذارد، این را هم بگذار */
+#styles-panel .gjs-sm-sector .gjs-sm-title {
+  font-variation-settings: "wght" 800 !important;
+}
+
           
       
       
