@@ -1,3 +1,5 @@
+// grapes/initEditor.js - نسخه کامل با Color Picker
+
 import styleSectors from './styleSectors';
 import blocks from './blocks';
 
@@ -8,7 +10,10 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     width: 'auto',
     storageManager: false,
     plugins: ['gjs-preset-webpage', 'gjs-blocks-basic'],
-    pluginsOpts: { 'gjs-preset-webpage': { blocks: [] }, 'gjs-blocks-basic': { blocks: [] } },
+    pluginsOpts: { 
+      'gjs-preset-webpage': { blocks: [] }, 
+      'gjs-blocks-basic': { blocks: [] } 
+    },
     canvas: {
       styles: [
         'https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css',
@@ -24,13 +29,26 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     },
     blockManager: { appendTo: panels.blocks },
     layerManager: { appendTo: panels.layers },
-    styleManager: { appendTo: panels.styles, sectors: styleSectors },
+    styleManager: { 
+      appendTo: panels.styles, 
+      sectors: styleSectors,
+    },
     traitManager: { appendTo: panels.traits },
     panels: { defaults: [] },
+    
+    // 🎨 فعال‌سازی Color Picker با پالت کامل
+    colorPicker: {
+      appendTo: 'parent',
+      offset: { top: 26, left: -166 },
+    },
   });
 
   // بلوک‌ها
-  blocks.forEach(b => e.BlockManager.add(b.id, { label: b.label, category: b.category, content: b.content }));
+  blocks.forEach(b => e.BlockManager.add(b.id, { 
+    label: b.label, 
+    category: b.category, 
+    content: b.content 
+  }));
 
   if (initialHtml) e.setComponents(initialHtml);
   if (initialCss) e.setStyle(initialCss);

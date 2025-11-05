@@ -1,4 +1,4 @@
-// styleSectors.js - نسخه بهبود یافته با Color Picker
+// grapes/styleSectors.js - نسخه نهایی با Color Picker
 
 const styleSectors = [
   {
@@ -77,7 +77,7 @@ const styleSectors = [
         name: 'رنگ متن', 
         property: 'color', 
         type: 'color',
-        defaults: '#333333'
+        defaults: '#333333',
       },
       {
         name: 'تراز متن',
@@ -142,7 +142,7 @@ const styleSectors = [
         name: 'رنگ پس‌زمینه', 
         property: 'background-color', 
         type: 'color',
-        defaults: 'transparent' 
+        defaults: 'transparent',
       },
       { 
         name: 'تصویر پس‌زمینه', 

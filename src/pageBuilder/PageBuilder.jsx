@@ -609,6 +609,141 @@ ${html}
         
         .gjs-dashed { border: 2px dashed #d1d5db !important; background: rgba(249,250,251,.5); }
         .gjs-pn-panel { background: white; }
+
+        
+        
+        /* Container اصلی */
+        .gjs-field-colorp-c {
+          display: block !important;
+          width: 100% !important;
+          position: relative !important;
+        }
+        
+        /* فیلد اینپوت با دکمه رنگ */
+        .gjs-field-colorp-c .gjs-field-colorp {
+          display: flex !important;
+          align-items: center !important;
+          gap: 10px !important;
+          width: 100% !important;
+          position: relative !important;
+        }
+        
+        /* اینپوت متنی کد رنگ */
+        .gjs-field-colorp-c input[type="text"] {
+          flex: 1 !important;
+          padding: 10px 48px 10px 12px !important;
+          border: 2px solid #d1d5db !important;
+          border-radius: 8px !important;
+          font-size: 14px !important;
+          font-family: 'Lahzeh', monospace !important;
+          font-weight: 700 !important;
+          color: #111827 !important;
+          background: white !important;
+          direction: ltr !important;
+          text-align: left !important;
+        }
+        
+        .gjs-field-colorp-c input[type="text"]:focus {
+          outline: none !important;
+          border-color: #4f46e5 !important;
+          box-shadow: 0 0 0 3px rgba(79,70,229,.1) !important;
+        }
+        
+        /* دکمه رنگ داخل فیلد */
+        .gjs-field-colorp-c .gjs-field-color-picker {
+          position: absolute !important;
+          left: 8px !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          width: 36px !important;
+          height: 36px !important;
+          border-radius: 6px !important;
+          border: 2px solid #d1d5db !important;
+          cursor: pointer !important;
+          transition: all 0.2s !important;
+          overflow: hidden !important;
+          background: white !important;
+        }
+        
+        /* حذف پس‌زمینه شطرنجی */
+        .gjs-field-colorp-c .gjs-checker-bg {
+          background: none !important;
+          background-image: none !important;
+          width: 100% !important;
+          height: 100% !important;
+          border: none !important;
+          border-radius: 4px !important;
+        }
+        
+        .gjs-field-colorp-c .gjs-field-color-picker:hover {
+          border-color: #4f46e5 !important;
+          box-shadow: 0 0 0 3px rgba(79,70,229,.08) !important;
+          transform: translateY(-50%) scale(1.05) !important;
+        }
+        
+        /* پالت رنگ باز شده */
+        .gjs-cm-colorpicker {
+          background: white !important;
+          border: 2px solid #e5e7eb !important;
+          border-radius: 12px !important;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
+          padding: 16px !important;
+          z-index: 9999 !important;
+          margin-top: 8px !important;
+        }
+        
+        /* اسلایدر رنگ اصلی */
+        .gjs-cm-color-spectrum {
+          border-radius: 8px !important;
+          border: 2px solid #e5e7eb !important;
+          width: 200px !important;
+          height: 200px !important;
+        }
+        
+        /* Hue picker (نوار رنگی) */
+        .gjs-cm-hue-spectrum {
+          border-radius: 6px !important;
+          height: 14px !important;
+          margin-top: 12px !important;
+          border: 1px solid #e5e7eb !important;
+        }
+        
+        /* Alpha picker (شفافیت) */
+        .gjs-cm-alpha-spectrum {
+          border-radius: 6px !important;
+          height: 14px !important;
+          margin-top: 8px !important;
+          border: 1px solid #e5e7eb !important;
+        }
+        
+        /* دسته‌های Hue و Alpha */
+        .gjs-cm-hue,
+        .gjs-cm-alpha {
+          margin: 8px 0 !important;
+        }
+        
+        /* Pointer (دایره انتخابگر) */
+        .gjs-cm-color-pointer,
+        .gjs-cm-hue-pointer,
+        .gjs-cm-alpha-pointer {
+          width: 16px !important;
+          height: 16px !important;
+          border: 3px solid white !important;
+          border-radius: 50% !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+        }
+        
+        /* Preview رنگ */
+        .gjs-cm-preview {
+          width: 40px !important;
+          height: 40px !important;
+          border-radius: 8px !important;
+          border: 2px solid #e5e7eb !important;
+          margin-top: 12px !important;
+        }
+          
+      
+      
       `}</style>
     </div>
   );
