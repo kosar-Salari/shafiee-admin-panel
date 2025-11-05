@@ -1,11 +1,13 @@
-// grapes/styleSectors.js - نسخه نهایی با Color Picker
+  // grapes/styleSectors.js - نسخه نهایی با Color Picker
 
-const styleSectors = [
+  const styleSectors = [
   {
+    id: 'spacing',                // ✅ برای دسترسی راحت از StyleManager
     name: '📐 ابعاد و فاصله',
     open: true,
     properties: [
       {
+        id: 'width',
         name: 'عرض',
         property: 'width',
         type: 'integer',
@@ -13,360 +15,426 @@ const styleSectors = [
         defaults: 'auto',
       },
       {
+        id: 'height',
         name: 'ارتفاع',
         property: 'height',
         type: 'integer',
         units: ['px', '%', 'vh', 'auto'],
         defaults: 'auto',
       },
+
+      // ✅ padding-all
       {
+        id: 'padding-all',
+        name: 'فاصله داخلی (همه جهات)',
+        property: 'padding',
+        type: 'integer',
+        units: ['px', 'rem'],
+        defaults: '0',
+        placeholder: '—', // وقتی 4 تا برابر نباشند، «—» می‌بینیم
+        min: 0,
+        max: 500,
+        onChange: (value, prop, opts = {}) => {
+          const toCss = (v) =>
+            typeof v === 'string' && /px|rem$/.test(v) ? v : `${v}px`;
+          const { selected } = opts;
+          if (selected && Array.isArray(selected)) {
+            selected.forEach((cmp) => {
+              const v = toCss(value);
+              cmp.addStyle({
+                'padding-top': v,
+                'padding-right': v,
+                'padding-bottom': v,
+                'padding-left': v,
+              });
+            });
+          }
+        },
+      },
+
+      // ✅ margin-all
+      {
+        id: 'margin-all',
+        name: 'فاصله خارجی (همه جهات)',
+        property: 'margin',
+        type: 'integer',
+        units: ['px', 'rem', 'auto'],
+        defaults: '0',
+        placeholder: '—',
+        min: 0,
+        max: 500,
+        onChange: (value, prop, opts = {}) => {
+          const toCss = (v) => (v === 'auto'
+            ? 'auto'
+            : (typeof v === 'string' && /px|rem|auto$/.test(v)) ? v : `${v}px`);
+          const { selected } = opts;
+          if (selected && Array.isArray(selected)) {
+            selected.forEach((cmp) => {
+              const v = toCss(value);
+              cmp.addStyle({
+                'margin-top': v,
+                'margin-right': v,
+                'margin-bottom': v,
+                'margin-left': v,
+              });
+            });
+          }
+        },
+      },
+
+      // ✅ padding sides
+      {
+        id: 'padding-sides',
         name: 'فاصله داخلی',
         property: 'padding',
         type: 'composite',
         properties: [
-          { name: 'بالا', property: 'padding-top', type: 'integer', units: ['px', 'rem'], defaults: '0' },
-          { name: 'راست', property: 'padding-right', type: 'integer', units: ['px', 'rem'], defaults: '0' },
-          { name: 'پایین', property: 'padding-bottom', type: 'integer', units: ['px', 'rem'], defaults: '0' },
-          { name: 'چپ', property: 'padding-left', type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'padding-top',    name: 'بالا',  property: 'padding-top',    type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'padding-right',  name: 'راست',  property: 'padding-right',  type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'padding-bottom', name: 'پایین', property: 'padding-bottom', type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'padding-left',   name: 'چپ',    property: 'padding-left',   type: 'integer', units: ['px', 'rem'], defaults: '0' },
         ],
       },
+
+      // ✅ margin sides
       {
+        id: 'margin-sides',
         name: 'فاصله خارجی',
         property: 'margin',
         type: 'composite',
         properties: [
-          { name: 'بالا', property: 'margin-top', type: 'integer', units: ['px', 'rem'], defaults: '0' },
-          { name: 'راست', property: 'margin-right', type: 'integer', units: ['px', 'rem', 'auto'], defaults: '0' },
-          { name: 'پایین', property: 'margin-bottom', type: 'integer', units: ['px', 'rem'], defaults: '0' },
-          { name: 'چپ', property: 'margin-left', type: 'integer', units: ['px', 'rem', 'auto'], defaults: '0' },
+          { id: 'margin-top',    name: 'بالا',  property: 'margin-top',    type: 'integer', units: ['px', 'rem'],        defaults: '0' },
+          { id: 'margin-right',  name: 'راست',  property: 'margin-right',  type: 'integer', units: ['px', 'rem', 'auto'], defaults: '0' },
+          { id: 'margin-bottom', name: 'پایین', property: 'margin-bottom', type: 'integer', units: ['px', 'rem'],        defaults: '0' },
+          { id: 'margin-left',   name: 'چپ',    property: 'margin-left',   type: 'integer', units: ['px', 'rem', 'auto'], defaults: '0' },
         ],
       },
     ],
   },
-  {
-    name: '✍️ تنظیمات متن',
-    open: true,
-    properties: [
-      {
-        name: 'اندازه فونت',
-        property: 'font-size',
-        type: 'integer',
-        units: ['px', 'rem', 'em'],
-        defaults: '16px',
-        min: 8,
-        max: 100,
-      },
-      {
-        name: 'ضخامت فونت',
-        property: 'font-weight',
-        type: 'select',
-        defaults: '400',
-        list: [
-          { value: '100', name: '100 - نازک' },
-          { value: '200', name: '200' },
-          { value: '300', name: '300 - نازک' },
-          { value: '400', name: '400 - معمولی' },
-          { value: '500', name: '500 - متوسط' },
-          { value: '600', name: '600 - نیمه‌بولد' },
-          { value: '700', name: '700 - بولد' },
-          { value: '800', name: '800 - خیلی بولد' },
-          { value: '900', name: '900 - سنگین' },
-        ],
-      },
-      { 
-        name: 'رنگ متن', 
-        property: 'color', 
-        type: 'color',
-        defaults: '#333333',
-      },
-      {
-        name: 'تراز متن',
-        property: 'text-align',
-        type: 'radio',
-        defaults: 'right',
-        list: [
-          { value: 'right', title: 'راست' },
-          { value: 'center', title: 'وسط' },
-          { value: 'left', title: 'چپ' },
-          { value: 'justify', title: 'جاستیفای' },
-        ],
-      },
-      {
-        name: 'تزیین متن',
-        property: 'text-decoration',
-        type: 'select',
-        defaults: 'none',
-        list: [
-          { value: 'none', name: 'بدون تزیین' },
-          { value: 'underline', name: 'خط زیر' },
-          { value: 'line-through', name: 'خط خورده' },
-          { value: 'overline', name: 'خط بالا' },
-        ],
-      },
-      {
-        name: 'شیب متن',
-        property: 'font-style',
-        type: 'select',
-        defaults: 'normal',
-        list: [
-          { value: 'normal', name: 'عادی' },
-          { value: 'italic', name: 'کج (Italic)' },
-        ],
-      },
-      {
-        name: 'فاصله خطوط',
-        property: 'line-height',
-        type: 'integer',
-        units: ['', 'px', 'em'],
-        defaults: '1.5',
-        min: 0,
-        max: 5,
-        step: 0.1,
-      },
-      { 
-        name: 'فاصله حروف', 
-        property: 'letter-spacing', 
-        type: 'integer', 
-        units: ['px', 'em'], 
-        defaults: '0', 
-        min: -5, 
-        max: 20 
-      },
-    ],
-  },
-  {
-    name: '🎨 پس‌زمینه',
-    open: false,
-    properties: [
-      { 
-        name: 'رنگ پس‌زمینه', 
-        property: 'background-color', 
-        type: 'color',
-        defaults: 'transparent',
-      },
-      { 
-        name: 'تصویر پس‌زمینه', 
-        property: 'background-image', 
-        type: 'file', 
-        defaults: 'none' 
-      },
-      {
-        name: 'اندازه پس‌زمینه',
-        property: 'background-size',
-        type: 'select',
-        defaults: 'cover',
-        list: [
-          { value: 'auto', name: 'خودکار' },
-          { value: 'cover', name: 'پوشش کامل' },
-          { value: 'contain', name: 'نمایش کامل' },
-        ],
-      },
-      {
-        name: 'موقعیت پس‌زمینه',
-        property: 'background-position',
-        type: 'select',
-        defaults: 'center center',
-        list: [
-          { value: 'top left', name: 'بالا چپ' },
-          { value: 'top center', name: 'بالا وسط' },
-          { value: 'top right', name: 'بالا راست' },
-          { value: 'center left', name: 'وسط چپ' },
-          { value: 'center center', name: 'وسط وسط' },
-          { value: 'center right', name: 'وسط راست' },
-          { value: 'bottom left', name: 'پایین چپ' },
-          { value: 'bottom center', name: 'پایین وسط' },
-          { value: 'bottom right', name: 'پایین راست' },
-        ],
-      },
-      {
-        name: 'تکرار پس‌زمینه',
-        property: 'background-repeat',
-        type: 'select',
-        defaults: 'repeat',
-        list: [
-          { value: 'repeat', name: 'تکرار' },
-          { value: 'repeat-x', name: 'تکرار افقی' },
-          { value: 'repeat-y', name: 'تکرار عمودی' },
-          { value: 'no-repeat', name: 'بدون تکرار' },
-        ],
-      },
-    ],
-  },
-  {
-    name: '🔲 حاشیه و سایه',
-    open: false,
-    properties: [
-      {
-        name: 'گردی گوشه‌ها',
-        property: 'border-radius',
-        type: 'integer',
-        units: ['px', '%'],
-        defaults: '0',
-        min: 0,
-        max: 100,
-      },
-      {
-        name: 'حاشیه',
-        property: 'border',
-        type: 'composite',
-        properties: [
-          { name: 'عرض', property: 'border-width', type: 'integer', units: ['px'], defaults: '0', min: 0, max: 20 },
-          {
-            name: 'نوع',
-            property: 'border-style',
-            type: 'select',
-            defaults: 'solid',
-            list: [
-              { value: 'none', name: 'ندارد' },
-              { value: 'solid', name: 'خط پیوسته' },
-              { value: 'dashed', name: 'خط چین' },
-              { value: 'dotted', name: 'نقطه چین' },
-              { value: 'double', name: 'خط دوتایی' },
-            ],
-          },
-          { name: 'رنگ', property: 'border-color', type: 'color', defaults: '#000000' },
-        ],
-      },
-      {
-        name: 'سایه جعبه',
-        property: 'box-shadow',
-        type: 'stack',
-        properties: [
-          { name: 'افقی', property: 'box-shadow-h', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'عمودی', property: 'box-shadow-v', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'بلور', property: 'box-shadow-blur', type: 'integer', units: ['px'], defaults: '5', min: 0 },
-          { name: 'گسترش', property: 'box-shadow-spread', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'رنگ', property: 'box-shadow-color', type: 'color', defaults: 'rgba(0,0,0,0.5)' },
-        ],
-      },
-      {
-        name: 'سایه متن',
-        property: 'text-shadow',
-        type: 'stack',
-        properties: [
-          { name: 'افقی', property: 'text-shadow-h', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'عمودی', property: 'text-shadow-v', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'بلور', property: 'text-shadow-blur', type: 'integer', units: ['px'], defaults: '0', min: 0 },
-          { name: 'رنگ', property: 'text-shadow-color', type: 'color', defaults: '#000000' },
-        ],
-      },
-    ],
-  },
-  {
-    name: '📍 موقعیت و نمایش',
-    open: false,
-    properties: [
-      {
-        name: 'نوع نمایش',
-        property: 'display',
-        type: 'select',
-        defaults: 'block',
-        list: [
-          { value: 'block', name: 'بلوکی' },
-          { value: 'inline-block', name: 'درون خطی-بلوکی' },
-          { value: 'inline', name: 'درون خطی' },
-          { value: 'flex', name: 'فلکس' },
-          { value: 'grid', name: 'گرید' },
-          { value: 'none', name: 'مخفی' },
-        ],
-      },
-      {
-        name: 'موقعیت',
-        property: 'position',
-        type: 'select',
-        defaults: 'static',
-        list: [
-          { value: 'static', name: 'استاتیک' },
-          { value: 'relative', name: 'نسبی' },
-          { value: 'absolute', name: 'مطلق' },
-          { value: 'fixed', name: 'ثابت' },
-          { value: 'sticky', name: 'چسبان' },
-        ],
-      },
-      { 
-        name: 'شفافیت', 
-        property: 'opacity', 
-        type: 'slider', 
-        defaults: '1', 
-        min: 0, 
-        max: 1, 
-        step: 0.1 
-      },
-      {
-        name: 'z-index',
-        property: 'z-index',
-        type: 'integer',
-        defaults: 'auto',
-        min: -10,
-        max: 100,
-      },
-    ],
-  },
-  {
-    name: '🎯 فلکس (Flexbox)',
-    open: false,
-    properties: [
-      {
-        name: 'جهت',
-        property: 'flex-direction',
-        type: 'radio',
-        defaults: 'row',
-        list: [
-          { value: 'row', name: 'افقی →', title: 'ردیف' },
-          { value: 'row-reverse', name: '← افقی', title: 'ردیف معکوس' },
-          { value: 'column', name: 'عمودی ↓', title: 'ستون' },
-          { value: 'column-reverse', name: '↑ عمودی', title: 'ستون معکوس' },
-        ],
-      },
-      {
-        name: 'تراز افقی',
-        property: 'justify-content',
-        type: 'radio',
-        defaults: 'flex-start',
-        list: [
-          { value: 'flex-start', name: 'ابتدا', title: 'شروع' },
-          { value: 'center', name: 'وسط', title: 'وسط' },
-          { value: 'flex-end', name: 'انتها', title: 'پایان' },
-          { value: 'space-between', name: 'فاصله بین', title: 'فاصله بین' },
-          { value: 'space-around', name: 'فاصله دور', title: 'فاصله اطراف' },
-          { value: 'space-evenly', name: 'فاصله یکسان', title: 'فاصله یکسان' },
-        ],
-      },
-      {
-        name: 'تراز عمودی',
-        property: 'align-items',
-        type: 'radio',
-        defaults: 'stretch',
-        list: [
-          { value: 'flex-start', name: 'بالا', title: 'بالا' },
-          { value: 'center', name: 'وسط', title: 'وسط' },
-          { value: 'flex-end', name: 'پایین', title: 'پایین' },
-          { value: 'stretch', name: 'کشیده', title: 'کشیده' },
-          { value: 'baseline', name: 'خط پایه', title: 'خط پایه' },
-        ],
-      },
-      {
-        name: 'شکستن',
-        property: 'flex-wrap',
-        type: 'select',
-        defaults: 'nowrap',
-        list: [
-          { value: 'nowrap', name: 'بدون شکستن' },
-          { value: 'wrap', name: 'شکستن' },
-          { value: 'wrap-reverse', name: 'شکستن معکوس' },
-        ],
-      },
-      {
-        name: 'فاصله بین',
-        property: 'gap',
-        type: 'integer',
-        units: ['px', 'rem'],
-        defaults: '0',
-        min: 0,
-        max: 100,
-      },
-    ],
-  },
-];
+    {
+      name: '✍️ تنظیمات متن',
+      open: true,
+      properties: [
+        {
+          name: 'اندازه فونت',
+          property: 'font-size',
+          type: 'integer',
+          units: ['px', 'rem', 'em'],
+          defaults: '16px',
+          min: 8,
+          max: 100,
+        },
+        {
+          name: 'ضخامت فونت',
+          property: 'font-weight',
+          type: 'select',
+          defaults: '400',
+          list: [
+            { value: '100', name: '100 - نازک' },
+            { value: '200', name: '200' },
+            { value: '300', name: '300 - نازک' },
+            { value: '400', name: '400 - معمولی' },
+            { value: '500', name: '500 - متوسط' },
+            { value: '600', name: '600 - نیمه‌بولد' },
+            { value: '700', name: '700 - بولد' },
+            { value: '800', name: '800 - خیلی بولد' },
+            { value: '900', name: '900 - سنگین' },
+          ],
+        },
+        { 
+          name: 'رنگ متن', 
+          property: 'color', 
+          type: 'color',
+          defaults: '#333333',
+        },
+        {
+          name: 'تراز متن',
+          property: 'text-align',
+          type: 'radio',
+          defaults: 'right',
+          list: [
+            { value: 'right', title: 'راست' },
+            { value: 'center', title: 'وسط' },
+            { value: 'left', title: 'چپ' },
+            { value: 'justify', title: 'جاستیفای' },
+          ],
+        },
+        {
+          name: 'تزیین متن',
+          property: 'text-decoration',
+          type: 'select',
+          defaults: 'none',
+          list: [
+            { value: 'none', name: 'بدون تزیین' },
+            { value: 'underline', name: 'خط زیر' },
+            { value: 'line-through', name: 'خط خورده' },
+            { value: 'overline', name: 'خط بالا' },
+          ],
+        },
+        {
+          name: 'شیب متن',
+          property: 'font-style',
+          type: 'select',
+          defaults: 'normal',
+          list: [
+            { value: 'normal', name: 'عادی' },
+            { value: 'italic', name: 'کج (Italic)' },
+          ],
+        },
+        {
+          name: 'فاصله خطوط',
+          property: 'line-height',
+          type: 'integer',
+          units: ['', 'px', 'em'],
+          defaults: '1.5',
+          min: 0,
+          max: 5,
+          step: 0.1,
+        },
+        { 
+          name: 'فاصله حروف', 
+          property: 'letter-spacing', 
+          type: 'integer', 
+          units: ['px', 'em'], 
+          defaults: '0', 
+          min: -5, 
+          max: 20 
+        },
+      ],
+    },
+    {
+      name: '🎨 پس‌زمینه',
+      open: false,
+      properties: [
+        { 
+          name: 'رنگ پس‌زمینه', 
+          property: 'background-color', 
+          type: 'color',
+          defaults: 'transparent',
+        },
+        { 
+          name: 'تصویر پس‌زمینه', 
+          property: 'background-image', 
+          type: 'file', 
+          defaults: 'none' 
+        },
+        {
+          name: 'اندازه پس‌زمینه',
+          property: 'background-size',
+          type: 'select',
+          defaults: 'cover',
+          list: [
+            { value: 'auto', name: 'خودکار' },
+            { value: 'cover', name: 'پوشش کامل' },
+            { value: 'contain', name: 'نمایش کامل' },
+          ],
+        },
+        {
+          name: 'موقعیت پس‌زمینه',
+          property: 'background-position',
+          type: 'select',
+          defaults: 'center center',
+          list: [
+            { value: 'top left', name: 'بالا چپ' },
+            { value: 'top center', name: 'بالا وسط' },
+            { value: 'top right', name: 'بالا راست' },
+            { value: 'center left', name: 'وسط چپ' },
+            { value: 'center center', name: 'وسط وسط' },
+            { value: 'center right', name: 'وسط راست' },
+            { value: 'bottom left', name: 'پایین چپ' },
+            { value: 'bottom center', name: 'پایین وسط' },
+            { value: 'bottom right', name: 'پایین راست' },
+          ],
+        },
+        {
+          name: 'تکرار پس‌زمینه',
+          property: 'background-repeat',
+          type: 'select',
+          defaults: 'repeat',
+          list: [
+            { value: 'repeat', name: 'تکرار' },
+            { value: 'repeat-x', name: 'تکرار افقی' },
+            { value: 'repeat-y', name: 'تکرار عمودی' },
+            { value: 'no-repeat', name: 'بدون تکرار' },
+          ],
+        },
+      ],
+    },
+    {
+      name: '🔲 حاشیه و سایه',
+      open: false,
+      properties: [
+        {
+          name: 'گردی گوشه‌ها',
+          property: 'border-radius',
+          type: 'integer',
+          units: ['px', '%'],
+          defaults: '0',
+          min: 0,
+          max: 100,
+        },
+        {
+          name: 'حاشیه',
+          property: 'border',
+          type: 'composite',
+          properties: [
+            { name: 'عرض', property: 'border-width', type: 'integer', units: ['px'], defaults: '0', min: 0, max: 20 },
+            {
+              name: 'نوع',
+              property: 'border-style',
+              type: 'select',
+              defaults: 'solid',
+              list: [
+                { value: 'none', name: 'ندارد' },
+                { value: 'solid', name: 'خط پیوسته' },
+                { value: 'dashed', name: 'خط چین' },
+                { value: 'dotted', name: 'نقطه چین' },
+                { value: 'double', name: 'خط دوتایی' },
+              ],
+            },
+            { name: 'رنگ', property: 'border-color', type: 'color', defaults: '#000000' },
+          ],
+        },
+        {
+          name: 'سایه جعبه',
+          property: 'box-shadow',
+          type: 'stack',
+          properties: [
+            { name: 'افقی', property: 'box-shadow-h', type: 'integer', units: ['px'], defaults: '0' },
+            { name: 'عمودی', property: 'box-shadow-v', type: 'integer', units: ['px'], defaults: '0' },
+            { name: 'بلور', property: 'box-shadow-blur', type: 'integer', units: ['px'], defaults: '5', min: 0 },
+            { name: 'گسترش', property: 'box-shadow-spread', type: 'integer', units: ['px'], defaults: '0' },
+            { name: 'رنگ', property: 'box-shadow-color', type: 'color', defaults: 'rgba(0,0,0,0.5)' },
+          ],
+        },
+        {
+          name: 'سایه متن',
+          property: 'text-shadow',
+          type: 'stack',
+          properties: [
+            { name: 'افقی', property: 'text-shadow-h', type: 'integer', units: ['px'], defaults: '0' },
+            { name: 'عمودی', property: 'text-shadow-v', type: 'integer', units: ['px'], defaults: '0' },
+            { name: 'بلور', property: 'text-shadow-blur', type: 'integer', units: ['px'], defaults: '0', min: 0 },
+            { name: 'رنگ', property: 'text-shadow-color', type: 'color', defaults: '#000000' },
+          ],
+        },
+      ],
+    },
+    {
+      name: '📍 موقعیت و نمایش',
+      open: false,
+      properties: [
+        {
+          name: 'نوع نمایش',
+          property: 'display',
+          type: 'select',
+          defaults: 'block',
+          list: [
+            { value: 'block', name: 'بلوکی' },
+            { value: 'inline-block', name: 'درون خطی-بلوکی' },
+            { value: 'inline', name: 'درون خطی' },
+            { value: 'flex', name: 'فلکس' },
+            { value: 'grid', name: 'گرید' },
+            { value: 'none', name: 'مخفی' },
+          ],
+        },
+        {
+          name: 'موقعیت',
+          property: 'position',
+          type: 'select',
+          defaults: 'static',
+          list: [
+            { value: 'static', name: 'استاتیک' },
+            { value: 'relative', name: 'نسبی' },
+            { value: 'absolute', name: 'مطلق' },
+            { value: 'fixed', name: 'ثابت' },
+            { value: 'sticky', name: 'چسبان' },
+          ],
+        },
+        { 
+          name: 'شفافیت', 
+          property: 'opacity', 
+          type: 'slider', 
+          defaults: '1', 
+          min: 0, 
+          max: 1, 
+          step: 0.1 
+        },
+        {
+          name: 'z-index',
+          property: 'z-index',
+          type: 'integer',
+          defaults: 'auto',
+          min: -10,
+          max: 100,
+        },
+      ],
+    },
+    {
+      name: '🎯 فلکس (Flexbox)',
+      open: false,
+      properties: [
+        {
+          name: 'جهت',
+          property: 'flex-direction',
+          type: 'radio',
+          defaults: 'row',
+          list: [
+            { value: 'row', name: 'افقی →', title: 'ردیف' },
+            { value: 'row-reverse', name: '← افقی', title: 'ردیف معکوس' },
+            { value: 'column', name: 'عمودی ↓', title: 'ستون' },
+            { value: 'column-reverse', name: '↑ عمودی', title: 'ستون معکوس' },
+          ],
+        },
+        {
+          name: 'تراز افقی',
+          property: 'justify-content',
+          type: 'radio',
+          defaults: 'flex-start',
+          list: [
+            { value: 'flex-start', name: 'ابتدا', title: 'شروع' },
+            { value: 'center', name: 'وسط', title: 'وسط' },
+            { value: 'flex-end', name: 'انتها', title: 'پایان' },
+            { value: 'space-between', name: 'فاصله بین', title: 'فاصله بین' },
+            { value: 'space-around', name: 'فاصله دور', title: 'فاصله اطراف' },
+            { value: 'space-evenly', name: 'فاصله یکسان', title: 'فاصله یکسان' },
+          ],
+        },
+        {
+          name: 'تراز عمودی',
+          property: 'align-items',
+          type: 'radio',
+          defaults: 'stretch',
+          list: [
+            { value: 'flex-start', name: 'بالا', title: 'بالا' },
+            { value: 'center', name: 'وسط', title: 'وسط' },
+            { value: 'flex-end', name: 'پایین', title: 'پایین' },
+            { value: 'stretch', name: 'کشیده', title: 'کشیده' },
+            { value: 'baseline', name: 'خط پایه', title: 'خط پایه' },
+          ],
+        },
+        {
+          name: 'شکستن',
+          property: 'flex-wrap',
+          type: 'select',
+          defaults: 'nowrap',
+          list: [
+            { value: 'nowrap', name: 'بدون شکستن' },
+            { value: 'wrap', name: 'شکستن' },
+            { value: 'wrap-reverse', name: 'شکستن معکوس' },
+          ],
+        },
+        {
+          name: 'فاصله بین',
+          property: 'gap',
+          type: 'integer',
+          units: ['px', 'rem'],
+          defaults: '0',
+          min: 0,
+          max: 100,
+        },
+      ],
+    },
+  ];
 
-export default styleSectors;
+  export default styleSectors;
