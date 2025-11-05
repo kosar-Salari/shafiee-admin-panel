@@ -856,6 +856,106 @@ select.gjs-field,
 #styles-panel .gjs-sm-sector .gjs-sm-title {
   font-variation-settings: "wght" 800 !important;
 }
+/* === Units badge inside number/integer inputs (px, %, rem, ...) === */
+.gjs-field-integer,
+.gjs-field-number {
+  position: relative !important;
+}
+
+/* کمی اینپوت‌ها بزرگ‌تر بشن و جای badge هم باز بشه */
+.gjs-field-integer input,
+.gjs-field-number input {
+  height: 42px !important;
+  font-size: 15px !important;
+  /* برای هر دو حالت RTL/LTR از ویژگی‌های منطقی استفاده می‌کنیم */
+  padding-inline-start: 12px !important;  /* سمت شروع متن */
+  padding-inline-end: 44px !important;    /* جا برای badge واحد */
+}
+
+/* خود باکس واحد رو ببریم گوشه‌ی اینپوت و ریزش کنیم */
+.gjs-field-integer .gjs-field-units,
+.gjs-field-number .gjs-field-units,
+.gjs-input-unit,
+.gjs-sm-unit,
+.gjs-unit {
+  position: absolute !important;
+  inset-inline-end: 8px !important;      /* سمت انتهایی (در RTL می‌شود چپ) */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 2 !important;
+  height: 22px !important;
+  min-width: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important;
+}
+
+/* اگر واحد به صورت <select> رندر می‌شود */
+.gjs-field-units select,
+.gjs-input-unit select {
+  height: 22px !important;
+  min-width: 28px !important;
+  padding: 0 4px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  appearance: none !important;
+}
+
+/* اگر بعضی تم‌ها به‌جای select متن ساده نشون می‌دن */
+.gjs-field-units .gjs-unit,
+.gjs-input-unit .gjs-unit {
+  font-size: 11px !important;
+  padding: 2px 6px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  line-height: 1 !important;
+  height: 22px !important;
+}
+
+/* اطمینان از هم‌پوشانی نشدن (حل مشکل دو مستطیل روی هم) */
+.gjs-field-integer .gjs-field-units,
+.gjs-field-number .gjs-field-units {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* اگر propertyهای ترکیبی مثل padding/margin هم input عددی دارند */
+.gjs-sm-property .gjs-field-integer input,
+.gjs-sm-property .gjs-field-number input {
+  height: 40px !important;
+  padding-inline-end: 44px !important;
+}
+
+/* === Toolbar روی کانواس کمی بزرگ‌تر و خوش‌دست‌تر === */
+.gjs-toolbar {
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+}
+
+.gjs-toolbar-item {
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+}
+
+.gjs-toolbar-item svg,
+.gjs-toolbar-item i {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* برای اینکه badge همیشه روِی اینپوت قرار بگیره */
+.gjs-field,
+.gjs-sm-property,feat(ui): refine unit badge (px) and improve numeric inputs in Style Manager
+.gjs-trt-trait {
+  position: relative !important;
+  overflow: visible !important;
+}
 
           
       
