@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LayoutShell from './components/LayoutShell';
 import MyPages from './pages/Pages';
@@ -8,12 +7,24 @@ import News from './pages/News';
 import Articles from './pages/Articles';
 import PageBuilder from './pageBuilder/PageBuilder';
 
+import Login from './pages/Login';
+import PrivateRoute from './components/PrivateRoute';
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* داشبورد با سایدبار */}
-        <Route element={<LayoutShell />}>
+        {/* ورود */}
+        <Route path="/login" element={<Login />} />
+
+        {/* روت‌های محافظت‌شده با شِل داشبورد */}
+        <Route
+          element={
+            <PrivateRoute>
+              <LayoutShell />
+            </PrivateRoute>
+          }
+        >
           <Route path="/" element={<Navigate to="/pages" replace />} />
           <Route path="/pages" element={<MyPages />} />
           <Route path="/mainPage" element={<MainPage />} />
@@ -22,9 +33,23 @@ export default function App() {
           <Route path="/articles" element={<Articles />} />
         </Route>
 
-        <Route path="/builder" element={<PageBuilder />} />
+        {/* بیلدر هم محافظت شود */}
+        <Route
+          path="/builder"
+          element={
+            <PrivateRoute>
+              <PageBuilder />
+            </PrivateRoute>
+          }
+        />
 
-        <Route path="*" element={<div className="p-6 text-center font-lahzeh font-bold text-xl">!یافت نشد</div>} />
+        {/* 404 */}
+        <Route
+          path="*"
+          element={
+            <div className="p-6 text-center font-lahzeh font-bold text-xl">!یافت نشد</div>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
