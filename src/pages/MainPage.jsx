@@ -1,6 +1,6 @@
 // src/pages/AdminMainPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { Upload, Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import { Upload, Plus, Trash2, GripVertical, Loader2, Info } from 'lucide-react';
 import NewsArticlesSettings from '../components/NewsArticlesSettings';
 import LinkedImagesSettings from '../components/LinkImageManager';
 
@@ -8,12 +8,6 @@ import { getSettings,updateSettings} from '../services/settingsService';
 
 import {localToApi , apiToLocal } from '../services/settingsMapper';
 import {uploadFile} from '../services/uploadService';
-
-const RECOMMENDED_SIZES = {
-  banner: '1920×640 (نسبت 3:1)',
-  side: '640×640 (مربع)',
-  card: '960×540 (نسبت 16:9)',
-};
 
 export default function AdminMainPage() {
   const [loading, setLoading] = useState(true);
@@ -28,7 +22,7 @@ export default function AdminMainPage() {
     { id: 'side-right', position: 'right', image: '', link: '/' },
   ]);
 
-  // imageLinks1: عکس‌های بالا/پایین بنر (همون “linkCards” شما)
+  // imageLinks1: عکس‌های بالا/پایین بنر (همون "linkCards" شما)
   const [linkCards, setLinkCards] = useState([]); // [{id, image, link, position}]
 
   // برای Drag & Drop
@@ -238,12 +232,7 @@ export default function AdminMainPage() {
     <div className="min-h-screen bg-gray-50 font-lahzeh" dir="rtl">
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">مدیریت صفحه اصلی</h1>
-            <div className="text-xs text-gray-500">
-              اندازه‌های پیشنهادی: بنر {RECOMMENDED_SIZES.banner} • کناری {RECOMMENDED_SIZES.side} • کارت {RECOMMENDED_SIZES.card}
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">مدیریت صفحه اصلی</h1>
         </div>
       </div>
 
@@ -268,7 +257,13 @@ export default function AdminMainPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Right Side Card */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              <h3 className="text-sm font-bold mb-3 text-center">عکس سمت راست (اختیاری)</h3>
+              <h3 className="text-sm font-bold mb-2 text-center">عکس سمت راست (اختیاری)</h3>
+              <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-3 flex items-start gap-2">
+                <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-blue-800">
+                  <strong>ابعاد پیشنهادی:</strong> 380×640 
+                </p>
+              </div>
               {bannerSideCards[1]?.image ? (
                 <div className="space-y-3">
                   <div className="relative">
@@ -302,7 +297,18 @@ export default function AdminMainPage() {
 
             {/* Center Banner */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              <h3 className="text-sm font-bold mb-3 text-center">بنر اصلی (وسط)</h3>
+              <h3 className="text-sm font-bold mb-2 text-center">بنر اصلی (وسط)</h3>
+              <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-3">
+                <div className="flex items-start gap-2">
+                  <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-blue-800">
+                    <p className="font-bold mb-1">ابعاد پیشنهادی:</p>
+                    <p className="mb-1">• با دو عکس کناری: <strong>380×1280</strong> </p>
+                    <p className="mb-1">• با یک عکس کناری: <strong>380×1600</strong> </p>
+                    <p>• بدون عکس کناری: <strong>380×1920</strong> </p>
+                  </div>
+                </div>
+              </div>
               {bannerImage ? (
                 <div className="relative">
                   <img src={bannerImage} alt="بنر" className="w-full h-80 object-cover rounded-lg" />
@@ -324,7 +330,13 @@ export default function AdminMainPage() {
 
             {/* Left Side Card */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              <h3 className="text-sm font-bold mb-3 text-center">عکس سمت چپ (اختیاری)</h3>
+              <h3 className="text-sm font-bold mb-2 text-center">عکس سمت چپ (اختیاری)</h3>
+              <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-3 flex items-start gap-2">
+                <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-blue-800">
+                  <strong>ابعاد پیشنهادی:</strong> 380×640 پیکسل 
+                </p>
+              </div>
               {bannerSideCards[0]?.image ? (
                 <div className="space-y-3">
                   <div className="relative">
@@ -379,64 +391,88 @@ export default function AdminMainPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedCards.map((card) => (
-              <div
-                key={card.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, card)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, card)}
-                className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all cursor-move"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="cursor-grab active:cursor-grabbing mt-2">
-                    <GripVertical size={24} className="text-gray-400" />
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
-                      {card.image ? (
-                        <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
-                      ) : (
-                        <div className="h-48 flex items-center justify-center bg-gray-50">
-                          <span className="text-gray-400">بدون عکس</span>
-                        </div>
-                      )}
-                    </div>
+            {sortedCards.map((card, idx) => {
+              // تشخیص اینکه این کارت آخری و فرد است یا نه
+              const totalAfterBanner = sortedCards.length - 2;
+              const indexAfterBanner = idx - 2;
+              const isAfterBanner = idx >= 2;
+              const isLastAndOdd = isAfterBanner && indexAfterBanner === totalAfterBanner - 1 && totalAfterBanner % 2 === 1;
 
-                    <div className="space-y-3">
-                      <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer hover:bg-gray-50">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a 2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span className="text-sm">{card.image ? 'تغییر عکس' : 'آپلود عکس'}</span>
-                        <input type="file" accept="image/*" onChange={(e) => handleCardImageUpload(card.id, e)} className="hidden" />
-                      </label>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">لینک</label>
-                        <input
-                          type="text"
-                          value={card.link}
-                          onChange={(e) => updateCard(card.id, 'link', e.target.value)}
-                          className="w-full px-3 py-2 border rounded-lg text-sm"
-                          placeholder="/example"
-                        />
+              return (
+                <div
+                  key={card.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, card)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, card)}
+                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all cursor-move"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="cursor-grab active:cursor-grabbing mt-2">
+                      <GripVertical size={24} className="text-gray-400" />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      {/* راهنمای ابعاد */}
+                      <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 flex items-start gap-2">
+                        <Info size={14} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-blue-800">
+                          {isLastAndOdd ? (
+                            <>
+                              <strong>عکس تمام‌عرض:</strong> 192×1920
+                            </>
+                          ) : (
+                            <>
+                              <strong>عکس نصف‌عرض:</strong> 192×960
+                            </>
+                          )}
+                        </p>
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-xs text-gray-400">order: {card.position}</div>
-                      <button
-                        onClick={() => deleteCard(card.id)}
-                        className="bg-red-100 text-red-700 px-3 py-2 rounded-lg hover:bg-red-200 flex items-center justify-center gap-2"
-                      >
-                        <Trash2 size={18} />
-                        <span>حذف</span>
-                      </button>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
+                        {card.image ? (
+                          <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
+                        ) : (
+                          <div className="h-48 flex items-center justify-center bg-gray-50">
+                            <span className="text-gray-400">بدون عکس</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a 2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-sm">{card.image ? 'تغییر عکس' : 'آپلود عکس'}</span>
+                          <input type="file" accept="image/*" onChange={(e) => handleCardImageUpload(card.id, e)} className="hidden" />
+                        </label>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">لینک</label>
+                          <input
+                            type="text"
+                            value={card.link}
+                            onChange={(e) => updateCard(card.id, 'link', e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                            placeholder="/example"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-xs text-gray-400">order: {card.position}</div>
+                        <button
+                          onClick={() => deleteCard(card.id)}
+                          className="bg-red-100 text-red-700 px-3 py-2 rounded-lg hover:bg-red-200 flex items-center justify-center gap-2"
+                        >
+                          <Trash2 size={18} />
+                          <span>حذف</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Save only this section */}
@@ -456,26 +492,28 @@ export default function AdminMainPage() {
           <h2 className="text-xl font-bold mb-4">پیش‌نمایش بخش بالای صفحه</h2>
           <div className="border-2 rounded-lg p-4 bg-gray-50">
             {/* Top Row (اولین دو کارت) */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {sortedCards.slice(0, 2).map((card) => (
-                <div key={card.id} className="rounded-lg overflow-hidden border-2 border-gray-300">
-                  {card.image ? (
-                    <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-400">بدون عکس</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {sortedCards.length > 0 && (
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {sortedCards.slice(0, 2).map((card) => (
+                  <div key={card.id} className="rounded-lg overflow-hidden border-2 border-gray-300">
+                    {card.image ? (
+                      <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">بدون عکس</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Banner Row with Side Cards */}
             <div className="grid grid-cols-12 gap-4 my-4 items-stretch">
               {/* Right Side Card */}
               {bannerSideCards[1]?.image && (
                 <div className="col-span-3 rounded-lg overflow-hidden border-2 border-gray-300">
-                  <img src={bannerSideCards[1].image} alt="کناری راست" className="w-full h-80 object-cover" />
+                  <img src={bannerSideCards[1].image} alt="کناری راست" className="w-full h-[380px] object-cover" />
                 </div>
               )}
 
@@ -487,13 +525,13 @@ export default function AdminMainPage() {
                     : (bannerSideCards[0]?.image || bannerSideCards[1]?.image)
                       ? 'col-span-9'
                       : 'col-span-12',
-                  'rounded-lg overflow-hidden',
+                  'rounded-lg overflow-hidden border-2 border-gray-300',
                 ].join(' ')}
               >
                 {bannerImage ? (
-                  <img src={bannerImage} alt="بنر" className="w-full h-80 object-cover" />
+                  <img src={bannerImage} alt="بنر" className="w-full h-[380px] object-cover" />
                 ) : (
-                  <div className="w-full h-64 bg-gray-300 flex items-center justify-center">
+                  <div className="w-full h-[380px] bg-gray-300 flex items-center justify-center">
                     <span className="text-gray-500">بنر اصلی</span>
                   </div>
                 )}
@@ -502,25 +540,60 @@ export default function AdminMainPage() {
               {/* Left Side Card */}
               {bannerSideCards[0]?.image && (
                 <div className="col-span-3 rounded-lg overflow-hidden border-2 border-gray-300">
-                  <img src={bannerSideCards[0].image} alt="کناری چپ" className="w-full h-80 object-cover" />
+                  <img src={bannerSideCards[0].image} alt="کناری چپ" className="w-full h-[380px] object-cover" />
                 </div>
               )}
             </div>
 
-            {/* Bottom Rows — کارت‌های بعدی */}
-            <div className="grid grid-cols-2 gap-4">
-              {sortedCards.slice(2, 6).map((card) => (
-                <div key={card.id} className="rounded-lg overflow-hidden border-2 border-gray-300">
-                  {card.image ? (
-                    <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-400">بدون عکس</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {/* Bottom Rows — کارت‌های بعدی با پشتیبانی از full-width */}
+            {sortedCards.length > 2 && (
+              <div className="space-y-4">
+                {(() => {
+                  const remaining = sortedCards.slice(2);
+                  const rows = [];
+                  
+                  for (let i = 0; i < remaining.length; i += 2) {
+                    const isLastAndOdd = i === remaining.length - 1;
+                    
+                    if (isLastAndOdd) {
+                      // آخری فرد است - full width
+                      rows.push(
+                        <div key={`row-${i}`} className="w-full">
+                          <div className="rounded-lg overflow-hidden border-2 border-gray-300">
+                            {remaining[i].image ? (
+                              <img src={remaining[i].image} alt="کارت" className="w-full h-48 object-cover" />
+                            ) : (
+                              <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                <span className="text-gray-400">بدون عکس (تمام‌عرض)</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      // دو تایی معمولی
+                      rows.push(
+                        <div key={`row-${i}`} className="grid grid-cols-2 gap-4">
+                          {[remaining[i], remaining[i + 1]].filter(Boolean).map((card) => (
+                            <div key={card.id} className="rounded-lg overflow-hidden border-2 border-gray-300">
+                              {card.image ? (
+                                <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
+                              ) : (
+                                <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                  <span className="text-gray-400">بدون عکس</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  return rows;
+                })()}
+              </div>
+            )}
           </div>
         </div>
 
