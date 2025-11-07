@@ -6,7 +6,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-100" dir="rtl">
+    <div className="min-h-screen bg-gray-100 font-lahzeh" dir="rtl">
       {/* Desktop Sidebar */}
       <Sidebar 
         activeTab={activeTab} 

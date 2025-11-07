@@ -200,7 +200,7 @@ export default function Articles() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+    <div className="min-h-screen bg-gray-50 p-6 font-lahzeh" dir="rtl">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-4">مدیریت مقالات</h1>

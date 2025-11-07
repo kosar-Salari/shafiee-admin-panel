@@ -114,7 +114,7 @@ export default function AdminPanel() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
+    <div className="min-h-screen font-lahzeh bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* هدر / اکشن‌ها */}
         <div className="flex items-center justify-between mb-6">
@@ -174,16 +174,6 @@ export default function AdminPanel() {
           >
             مدیریت فوتر
           </button>
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === "settings"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:text-gray-800"
-            }`}
-          >
-            تنظیمات عمومی
-          </button>
         </div>
 
         {/* محتوای تب‌ها */}
@@ -208,79 +198,7 @@ export default function AdminPanel() {
           />
         )}
 
-        {activeTab === "settings" && (
-          <div className="grid gap-4">
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="font-bold text-gray-800 mb-3">بنرها</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm mb-1 text-gray-700">Main Banner URL</label>
-                  <input
-                    value={mainBanner}
-                    onChange={(e) => setMainBanner(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                    dir="ltr"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-gray-700">Right Banner URL</label>
-                  <input
-                    value={rightBanner}
-                    onChange={(e) => setRightBanner(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                    dir="ltr"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-gray-700">Left Banner URL</label>
-                  <input
-                    value={leftBanner}
-                    onChange={(e) => setLeftBanner(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                    dir="ltr"
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="font-bold text-gray-800 mb-3">اخبار و مقالات</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={newsActive} onChange={e => setNewsActive(e.target.checked)} />
-                  <span>نمایش اخبار</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={articlesActive} onChange={e => setArticlesActive(e.target.checked)} />
-                  <span>نمایش مقالات</span>
-                </label>
-                <div>
-                  <label className="block text-sm mb-1 text-gray-700">تعداد اخبار</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={newsCount}
-                    onChange={(e) => setNewsCount(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-gray-700">تعداد مقالات</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={articlesCount}
-                    onChange={(e) => setArticlesCount(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

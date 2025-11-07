@@ -34,7 +34,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-100 to-indigo-200 font-lahzeh">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br  from-indigo-100 to-indigo-200 font-lahzeh">
       <div className="bg-white shadow-xl rounded-2xl p-8 w-[380px] text-right">
         <h2 className="text-2xl font-bold mb-6 text-indigo-600 text-center">ورود مدیر</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
