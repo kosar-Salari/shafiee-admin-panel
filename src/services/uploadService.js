@@ -1,12 +1,22 @@
+
 import http from './http';
+
+
+export function extractToken(data) {
+  if (!data) return '';
+  return (
+    data.token ||
+    data.accessToken ||
+    data.jwt ||
+    (typeof data === 'string' ? data : '')
+  );
+}
 
 /**
  * Upload file to S3 via backend
- * @param {File} file - انتخاب‌شده توسط کاربر
- * @param {Object} [opts]
- * @param {string} [opts.folder]
- * @param {(n:number)=>void} [opts.onProgress]
- * @returns {Promise<string>} - URL فایل
+ * @param {File} file
+ * @param {{ folder?: string, onProgress?: (n:number)=>void }} [opts]
+ * @returns {Promise<string>} - public URL
  */
 export async function uploadFile(file, { folder, onProgress } = {}) {
   const form = new FormData();
@@ -33,4 +43,20 @@ export async function uploadFile(file, { folder, onProgress } = {}) {
 
   if (!url) throw new Error('Upload succeeded but no URL returned');
   return url;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Auth (در صورت نیاز)
+────────────────────────────────────────────────────────────── */
+export async function apiRegister({ username, password }) {
+  const res = await http.post('/admin/register', { username, password });
+  return res.data;
+}
+export async function apiLogin({ username, password }) {
+  const res = await http.post('/admin/login', { username, password });
+  return res.data;
+}
+export async function apiValidate() {
+  const res = await http.get('/admin/validate');
+  return res.data;
 }

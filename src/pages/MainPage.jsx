@@ -1,125 +1,260 @@
-import React, { useState } from 'react';
-import { Upload, Plus, Trash2, GripVertical } from 'lucide-react';
+// src/pages/AdminMainPage.jsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { Upload, Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
 import NewsArticlesSettings from '../components/NewsArticlesSettings';
 import LinkedImagesSettings from '../components/LinkImageManager';
-const AdminMainPage = () => {
-  const [bannerImage, setBannerImage] = useState(null);
+
+import { getSettings,updateSettings} from '../services/settingsService';
+
+import {localToApi , apiToLocal } from '../services/settingsMapper';
+import {uploadFile} from '../services/uploadService';
+
+const RECOMMENDED_SIZES = {
+  banner: '1920×500 (یا 1920×600)',
+  side: '600×600',
+  card: '960×540',
+};
+
+export default function AdminMainPage() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  // ───── Core UI state (mapped از بک‌اند)
+  const [logo, setLogo] = useState('');
+  const [bannerImage, setBannerImage] = useState(''); // mainBanner
   const [bannerSideCards, setBannerSideCards] = useState([
-    { id: 'side-left', position: 'left', image: null, link: '/' },
-    { id: 'side-right', position: 'right', image: null, link: '/' }
+    { id: 'side-left', position: 'left', image: '', link: '/' },
+    { id: 'side-right', position: 'right', image: '', link: '/' },
   ]);
-  const [linkCards, setLinkCards] = useState([
-    { id: 1, image: null, link: '/middle-school' },
-    { id: 2, image: null, link: '/elementary' },
-    { id: 3, image: null, link: '/virtual-tour' },
-    { id: 4, image: null, link: '/achievements' },
-  ]);
+
+  // imageLinks1: عکس‌های بالا/پایین بنر (همون “linkCards” شما)
+  const [linkCards, setLinkCards] = useState([]); // [{id, image, link, position}]
+
+  // برای Drag & Drop
   const [draggedCard, setDraggedCard] = useState(null);
 
-  // Upload handlers
+  // News/Articles (اگر داخل NewsArticlesSettings مدیریت می‌کنی، این‌ها را هم‌سان کن)
+  const [newsActive, setNewsActive] = useState(true);
+  const [articlesActive, setArticlesActive] = useState(true);
+  const [newsCount, setNewsCount] = useState(3);
+  const [articlesCount, setArticlesCount] = useState(3);
+
+  /* ────────────────────────────────────────────────────────────
+     Init: GET settings → fill UI
+  ──────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const apiData = await getSettings();
+        const local = apiToLocal(apiData);
+
+        if (!isMounted) return;
+
+        setLogo(local.logo || '');
+        setBannerImage(local.mainBanner || '');
+        setBannerSideCards([
+          { id: 'side-left', position: 'left', image: local.leftBanner || '', link: '/' },
+          { id: 'side-right', position: 'right', image: local.rightBanner || '', link: '/' },
+        ]);
+
+        // فقط imageLinks1 را در این صفحه مدیریت می‌کنیم (طبق توضیح شما: بالا و پایین بنر)
+        const links = Array.isArray(local.imageLinks1) ? local.imageLinks1 : [];
+        const withIds = links
+          .slice()
+          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          .map((c, i) => ({ id: `c-${i + 1}`, image: c.image || '', link: c.link || '/', position: c.position ?? (i + 1) }));
+        setLinkCards(withIds);
+
+        setNewsActive(!!local.newsActive);
+        setArticlesActive(!!local.articlesActive);
+        setNewsCount(Number(local.newsCount ?? 3));
+        setArticlesCount(Number(local.articlesCount ?? 3));
+      } catch (e) {
+        setError('دریافت تنظیمات با خطا مواجه شد.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  const sortedCards = useMemo(
+    () => linkCards.slice().sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
+    [linkCards]
+  );
+
+  /* ────────────────────────────────────────────────────────────
+     Upload handlers (آپلود واقعی به سرور، بدون فشرده‌سازی)
+  ──────────────────────────────────────────────────────────── */
+  const handleUpload = async (file, { folder = 'images', onDone }) => {
+    if (!file) return;
+    try {
+      const url = await uploadFile(file, { folder });
+      if (onDone) onDone(url);
+    } catch (e) {
+      console.error('Upload error:', e);
+      alert('آپلود ناموفق بود.');
+    }
+  };
+
   const handleBannerUpload = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setBannerImage(ev.target.result);
-    reader.readAsDataURL(file);
+    handleUpload(file, { folder: 'banners', onDone: setBannerImage });
   };
-
   const handleBannerSideCardUpload = (cardId, e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setBannerSideCards(cards =>
-        cards.map(card => card.id === cardId ? { ...card, image: ev.target.result } : card)
-      );
-    };
-    reader.readAsDataURL(file);
+    handleUpload(file, {
+      folder: 'banners/sides',
+      onDone: (url) => {
+        setBannerSideCards((cards) =>
+          cards.map((c) => (c.id === cardId ? { ...c, image: url } : c))
+        );
+      },
+    });
   };
-
-  const updateBannerSideCard = (cardId, field, value) => {
-    setBannerSideCards(cards =>
-      cards.map(card => card.id === cardId ? { ...card, [field]: value } : card)
-    );
-  };
-
-  const removeBannerSideCard = (cardId) => {
-    setBannerSideCards(cards =>
-      cards.map(card => card.id === cardId ? { ...card, image: null, link: '/' } : card)
-    );
-  };
-
   const handleCardImageUpload = (cardId, e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setLinkCards(cards =>
-        cards.map(card => card.id === cardId ? { ...card, image: ev.target.result } : card)
-      );
-    };
-    reader.readAsDataURL(file);
+    handleUpload(file, {
+      folder: 'banners/linked',
+      onDone: (url) => {
+        setLinkCards((cards) =>
+          cards.map((c) => (c.id === cardId ? { ...c, image: url } : c))
+        );
+      },
+    });
   };
 
+  /* ────────────────────────────────────────────────────────────
+     CRUD + DnD برای لینک‌کارت‌ها (imageLinks1)
+  ──────────────────────────────────────────────────────────── */
   const addNewCard = () => {
-    setLinkCards(prev => [...prev, { id: Date.now(), image: null, link: '/' }]);
+    const maxPos = linkCards.reduce((mx, c) => Math.max(mx, c.position ?? 0), 0);
+    setLinkCards((prev) => [...prev, { id: `c-${Date.now()}`, image: '', link: '/', position: maxPos + 1 }]);
   };
-
   const deleteCard = (cardId) => {
-    setLinkCards(cards => cards.filter(card => card.id !== cardId));
+    setLinkCards((cards) => {
+      const filtered = cards.filter((c) => c.id !== cardId);
+      // Re-number positions
+      return filtered
+        .slice()
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .map((c, i) => ({ ...c, position: i + 1 }));
+    });
   };
-
   const updateCard = (cardId, field, value) => {
-    setLinkCards(cards =>
-      cards.map(card => card.id === cardId ? { ...card, [field]: value } : card)
-    );
+    setLinkCards((cards) => cards.map((c) => (c.id === cardId ? { ...c, [field]: value } : c)));
   };
 
-  // Drag & Drop
   const handleDragStart = (e, card) => {
     setDraggedCard(card);
     e.dataTransfer.effectAllowed = 'move';
   };
-
   const handleDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
-
   const handleDrop = (e, targetCard) => {
     e.preventDefault();
     if (!draggedCard || draggedCard.id === targetCard.id) return;
-    const draggedIndex = linkCards.findIndex(c => c.id === draggedCard.id);
-    const targetIndex = linkCards.findIndex(c => c.id === targetCard.id);
-    const next = [...linkCards];
-    next.splice(draggedIndex, 1);
-    next.splice(targetIndex, 0, draggedCard);
-    setLinkCards(next);
+
+    // مرتب‌سازی مجدد بر اساس position
+    const list = sortedCards; // already sorted
+    const draggedIdx = list.findIndex((x) => x.id === draggedCard.id);
+    const targetIdx = list.findIndex((x) => x.id === targetCard.id);
+    if (draggedIdx < 0 || targetIdx < 0) return;
+
+    const next = list.slice();
+    const [item] = next.splice(draggedIdx, 1);
+    next.splice(targetIdx, 0, item);
+
+    // Re-number positions
+    const renumbered = next.map((c, i) => ({ ...c, position: i + 1 }));
+    setLinkCards(renumbered);
     setDraggedCard(null);
   };
 
-  // Save only hero area
-  const saveHeroChanges = () => {
-    const data = { bannerImage, bannerSideCards, linkCards };
-    console.log('ذخیره تغییرات بخش بالای صفحه:', data);
-    alert('تغییرات بخش بالای صفحه ذخیره شد! ✅');
+  // Side cards link edit
+  const updateBannerSideCard = (cardId, field, value) => {
+    setBannerSideCards((cards) => cards.map((c) => (c.id === cardId ? { ...c, [field]: value } : c)));
   };
+  const removeBannerSideCard = (cardId) => {
+    setBannerSideCards((cards) => cards.map((c) => (c.id === cardId ? { ...c, image: '', link: '/' } : c)));
+  };
+
+  /* ────────────────────────────────────────────────────────────
+     SAVE (PATCH) — دقیقاً با همان فرمت خواسته‌شده
+  ──────────────────────────────────────────────────────────── */
+  const saveHeroChanges = async () => {
+    // تبدیل state به فرمت api
+    const localBundle = {
+      logo,
+      mainBanner: bannerImage,
+      rightBanner: bannerSideCards.find((c) => c.id === 'side-right')?.image || '',
+      leftBanner: bannerSideCards.find((c) => c.id === 'side-left')?.image || '',
+      newsActive,
+      articlesActive,
+      newsCount,
+      articlesCount,
+      // فقط imageLinks1 را از این صفحه ارسال می‌کنیم
+      imageLinks1: sortedCards.map((c) => ({ image: c.image, link: c.link, position: c.position })),
+      imageLinks2: [], // اگر صفحه‌ی دیگری مدیریت می‌کند، اینجا دست نزن
+      menuItems: [],   // این صفحه مدیریت منو ندارد
+      footerColumns: [], // همین‌طور
+    };
+
+    const payload = localToApi(localBundle);
+
+    try {
+      setSaving(true);
+      setError('');
+      await updateSettings(payload);
+      alert('تغییرات ذخیره شد! ✅');
+    } catch (e) {
+      setError('ذخیره تنظیمات با خطا مواجه شد.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ────────────────────────────────────────────────────────────
+     UI
+  ──────────────────────────────────────────────────────────── */
+  if (loading) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <div className="flex items-center gap-2 text-gray-600">
+          <Loader2 className="animate-spin" />
+          <span>در حال بارگذاری تنظیمات…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-lahzeh" dir="rtl">
-      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">مدیریت صفحه اصلی</h1>
+            <div className="text-xs text-gray-500">
+              اندازه‌های پیشنهادی: بنر {RECOMMENDED_SIZES.banner} • کناری {RECOMMENDED_SIZES.side} • کارت {RECOMMENDED_SIZES.card}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* ===== News & Articles under header ===== */}
+        {error && (
+          <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded mb-6">
+            {error}
+          </div>
+        )}
 
-        {/* ===== Hero (banner + side images) ===== */}
+        {/* ── Hero (banner + side images) ─────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8 mt-8">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +307,7 @@ const AdminMainPage = () => {
                 <div className="relative">
                   <img src={bannerImage} alt="بنر" className="w-full h-64 object-cover rounded-lg" />
                   <button
-                    onClick={() => setBannerImage(null)}
+                    onClick={() => setBannerImage('')}
                     className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
                   >
                     <Trash2 size={20} />
@@ -223,7 +358,7 @@ const AdminMainPage = () => {
           </div>
         </div>
 
-        {/* Link Cards Section */}
+        {/* ── Link Cards (imageLinks1) ────────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -244,7 +379,7 @@ const AdminMainPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {linkCards.map((card) => (
+            {sortedCards.map((card) => (
               <div
                 key={card.id}
                 draggable
@@ -257,9 +392,7 @@ const AdminMainPage = () => {
                   <div className="cursor-grab active:cursor-grabbing mt-2">
                     <GripVertical size={24} className="text-gray-400" />
                   </div>
-
                   <div className="flex-1 space-y-3">
-                    {/* Image Preview */}
                     <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
                       {card.image ? (
                         <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
@@ -270,16 +403,14 @@ const AdminMainPage = () => {
                       )}
                     </div>
 
-                    {/* Upload & Link Controls */}
                     <div className="space-y-3">
                       <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer hover:bg-gray-50">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a 2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <span className="text-sm">{card.image ? 'تغییر عکس' : 'آپلود عکس'}</span>
                         <input type="file" accept="image/*" onChange={(e) => handleCardImageUpload(card.id, e)} className="hidden" />
                       </label>
-
                       <div>
                         <label className="block text-sm font-medium mb-1">لینک</label>
                         <input
@@ -292,38 +423,41 @@ const AdminMainPage = () => {
                       </div>
                     </div>
 
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => deleteCard(card.id)}
-                      className="w-full bg-red-100 text-red-700 px-3 py-2 rounded-lg hover:bg-red-200 flex items-center justify-center gap-2"
-                    >
-                      <Trash2 size={18} />
-                      <span>حذف</span>
-                    </button>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs text-gray-400">order: {card.position}</div>
+                      <button
+                        onClick={() => deleteCard(card.id)}
+                        className="bg-red-100 text-red-700 px-3 py-2 rounded-lg hover:bg-red-200 flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={18} />
+                        <span>حذف</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Save button for this section */}
+          {/* Save only this section */}
           <div className="mt-6 flex justify-end">
             <button
               onClick={saveHeroChanges}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={saving}
+              className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              ذخیره تغییرات
+              {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
             </button>
           </div>
         </div>
 
-        {/* Preview (Hero) */}
+        {/* ── Preview (Hero) ──────────────────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">پیش‌نمایش بخش بالای صفحه</h2>
           <div className="border-2 rounded-lg p-4 bg-gray-50">
-            {/* Top Row */}
+            {/* Top Row (اولین دو کارت) */}
             <div className="grid grid-cols-2 gap-4 mb-4">
-              {linkCards.slice(0, 2).map(card => (
+              {sortedCards.slice(0, 2).map((card) => (
                 <div key={card.id} className="rounded-lg overflow-hidden border-2 border-gray-300">
                   {card.image ? (
                     <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
@@ -337,7 +471,7 @@ const AdminMainPage = () => {
             </div>
 
             {/* Banner Row with Side Cards */}
-            <div className="grid grid-cols-12 gap-4 my-4">
+            <div className="grid grid-cols-12 gap-4 my-4 items-stretch">
               {/* Right Side Card */}
               {bannerSideCards[1]?.image && (
                 <div className="col-span-2 rounded-lg overflow-hidden border-2 border-gray-300">
@@ -345,12 +479,21 @@ const AdminMainPage = () => {
                 </div>
               )}
 
-              {/* Center Banner */}
-              <div className={`${bannerSideCards[0]?.image && bannerSideCards[1]?.image ? 'col-span-8' : bannerSideCards[0]?.image || bannerSideCards[1]?.image ? 'col-span-10' : 'col-span-12'} rounded-lg overflow-hidden`}>
+              {/* Center Banner — col-span بسته به وجود کناری‌ها */}
+              <div
+                className={[
+                  bannerSideCards[0]?.image && bannerSideCards[1]?.image
+                    ? 'col-span-8'
+                    : (bannerSideCards[0]?.image || bannerSideCards[1]?.image)
+                      ? 'col-span-10'
+                      : 'col-span-12',
+                  'rounded-lg overflow-hidden',
+                ].join(' ')}
+              >
                 {bannerImage ? (
-                  <img src={bannerImage} alt="بنر" className="w-full h-64 object-cover rounded-lg" />
+                  <img src={bannerImage} alt="بنر" className="w-full h-64 object-cover" />
                 ) : (
-                  <div className="w-full h-64 bg-gray-300 flex items-center justify-center rounded-lg">
+                  <div className="w-full h-64 bg-gray-300 flex items-center justify-center">
                     <span className="text-gray-500">بنر اصلی</span>
                   </div>
                 )}
@@ -364,9 +507,9 @@ const AdminMainPage = () => {
               )}
             </div>
 
-            {/* Bottom Rows */}
+            {/* Bottom Rows — کارت‌های بعدی */}
             <div className="grid grid-cols-2 gap-4">
-              {linkCards.slice(2, 6).map(card => (
+              {sortedCards.slice(2, 6).map((card) => (
                 <div key={card.id} className="rounded-lg overflow-hidden border-2 border-gray-300">
                   {card.image ? (
                     <img src={card.image} alt="کارت" className="w-full h-48 object-cover" />
@@ -380,11 +523,21 @@ const AdminMainPage = () => {
             </div>
           </div>
         </div>
-        <NewsArticlesSettings />
-        <LinkedImagesSettings/>        
+
+        {/* سایر بخش‌ها (اگر لازم) */}
+        <NewsArticlesSettings
+          value={{
+            newsActive, articlesActive, newsCount, articlesCount,
+          }}
+          onChange={(v) => {
+            setNewsActive(!!v.newsActive);
+            setArticlesActive(!!v.articlesActive);
+            setNewsCount(Number(v.newsCount ?? 3));
+            setArticlesCount(Number(v.articlesCount ?? 3));
+          }}
+        />
+        <LinkedImagesSettings />
       </div>
     </div>
   );
-};
-
-export default AdminMainPage;
+}
