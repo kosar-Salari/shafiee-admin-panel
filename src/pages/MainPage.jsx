@@ -10,9 +10,9 @@ import {localToApi , apiToLocal } from '../services/settingsMapper';
 import {uploadFile} from '../services/uploadService';
 
 const RECOMMENDED_SIZES = {
-  banner: '1920×500 (یا 1920×600)',
-  side: '600×600',
-  card: '960×540',
+  banner: '1920×640 (نسبت 3:1)',
+  side: '640×640 (مربع)',
+  card: '960×540 (نسبت 16:9)',
 };
 
 export default function AdminMainPage() {
@@ -272,7 +272,7 @@ export default function AdminMainPage() {
               {bannerSideCards[1]?.image ? (
                 <div className="space-y-3">
                   <div className="relative">
-                    <img src={bannerSideCards[1].image} alt="کارت کناری راست" className="w-full h-64 object-cover rounded-lg" />
+                    <img src={bannerSideCards[1].image} alt="کارت کناری راست" className="w-full h-80 object-cover rounded-lg" />
                     <button
                       onClick={() => removeBannerSideCard('side-right')}
                       className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
@@ -305,7 +305,7 @@ export default function AdminMainPage() {
               <h3 className="text-sm font-bold mb-3 text-center">بنر اصلی (وسط)</h3>
               {bannerImage ? (
                 <div className="relative">
-                  <img src={bannerImage} alt="بنر" className="w-full h-64 object-cover rounded-lg" />
+                  <img src={bannerImage} alt="بنر" className="w-full h-80 object-cover rounded-lg" />
                   <button
                     onClick={() => setBannerImage('')}
                     className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
@@ -328,7 +328,7 @@ export default function AdminMainPage() {
               {bannerSideCards[0]?.image ? (
                 <div className="space-y-3">
                   <div className="relative">
-                    <img src={bannerSideCards[0].image} alt="کارت کناری چپ" className="w-full h-64 object-cover rounded-lg" />
+                    <img src={bannerSideCards[0].image} alt="کارت کناری چپ" className="w-full h-80 object-cover rounded-lg" />
                     <button
                       onClick={() => removeBannerSideCard('side-left')}
                       className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
@@ -474,8 +474,8 @@ export default function AdminMainPage() {
             <div className="grid grid-cols-12 gap-4 my-4 items-stretch">
               {/* Right Side Card */}
               {bannerSideCards[1]?.image && (
-                <div className="col-span-2 rounded-lg overflow-hidden border-2 border-gray-300">
-                  <img src={bannerSideCards[1].image} alt="کناری راست" className="w-full h-64 object-cover" />
+                <div className="col-span-3 rounded-lg overflow-hidden border-2 border-gray-300">
+                  <img src={bannerSideCards[1].image} alt="کناری راست" className="w-full h-80 object-cover" />
                 </div>
               )}
 
@@ -483,15 +483,15 @@ export default function AdminMainPage() {
               <div
                 className={[
                   bannerSideCards[0]?.image && bannerSideCards[1]?.image
-                    ? 'col-span-8'
+                    ? 'col-span-6'
                     : (bannerSideCards[0]?.image || bannerSideCards[1]?.image)
-                      ? 'col-span-10'
+                      ? 'col-span-9'
                       : 'col-span-12',
                   'rounded-lg overflow-hidden',
                 ].join(' ')}
               >
                 {bannerImage ? (
-                  <img src={bannerImage} alt="بنر" className="w-full h-64 object-cover" />
+                  <img src={bannerImage} alt="بنر" className="w-full h-80 object-cover" />
                 ) : (
                   <div className="w-full h-64 bg-gray-300 flex items-center justify-center">
                     <span className="text-gray-500">بنر اصلی</span>
@@ -501,8 +501,8 @@ export default function AdminMainPage() {
 
               {/* Left Side Card */}
               {bannerSideCards[0]?.image && (
-                <div className="col-span-2 rounded-lg overflow-hidden border-2 border-gray-300">
-                  <img src={bannerSideCards[0].image} alt="کناری چپ" className="w-full h-64 object-cover" />
+                <div className="col-span-3 rounded-lg overflow-hidden border-2 border-gray-300">
+                  <img src={bannerSideCards[0].image} alt="کناری چپ" className="w-full h-80 object-cover" />
                 </div>
               )}
             </div>
