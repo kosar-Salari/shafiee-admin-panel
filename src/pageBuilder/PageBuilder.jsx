@@ -29,6 +29,11 @@ import {
 } from '../services/articlesService';
 import { getNewsById, updateNews } from '../services/newsService';
 import { getPageById, updatePage } from '../services/pagesService';
+import { buildTree, getPathMap } from '../utils/categoryTree';
+import { fetchArticleCategories } from '../services/articleCategoriesService';
+import { useMemo } from 'react';
+
+
 
 export default function PageBuilder() {
   const [searchParams] = useSearchParams();
@@ -65,7 +70,9 @@ export default function PageBuilder() {
   const [contentData, setContentData] = useState({ html: '', css: '' });
   const [featuredImage, setFeaturedImage] = useState('');
 
-
+  const [categoriesTree, setCategoriesTree] = useState([]);
+  const [categoriesFlat, setCategoriesFlat] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(false);
   const scriptsLoaded = useGrapesLoader();
 
   // بارگذاری فونت لحظه (اختیاری)
@@ -242,6 +249,40 @@ export default function PageBuilder() {
       );
     }
   }, [editor, loadingContent, contentData]);
+
+
+  // لود دسته‌بندی‌ها برای صفحه‌ساز مقاله
+  useEffect(() => {
+    if (origin !== 'articles') return;
+
+    async function loadCats() {
+      setLoadingCats(true);
+      try {
+        const flat = await fetchArticleCategories();
+        setCategoriesFlat(flat);
+        setCategoriesTree(buildTree(flat));
+      } catch (e) {
+        console.error('خطا در دریافت دسته‌بندی‌های مقاله برای PageBuilder:', e);
+      } finally {
+        setLoadingCats(false);
+      }
+    }
+
+    loadCats();
+  }, [origin]);
+  const categoryPathMap = useMemo(
+    () => getPathMap(categoriesTree, ' / '),
+    [categoriesTree]
+  );
+
+  const selectedCategoryLabel = useMemo(() => {
+    if (!metaCategoryId) return '';
+    return (
+      categoryPathMap[String(metaCategoryId)] ||
+      `شناسه دسته: ${metaCategoryId}`
+    );
+  }, [metaCategoryId, categoryPathMap]);
+
 
   const handleSave = async () => {
     if (!editor) return;
@@ -483,6 +524,9 @@ ${html}
         title={metaTitle}
         slug={metaSlug}
         categoryId={metaCategoryId}
+        categoryLabel={selectedCategoryLabel}       
+        categoriesTree={categoriesTree}            
+        loadingCategories={loadingCats}            
         onChangeTitle={setMetaTitle}
         onChangeSlug={setMetaSlug}
         onChangeCategoryId={setMetaCategoryId}
