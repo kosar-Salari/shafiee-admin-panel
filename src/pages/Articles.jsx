@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Plus, ChevronDown, ChevronLeft, Search, Calendar,
-  FolderTree, Edit2, Trash2, Eye, CheckCircle2, AlertTriangle
+  FolderTree, Edit2, Trash2, Eye, CheckCircle2, AlertTriangle,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 import {
@@ -296,6 +297,32 @@ export default function Articles() {
     return options;
   }, [categoriesFlat, pathMap]);
 
+
+  const getArticleThumbnail = (article) => {
+    // اول اگر فیلد جداگانه داشتی
+    if (article.featuredImage) return article.featuredImage;
+
+    const c = article.content;
+    if (!c) return null;
+
+    if (typeof c === 'object' && c.featuredImage) {
+      return c.featuredImage;
+    }
+
+    if (typeof c === 'string') {
+      try {
+        const parsed = JSON.parse(c);
+        if (parsed && parsed.featuredImage) return parsed.featuredImage;
+      } catch (e) {
+        // نادیده می‌گیریم
+      }
+    }
+
+    return null;
+  };
+
+
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-lahzeh" dir="rtl">
       <div className="max-w-7xl mx-auto">
@@ -391,55 +418,98 @@ export default function Articles() {
                 {filteredArticles.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">مقاله‌ای یافت نشد</p>
                 ) : (
-                  filteredArticles.map(item => (
-                    <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-800 mb-2">{item.title}</h3>
-                          <div className="flex gap-4 text-sm text-gray-600">
-                            <span className="flex items-center gap-1">
-                              <FolderTree size={16} />
-                              {getCategoryPath(item.categoryId).join(' / ')}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar size={16} />
-                              {new Date(item.createdAt).toLocaleDateString('fa-IR')}
-                            </span>
+                  filteredArticles.map(item => {
+                    const thumb = getArticleThumbnail(item);
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                      >
+                        <div className="flex justify-between items-start">
+                          {/* سمت راست: تصویر شاخص */}
+                          <div className="w-20 h-20 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0 flex items-center justify-center ml-4">
+                            {thumb ? (
+                              <img
+                                src={thumb}
+                                alt={item.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ImageIcon className="text-gray-300" size={26} />
+
+                            )}
                           </div>
-                          <p className="text-sm text-gray-500 mt-2">آدرس: /articles/{item.slug}</p>
-                        </div>
+                          {/* سمت چپ: متن و اطلاعات */}
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">
+                              {item.title}
+                            </h3>
 
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              window.location.href =
-                                `/builder?origin=articles` +
-                                `&articleId=${item.id}` +
-                                `&category=${item.categoryId}` +
-                                `&title=${encodeURIComponent(item.title)}` +
-                                `&slug=${encodeURIComponent(item.slug)}`;
-                            }}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
-                            title="ویرایش در صفحه‌ساز"
-                          >
-                            <Edit2 size={18} />
-                          </button>
+                            <div className="flex gap-4 text-sm text-gray-600">
+                              <span className="flex items-center gap-1">
+                                <FolderTree size={16} />
+                                {getCategoryPath(item.categoryId).join(' / ')}
+                              </span>
 
-                          <button
-                            onClick={() => window.open(`/articles/${item.slug}`, '_blank')}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition" title="نمایش"
-                          ><Eye size={18} /></button>
-                          <button
-                            onClick={() => handleAskDeleteArticle(item.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="حذف"
-                          ><Trash2 size={18} /></button>
+                              <span className="flex items-center gap-1">
+                                <Calendar size={16} />
+                                {new Date(item.createdAt).toLocaleDateString('fa-IR')}
+                              </span>
+                            </div>
+
+                            <p className="text-sm text-gray-500 mt-2">
+                              آدرس: /articles/{item.slug}
+                            </p>
+                          </div>
+
+
+
+                          {/* اکشن‌ها */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                window.location.href =
+                                  `/builder?origin=articles` +
+                                  `&articleId=${item.id}` +
+                                  `&category=${item.categoryId}` +
+                                  `&title=${encodeURIComponent(item.title)}` +
+                                  `&slug=${encodeURIComponent(item.slug)}`;
+                              }}
+                              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                              title="ویرایش در صفحه‌ساز"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                window.open(`/articles/${item.slug}`, '_blank')
+                              }
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                              title="نمایش"
+                            >
+                              <Eye size={18} />
+                            </button>
+
+                            <button
+                              onClick={() => handleAskDeleteArticle(item.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                              title="حذف"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
+
+
+
           </div>
         )}
 
@@ -541,7 +611,7 @@ export default function Articles() {
                     !articleForm.title ||
                     !articleForm.slug ||
                     !selectedCategory ||
-                    slugExists      
+                    slugExists
                   }
                   className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >

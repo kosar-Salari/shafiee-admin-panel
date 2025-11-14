@@ -22,7 +22,6 @@ import initEditor from './grapes/initEditor';
 import TopBar from './components/TopBar';
 import CodeModal from './components/CodeModal';
 
-// ✅ سرویس‌های واقعی API
 import {
   getArticleById,
   createArticle,
@@ -32,16 +31,14 @@ import { getNewsById, updateNews } from '../services/newsService';
 import { getPageById, updatePage } from '../services/pagesService';
 
 export default function PageBuilder() {
-  // --- کوئری‌استرینگ‌ها
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const rawOrigin = searchParams.get('origin'); // ممکنه null باشه
+  const rawOrigin = searchParams.get('origin');
   const articleId = searchParams.get('articleId');
   const newsId = searchParams.get('newsId');
   const pageId = searchParams.get('pageId');
 
-  // اگر origin نیومده ولی id هست، حدس بزنیم از کجا اومده
   const origin =
     rawOrigin ||
     (articleId ? 'articles' : newsId ? 'news' : pageId ? 'pages' : null);
@@ -56,7 +53,6 @@ export default function PageBuilder() {
     queryCategory ? Number(queryCategory) : undefined
   );
 
-  // --- GrapesJS
   const editorRef = useRef(null);
   const [editor, setEditor] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -64,27 +60,22 @@ export default function PageBuilder() {
   const [htmlCode, setHtmlCode] = useState('');
   const [cssCode, setCssCode] = useState('');
   const [activeTab, setActiveTab] = useState('blocks');
-  const [fontLoaded, setFontLoaded] = useState(false);
 
-  // --- وضعیت لود محتوا از سرور
   const [loadingContent, setLoadingContent] = useState(true);
   const [contentData, setContentData] = useState({ html: '', css: '' });
+  const [featuredImage, setFeaturedImage] = useState('');
 
-  // بارگذاری فونت لحظه
+
+  const scriptsLoaded = useGrapesLoader();
+
+  // بارگذاری فونت لحظه (اختیاری)
   useEffect(() => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = '/fonts/lahzeh.css';
-    link.onload = () => setFontLoaded(true);
     document.head.appendChild(link);
   }, []);
 
-  const scriptsLoaded = useGrapesLoader();
-
-
-  // =======================
-  // ۱) گرفتن محتوا از API (هم آبجکت، هم استرینگ)
-  // =======================
   useEffect(() => {
     async function loadContent() {
       setLoadingContent(true);
@@ -99,17 +90,47 @@ export default function PageBuilder() {
           item = await getPageById(pageId);
         }
 
+
+        if (item) {
+          setMetaTitle(item.title || queryTitle);
+          setMetaSlug(item.slug || querySlug);
+          setMetaCategoryId(
+            item.categoryId != null ? Number(item.categoryId) : metaCategoryId
+          );
+
+          // ✅ تلاش برای پیدا کردن تصویر شاخص از جاهای مختلف
+          let fi = item.featuredImage || null;
+
+          if (item.content) {
+            if (typeof item.content === 'object' && item.content.featuredImage) {
+              fi = item.content.featuredImage || fi;
+            } else if (typeof item.content === 'string') {
+              // اگر content به صورت JSON استرینگ ذخیره شده
+              try {
+                const parsed = JSON.parse(item.content);
+                if (parsed && parsed.featuredImage) {
+                  fi = parsed.featuredImage || fi;
+                }
+              } catch (e) {
+                // نادیده می‌گیریم
+              }
+            }
+          }
+
+          setFeaturedImage(fi || '');
+        }
+
+
+
         if (item && item.content) {
           let html = '';
           let css = '';
 
-          // 🔹 حالت جدید: آبجکت { html, css }
           if (typeof item.content === 'object') {
-            html = item.content.html || '';
-            css = item.content.css || '';
-          }
-          // 🔹 حالت قدیمی: استرینگ شامل <style>...</style>
-          else if (typeof item.content === 'string') {
+            const { html: h = '', css: c = '' } = item.content || {};
+            html = h;
+            css = c;
+          } else if (typeof item.content === 'string') {
             const contentStr = item.content;
             const styleMatch = contentStr.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
             css = styleMatch ? styleMatch[1] : '';
@@ -122,6 +143,7 @@ export default function PageBuilder() {
         } else {
           setContentData({ html: '', css: '' });
         }
+
       } catch (error) {
         console.error('خطا در بارگذاری محتوا:', error);
         setContentData({ html: '', css: '' });
@@ -130,7 +152,6 @@ export default function PageBuilder() {
       }
     }
 
-    // اگر هیچ origin/id نداریم → ادیتور خالی
     if (!origin && !articleId && !newsId && !pageId) {
       setContentData({ html: '', css: '' });
       setLoadingContent(false);
@@ -141,89 +162,84 @@ export default function PageBuilder() {
   }, [origin, articleId, newsId, pageId]);
 
 
-  // =======================
-  // ۲) راه‌اندازی ادیتور (دیگه به loadingContent وابسته نیست)
-  // =======================
   useEffect(() => {
-    if (!scriptsLoaded || !editorRef.current || editor) return;
+    // فقط وقتی اسکریپت GrapesJS لود شده و کانتینر حاضر است
+    if (!scriptsLoaded || !editorRef.current) return;
 
     console.log('[PageBuilder] initEditor start', {
       scriptsLoaded,
       hasContainer: !!editorRef.current,
     });
 
-    try {
-      const e = initEditor({
-        container: editorRef.current,
-        panels: {
-          blocks: '#blocks-panel',
-          styles: '#styles-panel',
-          traits: '#traits-panel',
-          layers: '#layers-panel',
-        },
-        // اینجا می‌تونی خالی بذاری؛ محتوا رو در افکت بعدی ست می‌کنیم
-        initialHtml: '',
-        initialCss: '',
-      });
+    const e = initEditor({
+      container: editorRef.current,
+      panels: {
+        blocks: '#blocks-panel',
+        styles: '#styles-panel',
+        traits: '#traits-panel',
+        layers: '#layers-panel',
+      },
+      initialHtml: '',
+      initialCss: '',
+    });
 
-      e.on('load', () => {
-        const frame = e.Canvas.getFrameEl();
-        if (frame && frame.contentDocument) {
-          const doc = frame.contentDocument;
-          if (doc.documentElement) {
-            doc.documentElement.setAttribute('dir', 'rtl');
-          }
-          if (doc.body) {
-            doc.body.setAttribute('dir', 'rtl');
-            doc.body.style.direction = 'rtl';
-            doc.body.style.textAlign = 'right';
-            doc.body.style.padding = '20px';
-            doc.body.style.boxSizing = 'border-box';
-          }
+    e.on('load', () => {
+      const frame = e.Canvas.getFrameEl();
+      if (frame && frame.contentDocument) {
+        const doc = frame.contentDocument;
+        if (doc.documentElement) {
+          doc.documentElement.setAttribute('dir', 'rtl');
         }
-      });
-
-      e.on('component:selected', (component) => {
-        if (component.get('tagName') === 'body') {
-          component.set('stylable', [
-            'padding',
-            'padding-top',
-            'padding-right',
-            'padding-bottom',
-            'padding-left',
-            'background-color',
-            'margin',
-          ]);
+        if (doc.body) {
+          doc.body.setAttribute('dir', 'rtl');
+          doc.body.style.direction = 'rtl';
+          doc.body.style.textAlign = 'right';
+          doc.body.style.padding = '20px';
+          doc.body.style.boxSizing = 'border-box';
         }
-      });
+      }
+    });
 
-      setEditor(e);
-      console.log('[PageBuilder] editor created');
-    } catch (err) {
-      console.error('[PageBuilder] initEditor ERROR', err);
-    }
+    e.on('component:selected', (component) => {
+      if (component.get('tagName') === 'body') {
+        component.set('stylable', [
+          'padding',
+          'padding-top',
+          'padding-right',
+          'padding-bottom',
+          'padding-left',
+          'background-color',
+          'margin',
+        ]);
+      }
+    });
 
+    setEditor(e);
+    console.log('[PageBuilder] editor created');
+
+    // فقط موقع unmount کامپوننت destroy کن
     return () => {
       try {
-        editor?.destroy();
-      } catch { }
+        e.destroy();
+      } catch (err) {
+        console.error('Error destroying editor', err);
+      }
     };
-  }, [scriptsLoaded, editorRef, editor]);
+  }, [scriptsLoaded]); // ⬅️ مهم: editor از deps حذف شد
 
-  // =======================
-  // ۳) وقتی محتوا از API اومد، بریز توی ادیتور
-  // =======================
+
+  // ۳) اعمال محتوا روی ادیتور بعد از لود از API
   useEffect(() => {
     if (!editor) return;
     if (loadingContent) return;
-
-    console.log('[PageBuilder] applying API content to editor', contentData);
 
     if (contentData.html || contentData.css) {
       editor.setComponents(contentData.html || '');
       editor.setStyle(contentData.css || '');
     } else {
-      editor.setComponents('<div style="padding:20px; text-align:center;">صفحه خالی است</div>');
+      editor.setComponents(
+        '<div style="padding:20px; text-align:center;">صفحه خالی است</div>'
+      );
     }
   }, [editor, loadingContent, contentData]);
 
@@ -235,30 +251,33 @@ export default function PageBuilder() {
       const html = editor.getHtml();
       const css = editor.getCss();
 
-      // استرینگ نهایی برای بک‌اند (همون فرمت قبلی)
-      const fullContent = `<style>${css}</style>${html}`;
+      // 🔹 برای مقاله‌ها: آبجکت JSON شامل html/css/featuredImage
+      const contentForBackend = {
+        html,
+        css,
+        featuredImage: featuredImage || null,
+      };
+
+      // 🔹 برای news/pages اگر هنوز همون فرمت استرینگ با <style> می‌خوای
+      const fullContent = `<style>${css}</style>\n${html}`;
 
       let didCallApi = false;
 
       // --- مقالات ---
       if (origin === 'articles') {
+        const payload = {
+          title: metaTitle,
+          slug: metaSlug,
+          categoryId: metaCategoryId,
+          content: contentForBackend,       // html + css + featuredImage (برای خودت)
+          featuredImage: featuredImage || null, // 🎯 خیلی مهم: فیلد جدا برای بک‌اند
+        };
+
         if (articleId) {
-          // ویرایش مقاله موجود
-          await updateArticle(articleId, {
-            title: metaTitle,
-            slug: metaSlug,
-            categoryId: metaCategoryId,
-            content: fullContent,     // ⬅️ استرینگ
-          });
+          await updateArticle(articleId, payload);
           didCallApi = true;
         } else {
-          // ایجاد مقاله جدید
-          const created = await createArticle({
-            title: metaTitle,
-            slug: metaSlug,
-            categoryId: metaCategoryId,
-            content: fullContent,     // ⬅️ استرینگ
-          });
+          const created = await createArticle(payload);
           didCallApi = true;
 
           if (created?.id) {
@@ -274,7 +293,8 @@ export default function PageBuilder() {
         }
       }
 
-      // --- اخبار ---
+
+      // --- خبرها ---
       else if (origin === 'news') {
         if (newsId) {
           await updateNews(newsId, {
@@ -320,11 +340,6 @@ export default function PageBuilder() {
   };
 
 
-
-  // =======================
-  // ۴) بقیه اکشن‌ها
-  // =======================
-
   const handleBack = () => {
     if (origin === 'articles') navigate('/articles');
     else if (origin === 'news') navigate('/news');
@@ -332,6 +347,7 @@ export default function PageBuilder() {
     else navigate('/');
   };
 
+  // ✅ اینجا Tailwind رو هم به پریویو اضافه می‌کنیم
   const handlePreview = () => {
     if (!editor) return;
 
@@ -367,6 +383,9 @@ export default function PageBuilder() {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>${metaTitle}</title>
+  <!-- Tailwind برای کلاس‌های utility -->
+  <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <!-- آیکن‌ها -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
 ${lahzehFont}
@@ -385,7 +404,6 @@ ${html}
     window.open(url, '_blank');
   };
 
-
   const handleShowCode = () => {
     if (!editor) return;
     setHtmlCode(editor.getHtml());
@@ -393,6 +411,7 @@ ${html}
     setShowCode(true);
   };
 
+  // ✅ اینجا هم Tailwind را برای فایل دانلودی اضافه می‌کنیم
   const handleDownload = () => {
     if (!editor) return;
 
@@ -428,6 +447,9 @@ ${html}
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>${metaTitle}</title>
+  <!-- Tailwind برای کلاس‌ها -->
+  <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <!-- آیکن‌ها -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
 ${lahzehFont}
@@ -450,12 +472,7 @@ ${html}
     URL.revokeObjectURL(url);
   };
 
-
   const changeDevice = (device) => editor?.setDevice(device);
-
-  // =======================
-  // ۵) رندر
-  // =======================
 
   return (
     <div
@@ -467,8 +484,10 @@ ${html}
         slug={metaSlug}
         categoryId={metaCategoryId}
         onChangeTitle={setMetaTitle}
-        onChangeSlug={(v) => setMetaSlug(v)}
-        onChangeCategoryId={(v) => setMetaCategoryId(v)}
+        onChangeSlug={setMetaSlug}
+        onChangeCategoryId={setMetaCategoryId}
+        featuredImage={featuredImage}
+        onChangeFeaturedImage={setFeaturedImage}
         onBack={handleBack}
         saving={saving}
         onSave={handleSave}
@@ -493,15 +512,12 @@ ${html}
         style={{ minHeight: 0, margin: 0, padding: 0 }}
         dir="rtl"
       >
-        {!scriptsLoaded || loadingContent ? (
+        {/* فقط وقتی اسکریپت GrapesJS نیومده، کل ادیتور رو hide کن */}
+        {!scriptsLoaded ? (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-              <p className="text-gray-600">
-                {!scriptsLoaded
-                  ? 'در حال بارگذاری ویرایشگر...'
-                  : 'در حال بارگذاری محتوا...'}
-              </p>
+              <p className="text-gray-600">در حال بارگذاری ویرایشگر...</p>
             </div>
           </div>
         ) : (
@@ -520,6 +536,7 @@ ${html}
                 className="flex border-b border-gray-200 bg-gray-50"
                 style={{ flexShrink: 0 }}
               >
+                {/* تب‌ها همون قبلی‌ات باشن */}
                 <button
                   onClick={() => setActiveTab('blocks')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${activeTab === 'blocks'
@@ -591,6 +608,14 @@ ${html}
                 background: '#f9fafb',
               }}
             >
+              {/* اوورلی لود محتوا (فقط وقتی از API می‌گیریم) */}
+              {loadingContent && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-50/80">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3" />
+                  <p className="text-gray-600 text-sm">در حال بارگذاری محتوا...</p>
+                </div>
+              )}
+
               <div
                 id="gjs"
                 ref={editorRef}
@@ -611,16 +636,13 @@ ${html}
         )}
       </div>
 
+
       <CodeModal
         open={showCode}
         onClose={() => setShowCode(false)}
         htmlCode={htmlCode}
         cssCode={cssCode}
       />
-
-
-
-      {/* استایل‌های GrapesJS سفارشی */}
       <style>{`
         /* Reset کامل */
         * {
@@ -1204,14 +1226,4 @@ select.gjs-field,
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
 

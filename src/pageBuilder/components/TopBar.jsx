@@ -1,12 +1,16 @@
-import React from 'react';
+// src/pageBuilder/components/TopBar.jsx
+import React, { useRef, useState } from 'react';
+import { uploadFileToS3 } from '../../services/filesService';
 
 export default function TopBar({
   title,
   slug,
   categoryId,
+  featuredImage,
   onChangeTitle,
   onChangeSlug,
   onChangeCategoryId,
+  onChangeFeaturedImage,
   onBack,
   saving,
   onSave,
@@ -16,6 +20,9 @@ export default function TopBar({
   onDeviceChange,
   Icons,
 }) {
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+
   const {
     ArrowLeft,
     Save,
@@ -25,133 +32,182 @@ export default function TopBar({
     Monitor,
     Tablet,
     Smartphone,
-  } = Icons;
+  } = Icons || {};
+
+  const handleChooseFile = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploading(true);
+      const url = await uploadFileToS3(file);
+      onChangeFeaturedImage && onChangeFeaturedImage(url);
+    } catch (err) {
+      console.error('خطا در آپلود تصویر شاخص:', err);
+      alert('آپلود تصویر ناموفق بود. لطفاً دوباره تلاش کنید.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   return (
-    <div
-      className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm"
-      dir="rtl"
-    >
-      {/* سمت راست: بازگشت + فیلدهای متا */}
-      <div className="flex items-center gap-4 flex-1">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>بازگشت</span>
-        </button>
+    <div className="w-full border-b border-gray-200 bg-white px-4 py-3 flex items-center gap-4 shadow-sm" dir="rtl">
+      {/* دکمه بازگشت */}
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1 text-gray-700 hover:text-gray-900 px-2 py-1 rounded-lg hover:bg-gray-100"
+        type="button"
+      >
+        {ArrowLeft && <ArrowLeft size={18} />}
+        <span className="text-sm font-medium">بازگشت</span>
+      </button>
 
-        <div className="h-6 w-px bg-gray-300" />
-
-        {/* فیلد عنوان */}
-        <div className="flex flex-col min-w-[220px]">
-          <label className="text-xs text-gray-500 mb-1">عنوان</label>
+      {/* عنوان / اسلاگ / دسته / تصویر شاخص */}
+      <div className="flex-1 flex flex-wrap items-center gap-3">
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-500 mb-1">عنوان</span>
           <input
             type="text"
             value={title}
-            onChange={(e) => onChangeTitle(e.target.value)}
-            className="px-3 py-1.5 rounded-md border border-gray-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            placeholder="بدون عنوان"
+            onChange={(e) => onChangeTitle && onChangeTitle(e.target.value)}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-56"
+            placeholder="عنوان صفحه / مقاله"
           />
         </div>
 
-        {/* فیلد Slug */}
-        <div className="flex flex-col min-w-[260px]">
-          <label className="text-xs text-gray-500 mb-1">آدرس (Slug)</label>
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-500 mb-1">آدرس (Slug)</span>
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-400">/articles/</span>
             <input
               type="text"
               value={slug}
-              onChange={(e) =>
-                onChangeSlug(
-                  e.target.value.replace(/\s+/g, '-').toLowerCase()
-                )
-              }
-              className="flex-1 px-3 py-1.5 rounded-md border border-gray-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              placeholder="article-slug"
+              onChange={(e) => onChangeSlug && onChangeSlug(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-48"
+              placeholder="slug"
             />
           </div>
         </div>
 
-        {/* فیلد categoryId ساده */}
-        <div className="flex flex-col w-32">
-          <label className="text-xs text-gray-500 mb-1">شناسه دسته</label>
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-500 mb-1">شناسه دسته</span>
           <input
             type="number"
-            value={categoryId ?? ''}
+            value={categoryId || ''}
             onChange={(e) => {
               const v = e.target.value;
-              onChangeCategoryId(v === '' ? undefined : Number(v));
+              const num = v === '' ? undefined : Number(v);
+              onChangeCategoryId && onChangeCategoryId(num);
             }}
-            className="px-3 py-1.5 rounded-md border border-gray-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-left"
-            placeholder="مثلاً 12"
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-28 text-left"
+            placeholder="ID"
           />
+        </div>
+
+        {/* تصویر شاخص */}
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 mb-1">تصویر شاخص</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleChooseFile}
+                className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-800"
+                disabled={uploading}
+              >
+                {uploading ? 'در حال آپلود...' : 'انتخاب تصویر'}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {featuredImage && (
+            <div className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              <img
+                src={featuredImage}
+                alt="تصویر شاخص"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* سمت چپ: دیوایس‌ها + اکشن‌ها */}
-      <div className="flex items-center gap-3">
-        {/* انتخاب دیوایس */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => onDeviceChange('desktop')}
-            className="p-2 rounded hover:bg-white"
-            title="Desktop"
-          >
-            <Monitor className="w-4 h-4 text-gray-700" />
-          </button>
-          <button
-            onClick={() => onDeviceChange('tablet')}
-            className="p-2 rounded hover:bg-white"
-            title="Tablet"
-          >
-            <Tablet className="w-4 h-4 text-gray-700" />
-          </button>
-          <button
-            onClick={() => onDeviceChange('mobile')}
-            className="p-2 rounded hover:bg-white"
-            title="Mobile"
-          >
-            <Smartphone className="w-4 h-4 text-gray-700" />
-          </button>
-        </div>
-
-        <div className="h-6 w-px bg-gray-300" />
-
-        {/* اکشن‌ها */}
+      {/* انتخاب دیوایس */}
+      <div className="hidden md:flex items-center gap-1 border-x border-gray-200 px-3">
         <button
+          type="button"
+          onClick={() => onDeviceChange && onDeviceChange('desktop')}
+          className="p-1.5 rounded-lg hover:bg-gray-100"
+          title="Desktop"
+        >
+          {Monitor && <Monitor size={18} />}
+        </button>
+        <button
+          type="button"
+          onClick={() => onDeviceChange && onDeviceChange('tablet')}
+          className="p-1.5 rounded-lg hover:bg-gray-100"
+          title="Tablet"
+        >
+          {Tablet && <Tablet size={18} />}
+        </button>
+        <button
+          type="button"
+          onClick={() => onDeviceChange && onDeviceChange('mobile')}
+          className="p-1.5 rounded-lg hover:bg-gray-100"
+          title="Mobile"
+        >
+          {Smartphone && <Smartphone size={18} />}
+        </button>
+      </div>
+
+      {/* اکشن‌ها */}
+      <div className="flex items-center gap-2 pl-2">
+        <button
+          type="button"
           onClick={onShowCode}
-          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+          className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-800"
         >
-          <Code className="w-4 h-4" />
-          <span className="hidden sm:inline">کد</span>
+          {Code && <Code size={16} />}
+          <span>کد</span>
         </button>
 
         <button
+          type="button"
           onClick={onPreview}
-          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-indigo-500 text-indigo-600 hover:bg-indigo-50"
         >
-          <Eye className="w-4 h-4" />
-          <span className="hidden sm:inline">پیش‌نمایش</span>
+          {Eye && <Eye size={16} />}
+          <span>پیش‌نمایش</span>
         </button>
 
         <button
+          type="button"
           onClick={onDownload}
-          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+          className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
         >
-          <Download className="w-4 h-4" />
-          <span className="hidden sm:inline">دانلود</span>
+          {Download && <Download size={16} />}
+          <span>دانلود HTML</span>
         </button>
 
         <button
+          type="button"
           onClick={onSave}
           disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-4 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          <Save className="w-4 h-4" />
-          {saving ? 'در حال ذخیره…' : 'ذخیره'}
+          {Save && <Save size={18} />}
+          <span>{saving ? 'در حال ذخیره...' : 'ذخیره'}</span>
         </button>
       </div>
     </div>

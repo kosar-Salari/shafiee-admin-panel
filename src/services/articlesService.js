@@ -1,49 +1,65 @@
-
+// src/services/articlesService.js
 import http from './http';
 
+// تبدیل امن به عدد
 const toNum = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 };
 
+// اگر جایی لازم شد لیست رو از شکل‌های مختلف دربیاریم
 const unwrapList = (d) =>
-  Array.isArray(d?.items) ? d.items : Array.isArray(d) ? d : [];
+  Array.isArray(d?.items) ? d.items :
+  Array.isArray(d?.data?.items) ? d.data.items :
+  Array.isArray(d?.data) ? d.data :
+  Array.isArray(d) ? d :
+  [];
 
+// درآوردن یک آیتم از ریسپانس‌های مختلف
 const unwrapItem = (d) => {
   if (!d) return d;
-  if (d.item) return d.item;   
-  if (d.data) return d.data;   
+  if (d.item) return d.item;
+  if (d.data && !Array.isArray(d.data)) return d.data;
   return d;
 };
 
-function toUiArticle(a) {
+// مپ‌کردن آبجکت API به مدل قابل استفاده در UI
+function toUiArticle(a = {}) {
   return {
     id: a.id ?? a._id ?? '',
     title: a.title ?? '',
     slug: a.slug ?? '',
     categoryId: toNum(a.categoryId ?? a.category_id),
+
+    // تاریخ‌ها
     createdAt:
       a.createdAt ??
       a.created_at ??
       a.updatedAt ??
       a.updated_at ??
       new Date().toISOString(),
+
+    // خود محتوا (می‌تونه استرینگ باشه یا بعداً آبجکت html/css)
     content: a.content ?? null,
+
+    // 🎯 عکس شاخص (در صورت وجود)
+    featuredImage:
+      a.featuredImage ??
+      a.featured_image ??
+      a.thumbnail ??
+      null,
   };
 }
 
+// ===============================
+// لیست مقالات
+// ===============================
 export async function getArticles() {
   try {
     const res = await http.get('/admin/manage-articles/');
 
     const payload = res?.data;
-
-    const list =
-      Array.isArray(payload?.items) ? payload.items :
-      Array.isArray(payload?.data?.items) ? payload.data.items :
-      Array.isArray(payload?.data) ? payload.data :
-      Array.isArray(payload) ? payload :
-      [];
+    const list = unwrapList(payload);
 
     return list.map(toUiArticle);
   } catch (error) {
@@ -52,12 +68,14 @@ export async function getArticles() {
   }
 }
 
+// ===============================
+// گرفتن یک مقاله با id
+// ===============================
 export async function getArticleById(id) {
   try {
     const res = await http.get(`/admin/manage-articles/${toNum(id)}`);
 
     console.log('RAW getArticleById response:', res.data);
-
     const item = unwrapItem(res.data);
     console.log('UNWRAPPED article item:', item);
 
@@ -70,15 +88,20 @@ export async function getArticleById(id) {
 
 export async function createArticle(payload) {
   try {
+    let content;
 
-    const content =
-      typeof payload.content === 'string'
-        ? payload.content
-        : (() => {
-            const html = payload.html || payload.content?.html || '';
-            const css = payload.css || payload.content?.css || '';
-            return `<style>${css}</style>${html}`;
-          })();
+    if (payload.content && typeof payload.content === 'object') {
+      // ✅ از PageBuilder: { html, css, featuredImage, ... }
+      content = payload.content;
+    } else if (typeof payload.content === 'string') {
+      // اگر جاهای دیگه هنوز استرینگ می‌فرستن
+      content = payload.content;
+    } else {
+      // حالت قدیمی: html/css جدا
+      const html = payload.html || '';
+      const css = payload.css || '';
+      content = `<style>${css}</style>${html}`;
+    }
 
     const body = {
       title: payload.title,
@@ -115,20 +138,24 @@ export async function createArticle(payload) {
 
 export async function updateArticle(id, payload) {
   try {
-    const content =
-      typeof payload.content === 'string'
-        ? payload.content
-        : (() => {
-            const html = payload.html || payload.content?.html || '';
-            const css = payload.css || payload.content?.css || '';
-            return `<style>${css}</style>${html}`;
-          })();
+    let content;
+
+    if (payload.content && typeof payload.content === 'object') {
+      // ✅ از PageBuilder
+      content = payload.content;
+    } else if (typeof payload.content === 'string') {
+      content = payload.content;
+    } else {
+      const html = payload.html || '';
+      const css = payload.css || '';
+      content = `<style>${css}</style>${html}`;
+    }
 
     const body = {
       title: payload.title,
       slug: payload.slug,
       categoryId: toNum(payload.categoryId),
-      content, 
+      content,
     };
 
     console.log('به‌روزرسانی مقاله:', body);
@@ -156,4 +183,3 @@ export async function deleteArticle(id) {
     throw error;
   }
 }
-
