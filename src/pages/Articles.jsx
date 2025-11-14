@@ -73,7 +73,50 @@ export default function Articles() {
       ),
     [articleForm.slug, articles]
   );
+  const pathMap = useMemo(() => getPathMap(categoriesTree, ' / '), [categoriesTree]);
 
+
+  const descendantsMap = useMemo(() => {
+    const byParent = {};
+    const map = {};
+
+    // گروه‌بندی بر اساس parentId
+    categoriesFlat.forEach((cat) => {
+      const parent = cat.parentId == null ? null : Number(cat.parentId);
+      if (!byParent[parent]) byParent[parent] = [];
+      byParent[parent].push(Number(cat.id));
+    });
+
+    // تابع کمکی برای بدست‌آوردن همه‌ی فرزندان یک دسته
+    const collectDescendants = (rootId) => {
+      const result = new Set();
+      const stack = [rootId];
+
+      while (stack.length) {
+        const current = stack.pop();
+        if (result.has(current)) continue;
+        result.add(current);
+
+        const children = byParent[current];
+        if (children && children.length) {
+          children.forEach((ch) => stack.push(ch));
+        }
+      }
+
+      return Array.from(result);
+    };
+
+    // برای هر دسته، لیست خودش + همه‌ی زیردسته‌هاش رو بساز
+    categoriesFlat.forEach((cat) => {
+      const id = Number(cat.id);
+      map[id] = collectDescendants(id);
+    });
+
+    return map;
+  }, [categoriesFlat]);
+
+
+  
 
   useEffect(() => { loadInitial(); }, []);
 
@@ -111,9 +154,7 @@ export default function Articles() {
     await refreshArticles();
   }
 
-  const pathMap = useMemo(() => getPathMap(categoriesTree, ' / '), [categoriesTree]);
 
-  // --- ایجاد دسته
   const addCategory = async () => {
     const name = newCategory.name.trim();
     if (!name) return;
@@ -279,11 +320,21 @@ export default function Articles() {
 
 
 
-  const filteredArticles = articles.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !filterCategory || Number(item.categoryId) === Number(filterCategory);
+  const filteredArticles = articles.filter((item) => {
+    const matchesSearch = item.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    let matchesCategory = true;
+    if (filterCategory) {
+      const catId = Number(filterCategory);
+      const familyIds = descendantsMap[catId] || [catId]; // خودش + همه‌ی زیردسته‌ها
+      matchesCategory = familyIds.includes(Number(item.categoryId));
+    }
+
     const dateStr = (item.createdAt || '').slice(0, 10); // YYYY-MM-DD
     const matchesDate = !filterDate || dateStr === filterDate;
+
     return matchesSearch && matchesCategory && matchesDate;
   });
 
