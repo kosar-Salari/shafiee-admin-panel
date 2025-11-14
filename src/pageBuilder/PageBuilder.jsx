@@ -1,6 +1,20 @@
-// src/PageBuilder.jsx
+// src/pageBuilder/PageBuilder.jsx
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Save, Eye, Code, Download, Monitor, Tablet, Smartphone, Layers, Settings, Box } from 'lucide-react';
+import {
+  ArrowLeft,
+  Save,
+  Eye,
+  Code,
+  Download,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Layers,
+  Settings,
+  Box,
+} from 'lucide-react';
+
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import useGrapesLoader from './hooks/useGrapesLoader';
 import initEditor from './grapes/initEditor';
@@ -8,9 +22,41 @@ import initEditor from './grapes/initEditor';
 import TopBar from './components/TopBar';
 import CodeModal from './components/CodeModal';
 
-import { loadPage, savePage } from './utils/storage';
+// ✅ سرویس‌های واقعی API
+import {
+  getArticleById,
+  createArticle,
+  updateArticle,
+} from '../services/articlesService';
+import { getNewsById, updateNews } from '../services/newsService';
+import { getPageById, updatePage } from '../services/pagesService';
 
-export default function PageBuilder({ slug, onBack }) {
+export default function PageBuilder() {
+  // --- کوئری‌استرینگ‌ها
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const rawOrigin = searchParams.get('origin'); // ممکنه null باشه
+  const articleId = searchParams.get('articleId');
+  const newsId = searchParams.get('newsId');
+  const pageId = searchParams.get('pageId');
+
+  // اگر origin نیومده ولی id هست، حدس بزنیم از کجا اومده
+  const origin =
+    rawOrigin ||
+    (articleId ? 'articles' : newsId ? 'news' : pageId ? 'pages' : null);
+
+  const queryCategory = searchParams.get('category');
+  const queryTitle = searchParams.get('title') || 'بدون عنوان';
+  const querySlug = searchParams.get('slug') || 'page';
+
+  const [metaTitle, setMetaTitle] = useState(queryTitle);
+  const [metaSlug, setMetaSlug] = useState(querySlug);
+  const [metaCategoryId, setMetaCategoryId] = useState(
+    queryCategory ? Number(queryCategory) : undefined
+  );
+
+  // --- GrapesJS
   const editorRef = useRef(null);
   const [editor, setEditor] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -19,6 +65,10 @@ export default function PageBuilder({ slug, onBack }) {
   const [cssCode, setCssCode] = useState('');
   const [activeTab, setActiveTab] = useState('blocks');
   const [fontLoaded, setFontLoaded] = useState(false);
+
+  // --- وضعیت لود محتوا از سرور
+  const [loadingContent, setLoadingContent] = useState(true);
+  const [contentData, setContentData] = useState({ html: '', css: '' });
 
   // بارگذاری فونت لحظه
   useEffect(() => {
@@ -31,74 +81,260 @@ export default function PageBuilder({ slug, onBack }) {
 
   const scriptsLoaded = useGrapesLoader();
 
+
+  // =======================
+  // ۱) گرفتن محتوا از API (هم آبجکت، هم استرینگ)
+  // =======================
+  useEffect(() => {
+    async function loadContent() {
+      setLoadingContent(true);
+      try {
+        let item = null;
+
+        if (origin === 'articles' && articleId) {
+          item = await getArticleById(articleId);
+        } else if (origin === 'news' && newsId) {
+          item = await getNewsById(newsId);
+        } else if (origin === 'pages' && pageId) {
+          item = await getPageById(pageId);
+        }
+
+        if (item && item.content) {
+          let html = '';
+          let css = '';
+
+          // 🔹 حالت جدید: آبجکت { html, css }
+          if (typeof item.content === 'object') {
+            html = item.content.html || '';
+            css = item.content.css || '';
+          }
+          // 🔹 حالت قدیمی: استرینگ شامل <style>...</style>
+          else if (typeof item.content === 'string') {
+            const contentStr = item.content;
+            const styleMatch = contentStr.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+            css = styleMatch ? styleMatch[1] : '';
+            html = contentStr
+              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+              .trim();
+          }
+
+          setContentData({ html, css });
+        } else {
+          setContentData({ html: '', css: '' });
+        }
+      } catch (error) {
+        console.error('خطا در بارگذاری محتوا:', error);
+        setContentData({ html: '', css: '' });
+      } finally {
+        setLoadingContent(false);
+      }
+    }
+
+    // اگر هیچ origin/id نداریم → ادیتور خالی
+    if (!origin && !articleId && !newsId && !pageId) {
+      setContentData({ html: '', css: '' });
+      setLoadingContent(false);
+      return;
+    }
+
+    loadContent();
+  }, [origin, articleId, newsId, pageId]);
+
+
+  // =======================
+  // ۲) راه‌اندازی ادیتور (دیگه به loadingContent وابسته نیست)
+  // =======================
   useEffect(() => {
     if (!scriptsLoaded || !editorRef.current || editor) return;
 
-    const saved = loadPage(slug);
-    const e = initEditor({
-      container: editorRef.current,
-      panels: {
-        blocks: '#blocks-panel',
-        styles: '#styles-panel',
-        traits: '#traits-panel',
-        layers: '#layers-panel',
-      },
-      initialHtml: saved?.html,
-      initialCss: saved?.css,
+    console.log('[PageBuilder] initEditor start', {
+      scriptsLoaded,
+      hasContainer: !!editorRef.current,
     });
 
-    // فورس کردن RTL برای iframe
-    e.on('load', () => {
-      const frame = e.Canvas.getFrameEl();
-      if (frame && frame.contentDocument) {
-        const doc = frame.contentDocument;
-        if (doc.documentElement) {
-          doc.documentElement.setAttribute('dir', 'rtl');
+    try {
+      const e = initEditor({
+        container: editorRef.current,
+        panels: {
+          blocks: '#blocks-panel',
+          styles: '#styles-panel',
+          traits: '#traits-panel',
+          layers: '#layers-panel',
+        },
+        // اینجا می‌تونی خالی بذاری؛ محتوا رو در افکت بعدی ست می‌کنیم
+        initialHtml: '',
+        initialCss: '',
+      });
+
+      e.on('load', () => {
+        const frame = e.Canvas.getFrameEl();
+        if (frame && frame.contentDocument) {
+          const doc = frame.contentDocument;
+          if (doc.documentElement) {
+            doc.documentElement.setAttribute('dir', 'rtl');
+          }
+          if (doc.body) {
+            doc.body.setAttribute('dir', 'rtl');
+            doc.body.style.direction = 'rtl';
+            doc.body.style.textAlign = 'right';
+            doc.body.style.padding = '20px';
+            doc.body.style.boxSizing = 'border-box';
+          }
         }
-        if (doc.body) {
-          doc.body.setAttribute('dir', 'rtl');
-          doc.body.style.direction = 'rtl';
-          doc.body.style.textAlign = 'right';
-          // padding پیش‌فرض 20px از همه طرف
-          doc.body.style.padding = '20px';
-          doc.body.style.boxSizing = 'border-box';
+      });
+
+      e.on('component:selected', (component) => {
+        if (component.get('tagName') === 'body') {
+          component.set('stylable', [
+            'padding',
+            'padding-top',
+            'padding-right',
+            'padding-bottom',
+            'padding-left',
+            'background-color',
+            'margin',
+          ]);
         }
-      }
-    });
+      });
 
-    // اضافه کردن تنظیم padding به Body در Style Manager
-    e.on('component:selected', (component) => {
-      if (component.get('tagName') === 'body') {
-        // این اجازه میده body رو انتخاب کنی و padding-ش رو تغییر بدی
-        component.set('stylable', ['padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'background-color', 'margin']);
-      }
-    });
-
-    setEditor(e);
+      setEditor(e);
+      console.log('[PageBuilder] editor created');
+    } catch (err) {
+      console.error('[PageBuilder] initEditor ERROR', err);
+    }
 
     return () => {
-      try { e?.destroy(); } catch { }
+      try {
+        editor?.destroy();
+      } catch { }
     };
-  }, [scriptsLoaded, slug]);
+  }, [scriptsLoaded, editorRef, editor]);
+
+  // =======================
+  // ۳) وقتی محتوا از API اومد، بریز توی ادیتور
+  // =======================
+  useEffect(() => {
+    if (!editor) return;
+    if (loadingContent) return;
+
+    console.log('[PageBuilder] applying API content to editor', contentData);
+
+    if (contentData.html || contentData.css) {
+      editor.setComponents(contentData.html || '');
+      editor.setStyle(contentData.css || '');
+    } else {
+      editor.setComponents('<div style="padding:20px; text-align:center;">صفحه خالی است</div>');
+    }
+  }, [editor, loadingContent, contentData]);
 
   const handleSave = async () => {
     if (!editor) return;
     setSaving(true);
+
     try {
       const html = editor.getHtml();
       const css = editor.getCss();
-      savePage(slug, { html, css });
-      alert('صفحه با موفقیت ذخیره شد!');
+
+      // استرینگ نهایی برای بک‌اند (همون فرمت قبلی)
+      const fullContent = `<style>${css}</style>${html}`;
+
+      let didCallApi = false;
+
+      // --- مقالات ---
+      if (origin === 'articles') {
+        if (articleId) {
+          // ویرایش مقاله موجود
+          await updateArticle(articleId, {
+            title: metaTitle,
+            slug: metaSlug,
+            categoryId: metaCategoryId,
+            content: fullContent,     // ⬅️ استرینگ
+          });
+          didCallApi = true;
+        } else {
+          // ایجاد مقاله جدید
+          const created = await createArticle({
+            title: metaTitle,
+            slug: metaSlug,
+            categoryId: metaCategoryId,
+            content: fullContent,     // ⬅️ استرینگ
+          });
+          didCallApi = true;
+
+          if (created?.id) {
+            navigate(
+              `/builder?origin=articles` +
+              `&articleId=${created.id}` +
+              `&category=${metaCategoryId || ''}` +
+              `&title=${encodeURIComponent(metaTitle)}` +
+              `&slug=${encodeURIComponent(metaSlug)}`,
+              { replace: true }
+            );
+          }
+        }
+      }
+
+      // --- اخبار ---
+      else if (origin === 'news') {
+        if (newsId) {
+          await updateNews(newsId, {
+            title: metaTitle,
+            slug: metaSlug,
+            content: fullContent,
+            categoryId: metaCategoryId,
+          });
+          didCallApi = true;
+        }
+      }
+
+      // --- صفحات ---
+      else if (origin === 'pages') {
+        if (pageId) {
+          await updatePage(pageId, {
+            title: metaTitle,
+            slug: metaSlug,
+            content: fullContent,
+          });
+          didCallApi = true;
+        }
+      }
+
+      if (!didCallApi) {
+        console.warn('هیچ مقصدی برای ذخیره‌سازی پیدا نشد (origin / id خالی است)');
+        alert(
+          'مقصد ذخیره‌سازی مشخص نیست (origin / id). لطفاً از مسیر صحیح وارد صفحه‌ساز شوید.'
+        );
+        return;
+      }
+
+      alert('محتوا با موفقیت ذخیره شد!');
     } catch (err) {
-      console.error(err);
-      alert('خطا در ذخیره صفحه');
+      console.error('خطا در ذخیره:', err);
+      alert(
+        'خطا در ذخیره محتوا: ' +
+        (err?.response?.data?.message || err.message || '')
+      );
     } finally {
       setSaving(false);
     }
   };
 
+
+
+  // =======================
+  // ۴) بقیه اکشن‌ها
+  // =======================
+
+  const handleBack = () => {
+    if (origin === 'articles') navigate('/articles');
+    else if (origin === 'news') navigate('/news');
+    else if (origin === 'pages') navigate('/pages');
+    else navigate('/');
+  };
+
   const handlePreview = () => {
     if (!editor) return;
+
     const html = editor.getHtml();
     const css = editor.getCss();
     const baseUrl = window.location.origin;
@@ -112,36 +348,8 @@ export default function PageBuilder({ slug, onBack }) {
 }
 @font-face {
   font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-ExtraLight.ttf') format('truetype');
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
   src: url('${baseUrl}/fonts/Lahzeh-Regular.ttf') format('truetype');
   font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-SemiBold.ttf') format('truetype');
-  font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
@@ -151,20 +359,6 @@ export default function PageBuilder({ slug, onBack }) {
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-ExtraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lahzeh';
-  src: url('${baseUrl}/fonts/Lahzeh-Black.ttf') format('truetype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
 }`;
 
     const fullHtml = `<!DOCTYPE html>
@@ -172,7 +366,7 @@ export default function PageBuilder({ slug, onBack }) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>${slug}</title>
+  <title>${metaTitle}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
 ${lahzehFont}
@@ -191,6 +385,7 @@ ${html}
     window.open(url, '_blank');
   };
 
+
   const handleShowCode = () => {
     if (!editor) return;
     setHtmlCode(editor.getHtml());
@@ -200,6 +395,7 @@ ${html}
 
   const handleDownload = () => {
     if (!editor) return;
+
     const html = editor.getHtml();
     const css = editor.getCss();
     const baseUrl = window.location.origin;
@@ -231,7 +427,7 @@ ${html}
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>${slug}</title>
+  <title>${metaTitle}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
 ${lahzehFont}
@@ -249,54 +445,86 @@ ${html}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${slug}.html`;
+    a.download = `${metaSlug || 'page'}.html`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
+
   const changeDevice = (device) => editor?.setDevice(device);
 
+  // =======================
+  // ۵) رندر
+  // =======================
+
   return (
-    <div className="h-screen flex flex-col font-lahzeh" style={{ margin: 0, padding: 0, overflow: 'hidden' }}>
+    <div
+      className="h-screen flex flex-col font-lahzeh"
+      style={{ margin: 0, padding: 0, overflow: 'hidden' }}
+    >
       <TopBar
-        slug={slug}
-        onBack={onBack}
+        title={metaTitle}
+        slug={metaSlug}
+        categoryId={metaCategoryId}
+        onChangeTitle={setMetaTitle}
+        onChangeSlug={(v) => setMetaSlug(v)}
+        onChangeCategoryId={(v) => setMetaCategoryId(v)}
+        onBack={handleBack}
         saving={saving}
         onSave={handleSave}
         onPreview={handlePreview}
         onDownload={handleDownload}
         onShowCode={handleShowCode}
         onDeviceChange={changeDevice}
-        Icons={{ ArrowLeft, Save, Eye, Code, Download, Monitor, Tablet, Smartphone }}
+        Icons={{
+          ArrowLeft,
+          Save,
+          Eye,
+          Code,
+          Download,
+          Monitor,
+          Tablet,
+          Smartphone,
+        }}
       />
 
-      <div className="flex-1 flex overflow-hidden" style={{ minHeight: 0, margin: 0, padding: 0 }} dir="rtl">
-        {!scriptsLoaded ? (
+      <div
+        className="flex-1 flex overflow-hidden"
+        style={{ minHeight: 0, margin: 0, padding: 0 }}
+        dir="rtl"
+      >
+        {!scriptsLoaded || loadingContent ? (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-              <p className="text-gray-600">در حال بارگذاری ویرایشگر...</p>
+              <p className="text-gray-600">
+                {!scriptsLoaded
+                  ? 'در حال بارگذاری ویرایشگر...'
+                  : 'در حال بارگذاری محتوا...'}
+              </p>
             </div>
           </div>
         ) : (
           <>
-            {/* 🎯 سایدبار راست - اول قرار می‌گیره */}
+            {/* سایدبار راست */}
             <div
               className="bg-white border-l border-gray-200 flex flex-col"
               dir="rtl"
               style={{
                 width: '320px',
                 flexShrink: 0,
-                minHeight: 0
+                minHeight: 0,
               }}
             >
-              {/* تب‌های بالا */}
-              <div className="flex border-b border-gray-200 bg-gray-50" style={{ flexShrink: 0 }}>
+              <div
+                className="flex border-b border-gray-200 bg-gray-50"
+                style={{ flexShrink: 0 }}
+              >
                 <button
                   onClick={() => setActiveTab('blocks')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${activeTab === 'blocks'
-                      ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                 >
                   <Box size={18} />
@@ -305,8 +533,8 @@ ${html}
                 <button
                   onClick={() => setActiveTab('styles')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${activeTab === 'styles'
-                      ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                 >
                   <Settings size={18} />
@@ -315,8 +543,8 @@ ${html}
                 <button
                   onClick={() => setActiveTab('layers')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${activeTab === 'layers'
-                      ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                 >
                   <Layers size={18} />
@@ -324,21 +552,33 @@ ${html}
                 </button>
               </div>
 
-              {/* محتوای تب‌ها */}
               <div
                 className="flex-1 overflow-y-auto"
                 style={{ minHeight: 0 }}
               >
-                <div id="blocks-panel" style={{ display: activeTab === 'blocks' ? 'block' : 'none' }} className="p-4" />
-                <div style={{ display: activeTab === 'styles' ? 'block' : 'none' }}>
+                <div
+                  id="blocks-panel"
+                  style={{ display: activeTab === 'blocks' ? 'block' : 'none' }}
+                  className="p-4"
+                />
+                <div
+                  style={{ display: activeTab === 'styles' ? 'block' : 'none' }}
+                >
                   <div id="styles-panel" className="p-4" />
-                  <div id="traits-panel" className="p-4 border-t border-gray-200" />
+                  <div
+                    id="traits-panel"
+                    className="p-4 border-t border-gray-200"
+                  />
                 </div>
-                <div id="layers-panel" style={{ display: activeTab === 'layers' ? 'block' : 'none' }} className="p-4" />
+                <div
+                  id="layers-panel"
+                  style={{ display: activeTab === 'layers' ? 'block' : 'none' }}
+                  className="p-4"
+                />
               </div>
             </div>
 
-            {/* 🎯 بادی - کانواس اصلی - بعد از سایدبار */}
+            {/* کانواس اصلی */}
             <div
               className="flex-1"
               dir="ltr"
@@ -348,7 +588,7 @@ ${html}
                 margin: 0,
                 padding: 0,
                 overflow: 'hidden',
-                background: '#f9fafb'
+                background: '#f9fafb',
               }}
             >
               <div
@@ -363,7 +603,7 @@ ${html}
                   right: 0,
                   bottom: 0,
                   margin: 0,
-                  padding: 0
+                  padding: 0,
                 }}
               />
             </div>
@@ -377,6 +617,8 @@ ${html}
         htmlCode={htmlCode}
         cssCode={cssCode}
       />
+
+
 
       {/* استایل‌های GrapesJS سفارشی */}
       <style>{`
@@ -949,9 +1191,8 @@ select.gjs-field,
   height: 18px !important;
 }
 
-/* برای اینکه badge همیشه روِی اینپوت قرار بگیره */
 .gjs-field,
-.gjs-sm-property,feat(ui): refine unit badge (px) and improve numeric inputs in Style Manager
+.gjs-sm-property,
 .gjs-trt-trait {
   position: relative !important;
   overflow: visible !important;
