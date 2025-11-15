@@ -1,5 +1,6 @@
+
 // src/pageBuilder/PageBuilder.jsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   ArrowLeft,
   Save,
@@ -27,13 +28,15 @@ import {
   createArticle,
   updateArticle,
 } from '../services/articlesService';
-import { getNewsById, updateNews } from '../services/newsService';
+import {
+  getNewsById,
+  createNews,
+  updateNews,
+} from '../services/newsService';
 import { getPageById, updatePage } from '../services/pagesService';
 import { buildTree, getPathMap } from '../utils/categoryTree';
 import { fetchArticleCategories } from '../services/articleCategoriesService';
-import { useMemo } from 'react';
-
-
+import { fetchNewsCategories } from '../services/newsCategoriesService';
 
 export default function PageBuilder() {
   const [searchParams] = useSearchParams();
@@ -73,6 +76,7 @@ export default function PageBuilder() {
   const [categoriesTree, setCategoriesTree] = useState([]);
   const [categoriesFlat, setCategoriesFlat] = useState([]);
   const [loadingCats, setLoadingCats] = useState(false);
+
   const scriptsLoaded = useGrapesLoader();
 
   // بارگذاری فونت لحظه (اختیاری)
@@ -83,6 +87,7 @@ export default function PageBuilder() {
     document.head.appendChild(link);
   }, []);
 
+  // ----------------- لود محتوا (مقاله / خبر / صفحه) -----------------
   useEffect(() => {
     async function loadContent() {
       setLoadingContent(true);
@@ -96,7 +101,6 @@ export default function PageBuilder() {
         } else if (origin === 'pages' && pageId) {
           item = await getPageById(pageId);
         }
-
 
         if (item) {
           setMetaTitle(item.title || queryTitle);
@@ -112,7 +116,6 @@ export default function PageBuilder() {
             if (typeof item.content === 'object' && item.content.featuredImage) {
               fi = item.content.featuredImage || fi;
             } else if (typeof item.content === 'string') {
-              // اگر content به صورت JSON استرینگ ذخیره شده
               try {
                 const parsed = JSON.parse(item.content);
                 if (parsed && parsed.featuredImage) {
@@ -127,8 +130,6 @@ export default function PageBuilder() {
           setFeaturedImage(fi || '');
         }
 
-
-
         if (item && item.content) {
           let html = '';
           let css = '';
@@ -139,7 +140,9 @@ export default function PageBuilder() {
             css = c;
           } else if (typeof item.content === 'string') {
             const contentStr = item.content;
-            const styleMatch = contentStr.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+            const styleMatch = contentStr.match(
+              /<style[^>]*>([\s\S]*?)<\/style>/i
+            );
             css = styleMatch ? styleMatch[1] : '';
             html = contentStr
               .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -150,7 +153,6 @@ export default function PageBuilder() {
         } else {
           setContentData({ html: '', css: '' });
         }
-
       } catch (error) {
         console.error('خطا در بارگذاری محتوا:', error);
         setContentData({ html: '', css: '' });
@@ -166,11 +168,10 @@ export default function PageBuilder() {
     }
 
     loadContent();
-  }, [origin, articleId, newsId, pageId]);
+  }, [origin, articleId, newsId, pageId, queryTitle, querySlug, metaCategoryId]);
 
-
+  // ----------------- init GrapesJS -----------------
   useEffect(() => {
-    // فقط وقتی اسکریپت GrapesJS لود شده و کانتینر حاضر است
     if (!scriptsLoaded || !editorRef.current) return;
 
     console.log('[PageBuilder] initEditor start', {
@@ -224,7 +225,6 @@ export default function PageBuilder() {
     setEditor(e);
     console.log('[PageBuilder] editor created');
 
-    // فقط موقع unmount کامپوننت destroy کن
     return () => {
       try {
         e.destroy();
@@ -232,10 +232,9 @@ export default function PageBuilder() {
         console.error('Error destroying editor', err);
       }
     };
-  }, [scriptsLoaded]); // ⬅️ مهم: editor از deps حذف شد
+  }, [scriptsLoaded]);
 
-
-  // ۳) اعمال محتوا روی ادیتور بعد از لود از API
+  // ----------------- اعمال content روی ادیتور -----------------
   useEffect(() => {
     if (!editor) return;
     if (loadingContent) return;
@@ -250,19 +249,25 @@ export default function PageBuilder() {
     }
   }, [editor, loadingContent, contentData]);
 
-
-  // لود دسته‌بندی‌ها برای صفحه‌ساز مقاله
+  // ----------------- لود دسته‌بندی‌ها (مقاله + خبر) -----------------
   useEffect(() => {
-    if (origin !== 'articles') return;
+    if (origin !== 'articles' && origin !== 'news') return;
 
     async function loadCats() {
       setLoadingCats(true);
       try {
-        const flat = await fetchArticleCategories();
+        const flat =
+          origin === 'articles'
+            ? await fetchArticleCategories()
+            : await fetchNewsCategories();
+
         setCategoriesFlat(flat);
         setCategoriesTree(buildTree(flat));
       } catch (e) {
-        console.error('خطا در دریافت دسته‌بندی‌های مقاله برای PageBuilder:', e);
+        console.error(
+          `خطا در دریافت دسته‌بندی‌های ${origin} برای PageBuilder:`,
+          e
+        );
       } finally {
         setLoadingCats(false);
       }
@@ -270,6 +275,7 @@ export default function PageBuilder() {
 
     loadCats();
   }, [origin]);
+
   const categoryPathMap = useMemo(
     () => getPathMap(categoriesTree, ' / '),
     [categoriesTree]
@@ -283,7 +289,7 @@ export default function PageBuilder() {
     );
   }, [metaCategoryId, categoryPathMap]);
 
-
+  // ----------------- ذخیره محتوا -----------------
   const handleSave = async () => {
     if (!editor) return;
     setSaving(true);
@@ -292,14 +298,14 @@ export default function PageBuilder() {
       const html = editor.getHtml();
       const css = editor.getCss();
 
-      // 🔹 برای مقاله‌ها: آبجکت JSON شامل html/css/featuredImage
+      // 🔹 فرمت JSON با html/css/featuredImage
       const contentForBackend = {
         html,
         css,
         featuredImage: featuredImage || null,
       };
 
-      // 🔹 برای news/pages اگر هنوز همون فرمت استرینگ با <style> می‌خوای
+      // 🔹 برای pages اگر هنوز فرمت استرینگ می‌خوای
       const fullContent = `<style>${css}</style>\n${html}`;
 
       let didCallApi = false;
@@ -310,8 +316,8 @@ export default function PageBuilder() {
           title: metaTitle,
           slug: metaSlug,
           categoryId: metaCategoryId,
-          content: contentForBackend,       // html + css + featuredImage (برای خودت)
-          featuredImage: featuredImage || null, // 🎯 خیلی مهم: فیلد جدا برای بک‌اند
+          content: contentForBackend,
+          featuredImage: featuredImage || null,
         };
 
         if (articleId) {
@@ -334,17 +340,33 @@ export default function PageBuilder() {
         }
       }
 
-
       // --- خبرها ---
       else if (origin === 'news') {
+        const payload = {
+          title: metaTitle,
+          slug: metaSlug,
+          categoryId: metaCategoryId,
+          content: contentForBackend,
+          featuredImage: featuredImage || null,
+        };
+
         if (newsId) {
-          await updateNews(newsId, {
-            title: metaTitle,
-            slug: metaSlug,
-            content: fullContent,
-            categoryId: metaCategoryId,
-          });
+          await updateNews(newsId, payload);
           didCallApi = true;
+        } else {
+          const created = await createNews(payload);
+          didCallApi = true;
+
+          if (created?.id) {
+            navigate(
+              `/builder?origin=news` +
+              `&newsId=${created.id}` +
+              `&category=${metaCategoryId || ''}` +
+              `&title=${encodeURIComponent(metaTitle)}` +
+              `&slug=${encodeURIComponent(metaSlug)}`,
+              { replace: true }
+            );
+          }
         }
       }
 
@@ -361,7 +383,9 @@ export default function PageBuilder() {
       }
 
       if (!didCallApi) {
-        console.warn('هیچ مقصدی برای ذخیره‌سازی پیدا نشد (origin / id خالی است)');
+        console.warn(
+          'هیچ مقصدی برای ذخیره‌سازی پیدا نشد (origin / id خالی است)'
+        );
         alert(
           'مقصد ذخیره‌سازی مشخص نیست (origin / id). لطفاً از مسیر صحیح وارد صفحه‌ساز شوید.'
         );
@@ -380,7 +404,6 @@ export default function PageBuilder() {
     }
   };
 
-
   const handleBack = () => {
     if (origin === 'articles') navigate('/articles');
     else if (origin === 'news') navigate('/news');
@@ -388,7 +411,7 @@ export default function PageBuilder() {
     else navigate('/');
   };
 
-  // ✅ اینجا Tailwind رو هم به پریویو اضافه می‌کنیم
+  // ✅ پریویو با Tailwind + فونت لحظه
   const handlePreview = () => {
     if (!editor) return;
 
@@ -452,7 +475,7 @@ ${html}
     setShowCode(true);
   };
 
-  // ✅ اینجا هم Tailwind را برای فایل دانلودی اضافه می‌کنیم
+  // ✅ دانلود فایل HTML با Tailwind + فونت لحظه
   const handleDownload = () => {
     if (!editor) return;
 
@@ -524,9 +547,9 @@ ${html}
         title={metaTitle}
         slug={metaSlug}
         categoryId={metaCategoryId}
-        categoryLabel={selectedCategoryLabel}       
-        categoriesTree={categoriesTree}            
-        loadingCategories={loadingCats}            
+        categoryLabel={selectedCategoryLabel}
+        categoriesTree={categoriesTree}
+        loadingCategories={loadingCats}
         onChangeTitle={setMetaTitle}
         onChangeSlug={setMetaSlug}
         onChangeCategoryId={setMetaCategoryId}
@@ -556,7 +579,6 @@ ${html}
         style={{ minHeight: 0, margin: 0, padding: 0 }}
         dir="rtl"
       >
-        {/* فقط وقتی اسکریپت GrapesJS نیومده، کل ادیتور رو hide کن */}
         {!scriptsLoaded ? (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
             <div className="text-center">
@@ -580,7 +602,6 @@ ${html}
                 className="flex border-b border-gray-200 bg-gray-50"
                 style={{ flexShrink: 0 }}
               >
-                {/* تب‌ها همون قبلی‌ات باشن */}
                 <button
                   onClick={() => setActiveTab('blocks')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-sm transition-all ${activeTab === 'blocks'
@@ -613,10 +634,7 @@ ${html}
                 </button>
               </div>
 
-              <div
-                className="flex-1 overflow-y-auto"
-                style={{ minHeight: 0 }}
-              >
+              <div className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
                 <div
                   id="blocks-panel"
                   style={{ display: activeTab === 'blocks' ? 'block' : 'none' }}
@@ -652,11 +670,12 @@ ${html}
                 background: '#f9fafb',
               }}
             >
-              {/* اوورلی لود محتوا (فقط وقتی از API می‌گیریم) */}
               {loadingContent && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-50/80">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3" />
-                  <p className="text-gray-600 text-sm">در حال بارگذاری محتوا...</p>
+                  <p className="text-gray-600 text-sm">
+                    در حال بارگذاری محتوا...
+                  </p>
                 </div>
               )}
 
@@ -679,7 +698,6 @@ ${html}
           </>
         )}
       </div>
-
 
       <CodeModal
         open={showCode}
@@ -1270,4 +1288,3 @@ select.gjs-field,
     </div>
   );
 }
-

@@ -23,21 +23,17 @@ import {
 } from '../utils/categoryTree';
 
 export default function Articles() {
-  // --- دسته‌بندی‌ها
   const [categoriesTree, setCategoriesTree] = useState([]);
   const [categoriesFlat, setCategoriesFlat] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
 
-  // --- مقالات (از API)
   const [articles, setArticles] = useState([]);
 
-  // --- تب‌ها و فیلترها
   const [activeTab, setActiveTab] = useState('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState(null);
   const [filterDate, setFilterDate] = useState('');
 
-  // --- مودال‌ها و فرم‌ها
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', parentId: null });
 
@@ -45,21 +41,18 @@ export default function Articles() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [articleForm, setArticleForm] = useState({ title: '', slug: '', categoryId: '' });
 
-  // --- وضعیت بارگذاری/خطا
   const [loadingCats, setLoadingCats] = useState(true);
   const [errorCats, setErrorCats] = useState('');
 
   const [loadingArticles, setLoadingArticles] = useState(false);
   const [errorArticles, setErrorArticles] = useState('');
 
-  // --- مدال نتیجه
   const [resultModal, setResultModal] = useState({
     open: false, type: 'success', title: '', message: '',
   });
 
 
 
-  // --- مدال تأیید حذف (همیشه قبل از حذف)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null, mode: 'category' });
 
 
