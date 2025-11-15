@@ -1,114 +1,151 @@
-import React, { useState } from 'react';
-import { MessageSquare, Check, X, Reply, Trash2, Eye, EyeOff, Search, Filter } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+  MessageSquare,
+  Check,
+  Reply,
+  Trash2,
+  EyeOff,
+  Search,
+  Filter,
+} from 'lucide-react';
+
+import {
+  getAllComments,
+  acceptComment,
+  deleteCommentById,
+  replyToComment,
+} from '../services/commentsService'; // مسیر رو طبق ساختار پروژه‌ات تنظیم کن
 
 const Comments = () => {
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      author: 'علی محمدی',
-      email: 'ali@example.com',
-      content: 'مقاله بسیار عالی بود. ممنون از محتوای مفید',
-      postTitle: 'آموزش React',
-      date: '1403/08/10',
-      status: 'pending',
-      replies: []
-    },
-    {
-      id: 2,
-      author: 'سارا احمدی',
-      email: 'sara@example.com',
-      content: 'آیا می‌توانید در مورد Hooks بیشتر توضیح دهید؟',
-      postTitle: 'آموزش React',
-      date: '1403/08/09',
-      status: 'approved',
-      replies: [
-        {
-          id: 21,
-          author: 'ادمین',
-          content: 'حتما، به زودی مقاله جامعی در مورد Hooks منتشر می‌کنیم',
-          date: '1403/08/09'
-        }
-      ]
-    },
-    {
-      id: 3,
-      author: 'رضا کریمی',
-      email: 'reza@example.com',
-      content: 'محتوای بی‌کیفیت و تبلیغاتی',
-      postTitle: 'معرفی محصول جدید',
-      date: '1403/08/08',
-      status: 'spam',
-      replies: []
-    },
-    {
-      id: 4,
-      author: 'مریم نوری',
-      email: 'maryam@example.com',
-      content: 'عالی بود! منتظر مقالات بعدی هستم',
-      postTitle: 'راهنمای کامل TypeScript',
-      date: '1403/08/07',
-      status: 'approved',
-      replies: []
-    },
-    {
-      id: 5,
-      author: 'حسین رضایی',
-      email: 'hossein@example.com',
-      content: 'آیا می‌توانید یک پروژه عملی هم اضافه کنید؟',
-      postTitle: 'آموزش Next.js',
-      date: '1403/08/06',
-      status: 'pending',
-      replies: []
-    }
-  ]);
-
+  const [comments, setComments] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const updateCommentStatus = (id, newStatus) => {
-    setComments(comments.map(comment => 
-      comment.id === id ? { ...comment, status: newStatus } : comment
-    ));
-  };
+  // --- لود اولیه کامنت‌ها از سرور
+  const fetchComments = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const list = await getAllComments(); // الان خودش یه آرایه‌ست
 
-  const deleteComment = (id) => {
-    if (window.confirm('آیا مطمئن هستید که می‌خواهید این کامنت را حذف کنید؟')) {
-      setComments(comments.filter(comment => comment.id !== id));
+      const mapped = list.map((item) => ({
+        id: item.id || item._id,
+        author: item.name,
+        email: item.email,
+        content: item.content,
+        postTitle: item.postTitle || item.articleTitle || 'بدون عنوان',
+        date: item.createdAt
+          ? new Date(item.createdAt).toLocaleDateString('fa-IR')
+          : '',
+        status: item.isAccepted ? 'approved' : 'pending',
+        replies: item.replies || [],
+      }));
+
+      setComments(mapped);
+    } catch (err) {
+      console.error(err);
+      setError('خطا در دریافت کامنت‌ها. لطفا دوباره تلاش کنید.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const addReply = (commentId) => {
-    if (!replyText.trim()) return;
+  useEffect(() => {
+    fetchComments();
+  }, []);
 
-    setComments(comments.map(comment => {
-      if (comment.id === commentId) {
-        return {
-          ...comment,
-          replies: [
-            ...comment.replies,
-            {
-              id: Date.now(),
-              author: 'ادمین',
-              content: replyText,
-              date: new Date().toLocaleDateString('fa-IR')
-            }
-          ]
-        };
+  // --- تغییر وضعیت کامنت در استیت بعد از موفقیت API
+  const updateCommentStatus = async (id, newStatus) => {
+    // برای «approved» باید درخواست accept بزنیم
+    if (newStatus === 'approved') {
+      try {
+        await acceptComment(id);
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === id ? { ...c, status: 'approved' } : c
+          )
+        );
+      } catch (err) {
+        console.error(err);
+        alert('خطا در تایید کامنت');
       }
-      return comment;
-    }));
+      return;
+    }
 
-    setReplyText('');
-    setReplyingTo(null);
+    // برگشت به pending فقط در فرانت (بک فعلاً route خاصی برای unaccept نداره)
+    if (newStatus === 'pending') {
+      setComments((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status: 'pending' } : c))
+      );
+    }
   };
 
-  const filteredComments = comments.filter(comment => {
-    const matchesStatus = filterStatus === 'all' || comment.status === filterStatus;
-    const matchesSearch = comment.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comment.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comment.postTitle.toLowerCase().includes(searchTerm.toLowerCase());
+  const deleteComment = async (id) => {
+    if (!window.confirm('آیا مطمئن هستید که می‌خواهید این کامنت را حذف کنید؟')) {
+      return;
+    }
+
+    try {
+      await deleteCommentById(id);
+      setComments((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('خطا در حذف کامنت');
+    }
+  };
+
+  const addReply = async (commentId) => {
+    if (!replyText.trim()) return;
+
+    try {
+      // اینجا نام و ایمیل ادمین رو می‌فرستیم
+      await replyToComment(commentId, {
+        name: 'ادمین',
+        email: 'admin@example.com', // اگر ادمین لاگین‌شده داری، اینجا داینامیکش کن
+        content: replyText,
+      });
+
+      // آپدیت optimistic روی فرانت
+      setComments((prev) =>
+        prev.map((comment) => {
+          if (comment.id === commentId) {
+            return {
+              ...comment,
+              replies: [
+                ...(comment.replies || []),
+                {
+                  id: Date.now(),
+                  author: 'ادمین',
+                  content: replyText,
+                  date: new Date().toLocaleDateString('fa-IR'),
+                },
+              ],
+            };
+          }
+          return comment;
+        })
+      );
+
+      setReplyText('');
+      setReplyingTo(null);
+    } catch (err) {
+      console.error(err);
+      alert('خطا در ارسال پاسخ');
+    }
+  };
+
+  const filteredComments = comments.filter((comment) => {
+    const matchesStatus =
+      filterStatus === 'all' || comment.status === filterStatus;
+    const search = searchTerm.toLowerCase();
+    const matchesSearch =
+      (comment.author || '').toLowerCase().includes(search) ||
+      (comment.content || '').toLowerCase().includes(search) ||
+      (comment.postTitle || '').toLowerCase().includes(search);
     return matchesStatus && matchesSearch;
   });
 
@@ -116,11 +153,12 @@ const Comments = () => {
     const badges = {
       pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'در انتظار' },
       approved: { bg: 'bg-green-100', text: 'text-green-800', label: 'تایید شده' },
-      spam: { bg: 'bg-red-100', text: 'text-red-800', label: 'اسپم' }
     };
-    const badge = badges[status];
+    const badge = badges[status] || badges.pending;
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
+      <span
+        className={`px-3 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
+      >
         {badge.label}
       </span>
     );
@@ -128,13 +166,15 @@ const Comments = () => {
 
   const stats = {
     total: comments.length,
-    pending: comments.filter(c => c.status === 'pending').length,
-    approved: comments.filter(c => c.status === 'approved').length,
-    spam: comments.filter(c => c.status === 'spam').length
+    pending: comments.filter((c) => c.status === 'pending').length,
+    approved: comments.filter((c) => c.status === 'approved').length,
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 font-lahzeh" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 font-lahzeh"
+      dir="rtl"
+    >
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
@@ -145,28 +185,39 @@ const Comments = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">مدیریت کامنت‌ها</h1>
-                <p className="text-gray-500 text-sm">مدیریت و پاسخگویی به نظرات کاربران</p>
+                <p className="text-gray-500 text-sm">
+                  مدیریت و پاسخگویی به نظرات کاربران
+                </p>
               </div>
             </div>
+
+            {loading && (
+              <span className="text-sm text-gray-500">در حال بارگذاری...</span>
+            )}
+            {error && (
+              <span className="text-sm text-red-500">{error}</span>
+            )}
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
-              <div className="text-3xl font-bold text-blue-600 mb-1">{stats.total}</div>
+              <div className="text-3xl font-bold text-blue-600 mb-1">
+                {stats.total}
+              </div>
               <div className="text-sm text-blue-800">کل کامنت‌ها</div>
             </div>
             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl">
-              <div className="text-3xl font-bold text-yellow-600 mb-1">{stats.pending}</div>
+              <div className="text-3xl font-bold text-yellow-600 mb-1">
+                {stats.pending}
+              </div>
               <div className="text-sm text-yellow-800">در انتظار تایید</div>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl">
-              <div className="text-3xl font-bold text-green-600 mb-1">{stats.approved}</div>
+              <div className="text-3xl font-bold text-green-600 mb-1">
+                {stats.approved}
+              </div>
               <div className="text-sm text-green-800">تایید شده</div>
-            </div>
-            <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl">
-              <div className="text-3xl font-bold text-red-600 mb-1">{stats.spam}</div>
-              <div className="text-sm text-red-800">اسپم</div>
             </div>
           </div>
         </div>
@@ -194,7 +245,6 @@ const Comments = () => {
                 <option value="all">همه</option>
                 <option value="pending">در انتظار</option>
                 <option value="approved">تایید شده</option>
-                <option value="spam">اسپم</option>
               </select>
             </div>
           </div>
@@ -202,49 +252,73 @@ const Comments = () => {
 
         {/* Comments List */}
         <div className="space-y-4">
-          {filteredComments.length === 0 ? (
+          {loading && comments.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+              <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">در حال بارگذاری کامنت‌ها...</p>
+            </div>
+          ) : filteredComments.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
               <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">کامنتی یافت نشد</p>
             </div>
           ) : (
-            filteredComments.map(comment => (
-              <div key={comment.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
+            filteredComments.map((comment) => (
+              <div
+                key={comment.id}
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
-                        {comment.author.charAt(0)}
+                        {comment.author?.charAt(0) || '?'}
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-800">{comment.author}</h3>
+                        <h3 className="font-bold text-gray-800">
+                          {comment.author || 'بدون نام'}
+                        </h3>
                         <p className="text-xs text-gray-500">{comment.email}</p>
                       </div>
                       {getStatusBadge(comment.status)}
                     </div>
                     <div className="mr-13">
                       <p className="text-sm text-gray-600 mb-2">
-                        مقاله: <span className="font-semibold text-blue-600">{comment.postTitle}</span>
+                        مقاله:{' '}
+                        <span className="font-semibold text-blue-600">
+                          {comment.postTitle}
+                        </span>
                       </p>
-                      <p className="text-gray-700 leading-relaxed mb-2">{comment.content}</p>
+                      <p className="text-gray-700 leading-relaxed mb-2">
+                        {comment.content}
+                      </p>
                       <p className="text-xs text-gray-400">{comment.date}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Replies */}
-                {comment.replies.length > 0 && (
+                {comment.replies && comment.replies.length > 0 && (
                   <div className="mr-13 mt-4 space-y-3">
-                    {comment.replies.map(reply => (
-                      <div key={reply.id} className="bg-blue-50 rounded-xl p-4 border-r-4 border-blue-400">
+                    {comment.replies.map((reply) => (
+                      <div
+                        key={reply.id}
+                        className="bg-blue-50 rounded-xl p-4 border-r-4 border-blue-400"
+                      >
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-xs font-bold">
                             A
                           </div>
-                          <span className="font-bold text-sm text-gray-800">{reply.author}</span>
-                          <span className="text-xs text-gray-400">{reply.date}</span>
+                          <span className="font-bold text-sm text-gray-800">
+                            {reply.author || 'ادمین'}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {reply.date}
+                          </span>
                         </div>
-                        <p className="text-gray-700 text-sm mr-10">{reply.content}</p>
+                        <p className="text-gray-700 text-sm mr-10">
+                          {reply.content}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -300,25 +374,12 @@ const Comments = () => {
                       لغو تایید
                     </button>
                   )}
-                  {comment.status !== 'spam' ? (
-                    <button
-                      onClick={() => updateCommentStatus(comment.id, 'spam')}
-                      className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-medium"
-                    >
-                      <X className="w-4 h-4" />
-                      اسپم
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => updateCommentStatus(comment.id, 'pending')}
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition font-medium"
-                    >
-                      <Eye className="w-4 h-4" />
-                      لغو اسپم
-                    </button>
-                  )}
                   <button
-                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                    onClick={() =>
+                      setReplyingTo(
+                        replyingTo === comment.id ? null : comment.id
+                      )
+                    }
                     className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium"
                   >
                     <Reply className="w-4 h-4" />
