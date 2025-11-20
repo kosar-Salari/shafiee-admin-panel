@@ -13,6 +13,7 @@ export default function LayoutShell() {
     else if (location.pathname.startsWith('/comments')) setActiveTab('Comments');
     else if (location.pathname.startsWith('/news')) setActiveTab('News');
     else if (location.pathname.startsWith('/articles')) setActiveTab('Articles');
+    else if (location.pathname.startsWith('/header-footer')) setActiveTab('HeaderFooter');
     else setActiveTab('Pages');
   }, [location.pathname]);
 

@@ -4,10 +4,10 @@ import { Upload, Plus, Trash2, GripVertical, Loader2, Info } from 'lucide-react'
 import NewsArticlesSettings from '../components/NewsArticlesSettings';
 import LinkedImagesSettings from '../components/LinkImageManager';
 
-import { getSettings,updateSettings} from '../services/settingsService';
+import { getSettings, updateSettings } from '../services/settingsService';
 
-import {localToApi , apiToLocal } from '../services/settingsMapper';
-import {uploadFile} from '../services/uploadService';
+import { localToApi, apiToLocal } from '../services/settingsMapper';
+import { uploadFile } from '../services/uploadService';
 
 export default function AdminMainPage() {
   const [loading, setLoading] = useState(true);
@@ -183,31 +183,35 @@ export default function AdminMainPage() {
      SAVE (PATCH) — دقیقاً با همان فرمت خواسته‌شده
   ──────────────────────────────────────────────────────────── */
   const saveHeroChanges = async () => {
-    // تبدیل state به فرمت api
-    const localBundle = {
-      logo,
-      mainBanner: bannerImage,
-      rightBanner: bannerSideCards.find((c) => c.id === 'side-right')?.image || '',
-      leftBanner: bannerSideCards.find((c) => c.id === 'side-left')?.image || '',
-      newsActive,
-      articlesActive,
-      newsCount,
-      articlesCount,
-      // فقط imageLinks1 را از این صفحه ارسال می‌کنیم
-      imageLinks1: sortedCards.map((c) => ({ image: c.image, link: c.link, position: c.position })),
-      imageLinks2: [], // اگر صفحه‌ی دیگری مدیریت می‌کند، اینجا دست نزن
-      menuItems: [],   // این صفحه مدیریت منو ندارد
-      footerColumns: [], // همین‌طور
-    };
-
-    const payload = localToApi(localBundle);
-
     try {
       setSaving(true);
       setError('');
+
+      // 1️⃣ اول settings فعلی رو از بک بگیر
+      const currentSettings = await getSettings();
+
+      // 2️⃣ payload مستقیم (بدون localToApi)
+      const payload = {
+        ...currentSettings,
+        logo,
+        mainBanner: bannerImage,
+        rightBanner: bannerSideCards.find((c) => c.id === 'side-right')?.image || '',
+        leftBanner: bannerSideCards.find((c) => c.id === 'side-left')?.image || '',
+        newsActive,
+        articlesActive,
+        newsCount,
+        articlesCount,
+        disableCommentsForPages: currentSettings.disableCommentsForPages || null,
+
+        imageLinks1: sortedCards.map((c) => ({ image: c.image, link: c.link, position: c.position })),
+      };
+
+      console.log('📤 Direct payload:', payload);
       await updateSettings(payload);
+
       alert('تغییرات ذخیره شد! ✅');
     } catch (e) {
+      console.error('خطا در ذخیره:', e);
       setError('ذخیره تنظیمات با خطا مواجه شد.');
     } finally {
       setSaving(false);
@@ -261,7 +265,7 @@ export default function AdminMainPage() {
               <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-3 flex items-start gap-2">
                 <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-blue-800">
-                  <strong>ابعاد پیشنهادی:</strong> 380×640 
+                  <strong>ابعاد پیشنهادی:</strong> 380×640
                 </p>
               </div>
               {bannerSideCards[1]?.image ? (
@@ -334,7 +338,7 @@ export default function AdminMainPage() {
               <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-3 flex items-start gap-2">
                 <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-blue-800">
-                  <strong>ابعاد پیشنهادی:</strong> 380×640 پیکسل 
+                  <strong>ابعاد پیشنهادی:</strong> 380×640 پیکسل
                 </p>
               </div>
               {bannerSideCards[0]?.image ? (
@@ -551,10 +555,10 @@ export default function AdminMainPage() {
                 {(() => {
                   const remaining = sortedCards.slice(2);
                   const rows = [];
-                  
+
                   for (let i = 0; i < remaining.length; i += 2) {
                     const isLastAndOdd = i === remaining.length - 1;
-                    
+
                     if (isLastAndOdd) {
                       // آخری فرد است - full width
                       rows.push(
@@ -589,7 +593,7 @@ export default function AdminMainPage() {
                       );
                     }
                   }
-                  
+
                   return rows;
                 })()}
               </div>

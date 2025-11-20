@@ -127,6 +127,8 @@ export default function NewsArticlesSettings() {
     menuItems: Array.isArray(s.menuItems) ? s.menuItems : [],
     imageLinks1: Array.isArray(s.imageLinks1) ? s.imageLinks1 : [],
     imageLinks2: Array.isArray(s.imageLinks2) ? s.imageLinks2 : [],
+    disableCommentsForPages: s.disableCommentsForPages || null,
+
   });
 
   // Helpers: open success/error modals

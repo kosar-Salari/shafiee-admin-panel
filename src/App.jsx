@@ -6,6 +6,7 @@ import Comments from './pages/Comments';
 import News from './pages/News';
 import Articles from './pages/Articles';
 import PageBuilder from './pageBuilder/PageBuilder';
+import HeaderFooterPage from "./pages/HeaderFooter";
 
 import Login from './pages/Login';
 import PrivateRoute from './components/PrivateRoute';
@@ -31,6 +32,8 @@ export default function App() {
           <Route path="/comments" element={<Comments />} />
           <Route path="/news" element={<News />} />
           <Route path="/articles" element={<Articles />} />
+          <Route path="/header-footer" element={<HeaderFooterPage />} />
+
         </Route>
 
         {/* بیلدر هم محافظت شود */}

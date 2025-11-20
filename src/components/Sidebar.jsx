@@ -1,7 +1,7 @@
 
 // src/components/Sidebar.jsx
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, FileText, BookOpen, MessageSquare, Newspaper, BookMarked } from 'lucide-react';
+import { Home, FileText, BookOpen, MessageSquare, Newspaper, BookMarked, LayoutTemplate, } from 'lucide-react';
 
 const menuItems = [
   { id: 'Pages', label: 'مدیریت صفحات', icon: FileText, path: '/pages' },
@@ -9,6 +9,8 @@ const menuItems = [
   { id: 'News', label: 'مدیریت اخبار', icon: Newspaper, path: '/news' },
   { id: 'Articles', label: 'مدیریت مقالات', icon: BookMarked, path: '/articles' },
   { id: 'Comments', label: 'دیدگاه ها', icon: MessageSquare, path: '/comments' },
+  { id: 'HeaderFooter', label: 'هدر و فوتر سایت', icon: LayoutTemplate, path: '/header-footer' },
+
 ];
 
 const Sidebar = ({ activeTab, setActiveTab, onItemClick, className = '', isMobile = false }) => {

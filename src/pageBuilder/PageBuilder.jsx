@@ -1,4 +1,3 @@
-
 // src/pageBuilder/PageBuilder.jsx
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
@@ -19,7 +18,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import useGrapesLoader from './hooks/useGrapesLoader';
 import initEditor from './grapes/initEditor';
-
+import { getSettings, updateSettings } from '../services/settingsService';
 import TopBar from './components/TopBar';
 import CodeModal from './components/CodeModal';
 
@@ -33,7 +32,7 @@ import {
   createNews,
   updateNews,
 } from '../services/newsService';
-import { getPageById, updatePage } from '../services/pagesService';
+import { getPageById, createPage, updatePage } from '../services/pagesService';
 import { buildTree, getPathMap } from '../utils/categoryTree';
 import { fetchArticleCategories } from '../services/articleCategoriesService';
 import { fetchNewsCategories } from '../services/newsCategoriesService';
@@ -52,14 +51,27 @@ export default function PageBuilder() {
     (articleId ? 'articles' : newsId ? 'news' : pageId ? 'pages' : null);
 
   const queryCategory = searchParams.get('category');
+  const queryParentId = searchParams.get('parentId'); // 🆕 برای pages
   const queryTitle = searchParams.get('title') || 'بدون عنوان';
   const querySlug = searchParams.get('slug') || 'page';
+
+  console.log('🔍 URL Params:', {
+    origin,
+    articleId,
+    newsId,
+    pageId,
+    queryCategory,
+    queryParentId,
+    queryTitle,
+    querySlug
+  });
 
   const [metaTitle, setMetaTitle] = useState(queryTitle);
   const [metaSlug, setMetaSlug] = useState(querySlug);
   const [metaCategoryId, setMetaCategoryId] = useState(
     queryCategory ? Number(queryCategory) : undefined
   );
+  const [metaParentId, setMetaParentId] = useState(queryParentId || ''); // 🆕
 
   const editorRef = useRef(null);
   const [editor, setEditor] = useState(null);
@@ -76,7 +88,7 @@ export default function PageBuilder() {
   const [categoriesTree, setCategoriesTree] = useState([]);
   const [categoriesFlat, setCategoriesFlat] = useState([]);
   const [loadingCats, setLoadingCats] = useState(false);
-
+  const [commentsDisabled, setCommentsDisabled] = useState(false);
   const scriptsLoaded = useGrapesLoader();
 
   // بارگذاری فونت لحظه (اختیاری)
@@ -105,29 +117,50 @@ export default function PageBuilder() {
         if (item) {
           setMetaTitle(item.title || queryTitle);
           setMetaSlug(item.slug || querySlug);
-          setMetaCategoryId(
-            item.categoryId != null ? Number(item.categoryId) : metaCategoryId
-          );
+          // 🆕 چک کردن وضعیت کامنت
+          try {
+            const settings = await getSettings();
+            const disabledList = Array.isArray(settings.disableCommentsForPages)
+              ? settings.disableCommentsForPages
+              : [];
 
-          // ✅ تلاش برای پیدا کردن تصویر شاخص از جاهای مختلف
-          let fi = item.featuredImage || null;
-
-          if (item.content) {
-            if (typeof item.content === 'object' && item.content.featuredImage) {
-              fi = item.content.featuredImage || fi;
-            } else if (typeof item.content === 'string') {
-              try {
-                const parsed = JSON.parse(item.content);
-                if (parsed && parsed.featuredImage) {
-                  fi = parsed.featuredImage || fi;
-                }
-              } catch (e) {
-                // نادیده می‌گیریم
-              }
-            }
+            const itemIdentifier = item.slug || String(item.id);
+            const isDisabled = disabledList.includes(itemIdentifier);
+            setCommentsDisabled(isDisabled);
+          } catch (err) {
+            console.error('خطا در خواندن وضعیت کامنت:', err);
+            setCommentsDisabled(false);
           }
 
-          setFeaturedImage(fi || '');
+          // 🆕 برای pages: parentId
+          if (origin === 'pages') {
+            setMetaParentId(item.parentId || '');
+          } else {
+            // برای articles / news: categoryId
+            setMetaCategoryId(
+              item.categoryId != null ? Number(item.categoryId) : metaCategoryId
+            );
+          }
+
+          // تصویر شاخص (فقط برای articles/news)
+          if (origin !== 'pages') {
+            let fi = item.featuredImage || null;
+            if (item.content) {
+              if (typeof item.content === 'object' && item.content.featuredImage) {
+                fi = item.content.featuredImage || fi;
+              } else if (typeof item.content === 'string') {
+                try {
+                  const parsed = JSON.parse(item.content);
+                  if (parsed && parsed.featuredImage) {
+                    fi = parsed.featuredImage || fi;
+                  }
+                } catch (e) {
+                  // نادیده می‌گیریم
+                }
+              }
+            }
+            setFeaturedImage(fi || '');
+          }
         }
 
         if (item && item.content) {
@@ -251,6 +284,7 @@ export default function PageBuilder() {
 
   // ----------------- لود دسته‌بندی‌ها (مقاله + خبر) -----------------
   useEffect(() => {
+    // فقط برای articles و news نیاز به دسته‌بندی داریم
     if (origin !== 'articles' && origin !== 'news') return;
 
     async function loadCats() {
@@ -297,21 +331,50 @@ export default function PageBuilder() {
     try {
       const html = editor.getHtml();
       const css = editor.getCss();
+      // 🆕 به‌روز کردن لیست کامنت‌های غیرفعال
+      try {
+        const currentSettings = await getSettings();
+        let disabledList = Array.isArray(currentSettings.disableCommentsForPages)
+          ? [...currentSettings.disableCommentsForPages]
+          : [];
 
-      // 🔹 فرمت JSON با html/css/featuredImage
-      const contentForBackend = {
-        html,
-        css,
-        featuredImage: featuredImage || null,
-      };
+        // شناسه محتوا (ترجیحاً slug)
+        const itemIdentifier = metaSlug || (
+          origin === 'articles' ? articleId :
+            origin === 'news' ? newsId :
+              origin === 'pages' ? pageId : null
+        );
 
-      // 🔹 برای pages اگر هنوز فرمت استرینگ می‌خوای
-      const fullContent = `<style>${css}</style>\n${html}`;
+        if (itemIdentifier) {
+          if (commentsDisabled) {
+            // اضافه کن به لیست (اگه نبود)
+            if (!disabledList.includes(itemIdentifier)) {
+              disabledList.push(itemIdentifier);
+            }
+          } else {
+            // حذف کن از لیست
+            disabledList = disabledList.filter(id => id !== itemIdentifier);
+          }
 
+          // ذخیره settings
+          await updateSettings({
+            ...currentSettings,
+            disableCommentsForPages: disabledList,
+          });
+        }
+      } catch (err) {
+        console.error('خطا در به‌روز کردن وضعیت کامنت:', err);
+      }
       let didCallApi = false;
 
       // --- مقالات ---
       if (origin === 'articles') {
+        const contentForBackend = {
+          html,
+          css,
+          featuredImage: featuredImage || null,
+        };
+
         const payload = {
           title: metaTitle,
           slug: metaSlug,
@@ -342,6 +405,12 @@ export default function PageBuilder() {
 
       // --- خبرها ---
       else if (origin === 'news') {
+        const contentForBackend = {
+          html,
+          css,
+          featuredImage: featuredImage || null,
+        };
+
         const payload = {
           title: metaTitle,
           slug: metaSlug,
@@ -372,13 +441,46 @@ export default function PageBuilder() {
 
       // --- صفحات ---
       else if (origin === 'pages') {
+        const contentForBackend = {
+          html,
+          css,
+        };
+
+        const payload = {
+          title: metaTitle,
+          slug: metaSlug,
+          content: contentForBackend,
+        };
+
+        console.log('🔍 metaParentId قبل از چک:', metaParentId, typeof metaParentId);
+
+        // ✅ فقط اگر parentId واقعاً مقدار داشت، اضافه کن
+        if (metaParentId && String(metaParentId).trim() !== '') {
+          payload.parentId = String(metaParentId).trim();
+          console.log('✅ parentId به payload اضافه شد:', payload.parentId);
+        } else {
+          console.log('⏭️ parentId اضافه نشد به payload');
+        }
+
+        console.log('📤 Final payload برای Pages:', JSON.stringify(payload, null, 2));
+
         if (pageId) {
-          await updatePage(pageId, {
-            title: metaTitle,
-            slug: metaSlug,
-            content: fullContent,
-          });
+          await updatePage(pageId, payload);
           didCallApi = true;
+        } else {
+          const created = await createPage(payload);
+          didCallApi = true;
+
+          if (created?.id) {
+            navigate(
+              `/builder?origin=pages` +
+              `&pageId=${created.id}` +
+              `&title=${encodeURIComponent(metaTitle)}` +
+              `&slug=${encodeURIComponent(metaSlug)}` +
+              (metaParentId ? `&parentId=${encodeURIComponent(metaParentId)}` : ''),
+              { replace: true }
+            );
+          }
         }
       }
 
@@ -411,7 +513,6 @@ export default function PageBuilder() {
     else navigate('/');
   };
 
-  // ✅ پریویو با Tailwind + فونت لحظه
   const handlePreview = () => {
     if (!editor) return;
 
@@ -447,9 +548,7 @@ export default function PageBuilder() {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>${metaTitle}</title>
-  <!-- Tailwind برای کلاس‌های utility -->
   <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css">
-  <!-- آیکن‌ها -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
 ${lahzehFont}
@@ -475,7 +574,6 @@ ${html}
     setShowCode(true);
   };
 
-  // ✅ دانلود فایل HTML با Tailwind + فونت لحظه
   const handleDownload = () => {
     if (!editor) return;
 
@@ -511,9 +609,7 @@ ${html}
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>${metaTitle}</title>
-  <!-- Tailwind برای کلاس‌ها -->
   <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css">
-  <!-- آیکن‌ها -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
 ${lahzehFont}
@@ -550,9 +646,12 @@ ${html}
         categoryLabel={selectedCategoryLabel}
         categoriesTree={categoriesTree}
         loadingCategories={loadingCats}
+        parentId={metaParentId} // 🆕
+        origin={origin} // 🆕
         onChangeTitle={setMetaTitle}
         onChangeSlug={setMetaSlug}
         onChangeCategoryId={setMetaCategoryId}
+        onChangeParentId={setMetaParentId} // 🆕
         featuredImage={featuredImage}
         onChangeFeaturedImage={setFeaturedImage}
         onBack={handleBack}
@@ -573,7 +672,20 @@ ${html}
           Smartphone,
         }}
       />
-
+      {/* 🆕 چک‌باکس کامنت */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={commentsDisabled}
+            onChange={(e) => setCommentsDisabled(e.target.checked)}
+            className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+          />
+          <span className="text-sm font-medium text-gray-700">
+            غیرفعال کردن کامنت‌ها برای این صفحه
+          </span>
+        </label>
+      </div>
       <div
         className="flex-1 flex overflow-hidden"
         style={{ minHeight: 0, margin: 0, padding: 0 }}
@@ -588,7 +700,6 @@ ${html}
           </div>
         ) : (
           <>
-            {/* سایدبار راست */}
             <div
               className="bg-white border-l border-gray-200 flex flex-col"
               dir="rtl"
@@ -657,7 +768,6 @@ ${html}
               </div>
             </div>
 
-            {/* کانواس اصلی */}
             <div
               className="flex-1"
               dir="ltr"
@@ -1281,10 +1391,50 @@ select.gjs-field,
   position: relative !important;
   overflow: visible !important;
 }
+/* Asset Manager - نمایش بهتر ویدیو و فایل */
+.gjs-am-asset[data-type="video"]::before {
+  content: "🎬";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(79, 70, 229, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 1;
+}
 
+.gjs-am-asset[data-type="audio"]::before {
+  content: "🎵";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 1;
+}
+
+.gjs-am-asset[data-type="document"]::before {
+  content: "📎";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(245, 87, 108, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 1;
+}
       
       
       `}</style>
     </div>
   );
 }
+
+

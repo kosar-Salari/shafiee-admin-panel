@@ -126,30 +126,36 @@ export default function LinkedImages2Settings() {
   const saveChanges = async () => {
     if (!wholeLocal) return;
 
-    const bundle = {
-      ...wholeLocal,
-      imageLinks2: sorted.map(it => ({
-        image: it.image,
-        link: it.link,
-        position: it.position,
-      })),
-    };
-
-    const payload = localToApi(bundle);
-
     try {
       setSaving(true);
       setError('');
+
+      // 1️⃣ اول settings کامل رو از بک بگیر
+      const currentSettings = await getSettings();
+
+      // 2️⃣ payload مستقیم بدون localToApi
+      const payload = {
+        ...currentSettings,
+        disableCommentsForPages: currentSettings.disableCommentsForPages || null,
+        imageLinks2: sorted.map(it => ({
+          image: it.image,
+          link: it.link,
+          position: it.position,
+        })),
+      };
+
       await updateSettings(payload);
       alert('imageLinks2 ذخیره شد! ✅');
-      setWholeLocal(bundle); // سنک با آخرین وضعیت
+
+      // دوباره settings رو بگیر تا سنک بمونه
+      const fresh = await getSettings();
+      setWholeLocal(apiToLocal(fresh));
     } catch (e) {
       setError('ذخیره تنظیمات با خطا مواجه شد.');
     } finally {
       setSaving(false);
     }
   };
-
   /* ───────────────── UI ───────────────── */
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-8">

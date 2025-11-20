@@ -43,7 +43,7 @@ const blocks = [
 
   { id: 'container-section', label: '📦 بخش کانتینر', category: 'لایوت',
     content: '<div style="padding: 60px 40px; background: #f9fafb; border-radius: 16px; min-height: 200px; margin: 20px 0;"></div>' },
-  { id: 'two-column', label: '⬜⬜ دو ستون', category: 'לایوت',
+  { id: 'two-column', label: '⬜⬜ دو ستون', category: 'لایوت',
     content: '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; padding: 20px;"><div style="background: white; padding: 30px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div><div style="background: white; padding: 30px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div></div>' },
   { id: 'three-column', label: '⬜⬜⬜ سه ستون', category: 'لایوت',
     content: '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 20px;"><div style="background: white; padding: 24px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div><div style="background: white; padding: 24px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div><div style="background: white; padding: 24px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div></div>' },
@@ -51,10 +51,39 @@ const blocks = [
   { id: 'hero-section', label: '🎨 بخش Hero', category: 'تمپلیت‌ها',
     content: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 80px 40px; text-align: center; border-radius: 20px; margin: 20px 0;"><h1 style="font-size: 48px; font-weight: bold; color: white; margin: 0 0 20px 0;">عنوان اصلی شما</h1><p style="font-size: 20px; color: rgba(255,255,255,0.9); margin: 0 0 30px 0; max-width: 600px; margin-left: auto; margin-right: auto;">توضیحات کوتاه و جذاب درباره محصول یا خدمات شما</p><a href="#" style="display: inline-block; padding: 16px 40px; background: white; color: #667eea; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 18px;">شروع کنید</a></div>' },
 
+  // ===========================
+  // 🎬 بلوک‌های رسانه
+  // ===========================
+  
   { id: 'single-image', label: '🖼️ تصویر تکی', category: 'رسانه',
     content: '<img src="https://via.placeholder.com/800x400/667eea/ffffff?text=تصویر+شما" style="width: 100%; max-width: 800px; height: auto; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: block; margin: 20px auto;" />' },
-  { id: 'video-embed', label: '🎥 ویدیو', category: 'رسانه',
+  
+  { id: 'video-embed', label: '📺 ویدیو یوتیوب', category: 'رسانه',
     content: '<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe></div>' },
+  
+  // ✅ ویدیو با دکمه آپلود
+  { 
+    id: 'video-upload', 
+    label: '🎬 آپلود ویدیو', 
+    category: 'رسانه',
+    content: '' // این توی initEditor.js پر می‌شه
+  },
+  
+  // ✅ صوت با دکمه آپلود
+  { 
+    id: 'audio-upload', 
+    label: '🎵 آپلود صوت', 
+    category: 'رسانه',
+    content: '' // این توی initEditor.js پر می‌شه
+  },
+  
+  // ✅ فایل با دکمه آپلود
+  { 
+    id: 'file-upload', 
+    label: '📎 آپلود فایل', 
+    category: 'رسانه',
+    content: '' // این توی initEditor.js پر می‌شه
+  },
 
   // این مورد با مودال سفارشی در initEditor تکمیل می‌شود
   { id: 'icon-list', label: '✅ لیست با آیکن', category: 'متن', content: '' },

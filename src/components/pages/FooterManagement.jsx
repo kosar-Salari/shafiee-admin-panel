@@ -1,7 +1,7 @@
 // src/components/pages/FooterManagement.jsx
 import React, { useState } from "react";
-import { Plus, ChevronUp, ChevronDown, Pencil, Trash2 } from "lucide-react";
-
+import { Plus, ChevronUp, ChevronDown, Pencil, Trash2, Upload, X, Image as ImageIcon } from "lucide-react";
+import useFileUpload from "../../hooks/useFileUpload";
 export default function FooterManagement({ footerColumns, setFooterColumns }) {
   const [showFooterModal, setShowFooterModal] = useState(false);
   const [showFooterLinkModal, setShowFooterLinkModal] = useState(false);
@@ -12,6 +12,35 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
   const [footerLinkText, setFooterLinkText] = useState("");
   const [footerLinkUrl, setFooterLinkUrl] = useState("");
   const [footerLinkIcon, setFooterLinkIcon] = useState("");
+  const { doUpload, uploading, progress, error: uploadError } = useFileUpload("footer-icons");
+  const [tempIconFile, setTempIconFile] = useState(null);
+  const handleIconPick = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/"))
+      return alert("لطفاً فایل تصویری انتخاب کنید");
+    if (file.size > 5 * 1024 * 1024)
+      return alert("حجم فایل نباید بیشتر از 5MB باشد");
+    setTempIconFile(file);
+  };
+
+  const handleUploadIcon = async () => {
+    if (!tempIconFile) return;
+    try {
+      const url = await doUpload(tempIconFile, "footer-icons");
+      setFooterLinkIcon(url);
+      setTempIconFile(null);
+      alert("آیکن با موفقیت آپلود شد ✅");
+    } catch (e) {
+      console.error("خطا در آپلود آیکن:", e);
+      alert("خطا در آپلود آیکن");
+    }
+  };
+
+  const handleRemoveIcon = () => {
+    setFooterLinkIcon("");
+    setTempIconFile(null);
+  };
 
   const handleAddColumn = () => {
     if (footerColumns.length >= 4) return alert("حداکثر 4 ستون مجاز است");
@@ -67,7 +96,12 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
     if (!footerLinkText.trim()) return alert("متن لینک را وارد کنید");
     if (!footerLinkUrl.trim()) return alert("آدرس لینک را وارد کنید");
 
-    const newLink = { id: editingLink?.id || `l-${Date.now()}`, text: footerLinkText.trim(), url: footerLinkUrl.trim(), icon: footerLinkIcon.trim() };
+    const newLink = {
+      id: editingLink?.id || `l-${Date.now()}`,
+      text: footerLinkText.trim(),
+      url: footerLinkUrl.trim(),
+      icon: footerLinkIcon || "" // 👈 حذف trim تا URL عکس خراب نشه
+    };
 
     setFooterColumns(prev => prev.map(col => {
       if (col.id === currentColumnId) {
@@ -83,6 +117,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
     setFooterLinkText("");
     setFooterLinkUrl("");
     setFooterLinkIcon("");
+    setTempIconFile(null);
     setEditingLink(null);
     setCurrentColumnId(null);
   };
@@ -143,7 +178,20 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
               {column.links.map(link => (
                 <div key={link.id} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {link.icon && <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">{link.icon}</span>}
+                    {link.icon && (
+                      <div className="w-6 h-6 rounded border border-gray-300 overflow-hidden bg-white flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={link.icon} 
+                          alt="" 
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.parentElement.classList.add('bg-red-50');
+                            e.target.parentElement.innerHTML = '<span class="text-[8px] text-red-500">✕</span>';
+                          }}
+                        />
+                      </div>
+                    )}
                     <span className="text-sm truncate">{link.text}</span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -230,13 +278,64 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
               </div>
               <div>
                 <label className="block text-sm mb-1 text-gray-700">آیکن (اختیاری)</label>
-                <input
-                  value={footerLinkIcon}
-                  onChange={(e) => setFooterLinkIcon(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="مثال: phone, send, camera"
-                />
-                <p className="text-xs text-gray-500 mt-1">نام آیکن دلخواه (فقط برای UI شما)</p>
+
+                {/* پیش‌نمایش آیکن */}
+                {footerLinkIcon && (
+                  <div className="mb-3 relative group inline-block">
+                    <div className="w-16 h-16 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                      <img 
+                        src={footerLinkIcon} 
+                        alt="Icon" 
+                        className="max-w-full max-h-full object-contain"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div class="text-xs text-red-500">خطا در بارگذاری</div>';
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveIcon}
+                      className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
+                {/* آپلود آیکن */}
+                <div className="space-y-2">
+                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer text-sm">
+                    <Upload className="w-4 h-4" />
+                    <span>{footerLinkIcon ? "تغییر آیکن" : "آپلود آیکن"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleIconPick}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {tempIconFile && (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                      <span className="text-xs flex-1 truncate">{tempIconFile.name}</span>
+                      <button
+                        type="button"
+                        onClick={handleUploadIcon}
+                        disabled={uploading}
+                        className="px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                      >
+                        {uploading ? `${progress}%` : "ثبت"}
+                      </button>
+                    </div>
+                  )}
+
+                  {uploadError && (
+                    <p className="text-xs text-red-600">{uploadError}</p>
+                  )}
+
+                  <p className="text-xs text-gray-500">حجم مجاز: حداکثر 5MB | فرمت: PNG, JPG, SVG</p>
+                </div>
               </div>
             </div>
             <div className="mt-5 flex items-center justify-end gap-2">
