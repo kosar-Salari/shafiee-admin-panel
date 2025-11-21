@@ -1,4 +1,4 @@
-// grapes/styleSectors.js - نسخه نهایی با قابلیت لینک‌دهی
+// grapes/styleSectors.js - با قابلیت تراز کامل
 const styleSectors = [
   {
     id: 'spacing',
@@ -104,6 +104,61 @@ const styleSectors = [
     ],
   },
   {
+    name: '↔️ تراز و چیدمان',
+    open: true,
+    properties: [
+      {
+        name: 'تراز متن',
+        property: 'text-align',
+        type: 'radio',
+        defaults: 'right',
+        list: [
+          { value: 'right', title: 'راست', className: 'fa fa-align-right' },
+          { value: 'center', title: 'وسط', className: 'fa fa-align-center' },
+          { value: 'left', title: 'چپ', className: 'fa fa-align-left' },
+          { value: 'justify', title: 'جاستیفای', className: 'fa fa-align-justify' },
+        ],
+      },
+      {
+        name: 'نوع نمایش',
+        property: 'display',
+        type: 'select',
+        defaults: 'block',
+        list: [
+          { value: 'block', name: 'بلوکی (Block)' },
+          { value: 'inline', name: 'درون‌خطی (Inline)' },
+          { value: 'inline-block', name: 'درون‌خطی-بلوکی' },
+          { value: 'flex', name: 'فلکس (Flex)' },
+          { value: 'grid', name: 'گرید (Grid)' },
+          { value: 'none', name: 'مخفی (None)' },
+        ],
+      },
+      {
+        name: 'Float (شناوری)',
+        property: 'float',
+        type: 'radio',
+        defaults: 'none',
+        list: [
+          { value: 'none', title: 'ندارد', className: 'fa fa-times' },
+          { value: 'right', title: 'راست', className: 'fa fa-arrow-right' },
+          { value: 'left', title: 'چپ', className: 'fa fa-arrow-left' },
+        ],
+      },
+      {
+        name: 'Clear',
+        property: 'clear',
+        type: 'select',
+        defaults: 'none',
+        list: [
+          { value: 'none', name: 'ندارد' },
+          { value: 'both', name: 'هر دو طرف' },
+          { value: 'left', name: 'چپ' },
+          { value: 'right', name: 'راست' },
+        ],
+      },
+    ],
+  },
+  {
     name: '✍️ تنظیمات متن',
     open: true,
     properties: [
@@ -134,18 +189,6 @@ const styleSectors = [
         ],
       },
       { name: 'رنگ متن', property: 'color', type: 'color', defaults: '#333333' },
-      {
-        name: 'تراز متن',
-        property: 'text-align',
-        type: 'radio',
-        defaults: 'right',
-        list: [
-          { value: 'right', title: 'راست' },
-          { value: 'center', title: 'وسط' },
-          { value: 'left', title: 'چپ' },
-          { value: 'justify', title: 'جاستیفای' },
-        ],
-      },
       {
         name: 'تزیین متن',
         property: 'text-decoration',
@@ -221,20 +264,6 @@ const styleSectors = [
     name: '📍 موقعیت و نمایش',
     open: false,
     properties: [
-      {
-        name: 'نوع نمایش',
-        property: 'display',
-        type: 'select',
-        defaults: 'block',
-        list: [
-          { value: 'block', name: 'بلوکی' },
-          { value: 'inline-block', name: 'درون خطی-بلوکی' },
-          { value: 'inline', name: 'درون خطی' },
-          { value: 'flex', name: 'فلکس' },
-          { value: 'grid', name: 'گرید' },
-          { value: 'none', name: 'مخفی' },
-        ],
-      },
       {
         name: 'موقعیت',
         property: 'position',
