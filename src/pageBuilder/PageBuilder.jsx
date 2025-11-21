@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 import { useSearchParams, useNavigate } from 'react-router-dom';
-
+import LinkModal from './components/LinkModal';
 import useGrapesLoader from './hooks/useGrapesLoader';
 import initEditor from './grapes/initEditor';
 import { getSettings, updateSettings } from '../services/settingsService';
@@ -90,7 +90,9 @@ export default function PageBuilder() {
   const [loadingCats, setLoadingCats] = useState(false);
   const [commentsDisabled, setCommentsDisabled] = useState(false);
   const scriptsLoaded = useGrapesLoader();
-
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkModalData, setLinkModalData] = useState({});
+  const [selectedComponent, setSelectedComponent] = useState(null);
   // بارگذاری فونت لحظه (اختیاری)
   useEffect(() => {
     const link = document.createElement('link');
@@ -267,6 +269,54 @@ export default function PageBuilder() {
     };
   }, [scriptsLoaded]);
 
+  useEffect(() => {
+    if (!editor) return;
+
+    // 🔗 Command برای باز کردن مدال لینک
+    editor.Commands.add('open-link-modal', {
+      run(editor, sender, options) {
+        const selected = editor.getSelected();
+        if (!selected) {
+          alert('لطفاً ابتدا یک المان را انتخاب کنید');
+          return;
+        }
+
+        setSelectedComponent(selected);
+
+        // بررسی نوع المان
+        const tagName = selected.get('tagName');
+        const isText = ['text', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div'].includes(tagName) ||
+          selected.get('type') === 'text';
+
+        // پیدا کردن لینک والد اگر وجود دارد
+        let existingLink = null;
+        let current = selected;
+        while (current) {
+          if (current.get('tagName') === 'a') {
+            existingLink = current;
+            break;
+          }
+          current = current.parent();
+        }
+
+        const linkAttrs = existingLink?.getAttributes() || {};
+
+        setLinkModalData({
+          url: linkAttrs.href || '',
+          target: linkAttrs.target || '_self',
+          nofollow: linkAttrs.rel?.includes('nofollow') || false,
+          noopener: linkAttrs.rel?.includes('noopener') || false,
+          isText,
+          color: selected.getStyle('color') || '#3b82f6',
+          underline: selected.getStyle('text-decoration') === 'underline',
+          hoverScale: true,
+          hoverColor: '#1d4ed8',
+        });
+
+        setShowLinkModal(true);
+      },
+    });
+  }, [editor]);
   // ----------------- اعمال content روی ادیتور -----------------
   useEffect(() => {
     if (!editor) return;
@@ -506,6 +556,114 @@ export default function PageBuilder() {
     }
   };
 
+  const handleSaveLink = (formData) => {
+    if (!selectedComponent || !editor) {
+      console.error('کامپوننت یا ادیتور انتخاب نشده است');
+      return;
+    }
+
+    console.log('💾 ذخیره لینک با داده:', formData);
+
+    try {
+      const { url, target, nofollow, noopener, color, underline, hoverScale, hoverColor, isText } = formData;
+
+      // ساخت rel attribute
+      const relParts = [];
+      if (nofollow) relParts.push('nofollow');
+      if (noopener) relParts.push('noopener');
+      const rel = relParts.join(' ');
+
+      const selected = editor.getSelected();
+      if (!selected) {
+        console.error('هیچ المانی انتخاب نشده است');
+        return;
+      }
+
+      // منطق ایجاد/آپدیت لینک - روش ساده‌تر و مطمئن‌تر
+      let linkComponent;
+
+      if (selected.get('tagName') === 'a') {
+        // اگر المان انتخاب شده خودش لینک است
+        linkComponent = selected;
+        linkComponent.addAttributes({
+          href: url,
+          target: target || '_self'
+        });
+      } else {
+        // اگر المان انتخاب شده لینک نیست - ایجاد لینک جدید
+        const wrapper = selected.parent();
+        const index = selected.index();
+
+        // ایجاد لینک جدید
+        linkComponent = editor.getWrapper().append({
+          type: 'link',
+          attributes: {
+            href: url,
+            target: target || '_self'
+          },
+          components: [selected.clone()],
+        })[0];
+
+        // حذف المان اصلی و جایگزینی
+        selected.remove();
+
+        // انتقال لینک به موقعیت اصلی
+        if (wrapper && index !== undefined) {
+          wrapper.components().add(linkComponent, { at: index });
+        }
+      }
+
+      // تنظیم rel
+      if (rel) {
+        linkComponent.addAttributes({ rel });
+      } else {
+        linkComponent.removeAttributes('rel');
+      }
+
+      // استایل‌های متن
+      if (isText && linkComponent.components().length > 0) {
+        const textElement = linkComponent.components().at(0);
+
+        if (textElement) {
+          textElement.addStyle({
+            color: color || '#3b82f6',
+            textDecoration: underline ? 'underline' : 'none',
+            transition: 'all 0.3s ease',
+          });
+
+          // افزودن استایل هاور
+          const componentId = textElement.getId();
+          if (componentId) {
+            const hoverStyles = `
+            #${componentId}:hover {
+              color: ${hoverColor || '#1d4ed8'} !important;
+              ${hoverScale ? 'transform: scale(1.05);' : ''}
+            }
+          `;
+            // اضافه کردن استایل به ادیتور
+            const currentCss = editor.getCss();
+            if (!currentCss.includes(`#${componentId}:hover`)) {
+              editor.setStyle(currentCss + hoverStyles);
+            }
+          }
+        }
+      }
+
+      // انتخاب لینک جدید
+      editor.select(linkComponent);
+
+      console.log('✅ لینک با موفقیت ذخیره شد');
+
+    } catch (error) {
+      console.error('❌ خطا در ذخیره لینک:', error);
+      alert('خطا در ذخیره لینک. لطفاً دوباره تلاش کنید.');
+    } finally {
+      // حتماً در نهایت مدال بسته شود
+      setShowLinkModal(false);
+      setSelectedComponent(null);
+      setLinkModalData({});
+    }
+  };
   const handleBack = () => {
     if (origin === 'articles') navigate('/articles');
     else if (origin === 'news') navigate('/news');
@@ -542,6 +700,28 @@ export default function PageBuilder() {
   font-display: swap;
 }`;
 
+    // استایل‌های اضافی برای نمایش بهتر
+    const additionalStyles = `
+    /* استایل‌های متنی */
+    b, strong { font-weight: bold !important; }
+    i, em { font-style: italic !important; }
+    u { text-decoration: underline !important; }
+    strike { text-decoration: line-through !important; }
+    
+    /* استایل‌های تراز تصویر */
+    img[style*="margin-right: 0"] { float: right !important; }
+    img[style*="margin-right: auto"] { float: none !important; margin: 0 auto !important; display: block !important; }
+    img[style*="margin-left: 0"] { float: left !important; }
+    
+    /* استایل‌های عمومی */
+    body { 
+      font-family: 'Lahzeh', ui-sans-serif, system-ui, sans-serif !important;
+      direction: rtl !important;
+      text-align: right !important;
+      padding: 20px !important;
+    }
+  `;
+
     const fullHtml = `<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -552,9 +732,8 @@ export default function PageBuilder() {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
 ${lahzehFont}
-* { font-family: 'Lahzeh', ui-sans-serif, system-ui, sans-serif !important; }
-html, body { font-family: 'Lahzeh', ui-sans-serif, system-ui, sans-serif; margin: 0; padding: 0; }
 ${css}
+${additionalStyles}
   </style>
 </head>
 <body>
@@ -814,6 +993,12 @@ ${html}
         onClose={() => setShowCode(false)}
         htmlCode={htmlCode}
         cssCode={cssCode}
+      />
+      <LinkModal
+        open={showLinkModal}
+        onClose={() => setShowLinkModal(false)}
+        onSave={handleSaveLink}
+        initialData={linkModalData}
       />
       <style>{`
         /* Reset کامل */
@@ -1430,8 +1615,125 @@ select.gjs-field,
   font-size: 12px;
   z-index: 1;
 }
+      /* === Toolbar روی کانواس کمی بزرگ‌تر و خوش‌دست‌تر === */
+.gjs-toolbar {
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  background: white !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+  gap: 6px !important;
+  display: flex !important;
+}
+
+.gjs-toolbar-item {
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s !important;
+  background: transparent !important;
+  cursor: pointer !important;
+}
+
+.gjs-toolbar-item:hover {
+  background: #eef2ff !important;
+  color: #4f46e5 !important;
+  transform: scale(1.05) !important;
+}
+
+.gjs-toolbar-item svg,
+.gjs-toolbar-item i,
+.gjs-toolbar-item .fa {
+  width: 18px !important;
+  height: 18px !important;
+  font-size: 16px !important;
+}
+  /* === Toolbar یکپارچه و زیبا === */
+.gjs-toolbar {
+  padding: 8px 10px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+  gap: 6px !important;
+  display: flex !important;
+  border: 2px solid rgba(255,255,255,0.1) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.gjs-toolbar-item {
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  border: none !important;
+  font-size: 14px !important;
+  min-width: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.gjs-toolbar-item:hover {
+  transform: scale(1.08) translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(255,255,255,0.2) !important;
+  filter: brightness(1.2) !important;
+}
+
+.gjs-toolbar-item:active {
+  transform: scale(0.95) !important;
+}
+
+.gjs-toolbar-item svg,
+.gjs-toolbar-item i,
+.gjs-toolbar-item .fa {
+  width: 16px !important;
+  height: 16px !important;
+  font-size: 14px !important;
+  pointer-events: none !important;
+}
+
+/* مخفی کردن نوار RTE پیش‌فرض */
+.gjs-rte-toolbar {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* اطمینان از عدم نمایش نوار دوم */
+.gjs-rte-actionbar,
+.gjs-rte-action {
+  display: none !important;
+}
+
+/* رفع مشکل نمایش تولبار */
+.gjs-toolbar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
+}
+
+.gjs-toolbar-item {
+  flex-shrink: 0 !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* رفع مشکل مدال */
+.gjs-mdl-dialog {
+  z-index: 10000 !important;
+}
+
+/* رفع مشکل انتخاب متن */
+.gjs-rte-toolbar {
+  display: none !important;
+}
       
-      
+
+
       `}</style>
     </div>
   );

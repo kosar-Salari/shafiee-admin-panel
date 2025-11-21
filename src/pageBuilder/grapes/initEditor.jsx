@@ -75,8 +75,8 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
             } else if (file.type.startsWith('audio/')) {
               assetType = 'audio';
             } else if (
-              file.type === 'application/pdf' || 
-              file.type.includes('document') || 
+              file.type === 'application/pdf' ||
+              file.type.includes('document') ||
               file.type.includes('zip') ||
               file.type.includes('sheet') ||
               file.type.includes('text')
@@ -98,7 +98,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
             if (selected) {
               const tagName = selected.get('tagName');
               const uploadedAsset = uploadedAssets[0];
-              
+
               if (tagName === 'img') {
                 selected.addAttributes({ src: uploadedAsset.get('src') });
               } else if (tagName === 'video') {
@@ -106,7 +106,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
               } else if (tagName === 'audio') {
                 selected.addAttributes({ src: uploadedAsset.get('src') });
               } else if (tagName === 'a') {
-                selected.addAttributes({ 
+                selected.addAttributes({
                   href: uploadedAsset.get('src'),
                   download: uploadedAsset.get('name') || 'file'
                 });
@@ -141,7 +141,231 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     }
   });
 
+  // ===========================
+  // 🔧 غیرفعال کردن RTE toolbar پیش‌فرض
+  // ===========================
+  e.on('rte:enable', () => {
+    const rteToolbar = document.querySelector('.gjs-rte-toolbar');
+    if (rteToolbar) {
+      rteToolbar.style.display = 'none';
+    }
+  });
+
+  // ===========================
+  // 📝 دستورات متنی - با قابلیت Toggle
+  // ===========================
+
+  // شمارنده برای ساخت ID یونیک
+  let styleCounter = 0;
+
+  // ===========================
+  // 📝 دستورات متنی - رویکرد ساده و مطمئن
+  // ===========================
+
+  const applyTextStyle = (styleProp, styleValue) => {
+    const selected = e.getSelected();
+    if (!selected) return;
+
+    const frame = e.Canvas.getFrameEl();
+    if (!frame || !frame.contentDocument) return;
+
+    const doc = frame.contentDocument;
+    const sel = doc.getSelection();
+
+    if (!sel || sel.rangeCount === 0) {
+      // اگر متنی انتخاب نشده، استایل رو Toggle کن روی خود کامپوننت
+      const currentStyle = selected.getStyle(styleProp);
+
+      if (currentStyle === styleValue || (styleProp === 'font-weight' && (currentStyle === '700' || currentStyle === 'bold') && styleValue === 'bold')) {
+        // خاموش کردن
+        if (styleProp === 'font-weight') {
+          selected.removeStyle(styleProp);
+        } else if (styleProp === 'font-style') {
+          selected.removeStyle(styleProp);
+        } else if (styleProp === 'text-decoration') {
+          selected.removeStyle(styleProp);
+        }
+      } else {
+        // روشن کردن
+        selected.addStyle({ [styleProp]: styleValue });
+      }
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const selectedText = range.toString();
+
+    if (!selectedText) {
+      const currentStyle = selected.getStyle(styleProp);
+      if (currentStyle === styleValue || (styleProp === 'font-weight' && (currentStyle === '700' || currentStyle === 'bold') && styleValue === 'bold')) {
+        selected.removeStyle(styleProp);
+      } else {
+        selected.addStyle({ [styleProp]: styleValue });
+      }
+      return;
+    }
+
+    // 🔍 پیدا کردن parent element
+    let parentElement = range.commonAncestorContainer;
+    if (parentElement.nodeType === 3) { // text node
+      parentElement = parentElement.parentElement;
+    }
+
+    // ✅ چک کردن اینکه آیا داخل span با inline style هستیم
+    if (parentElement && parentElement.tagName === 'SPAN' && parentElement.hasAttribute('style')) {
+
+      // گرفتن تمام استایل‌های فعلی
+      const inlineStyle = parentElement.getAttribute('style');
+
+      // تبدیل به object
+      const styles = {};
+      inlineStyle.split(';').forEach(rule => {
+        const parts = rule.split(':');
+        if (parts.length === 2) {
+          const prop = parts[0].trim();
+          const val = parts[1].trim();
+          if (prop) styles[prop] = val;
+        }
+      });
+
+      // چک کردن آیا استایل مورد نظر فعال هست
+      let isActive = false;
+
+      if (styleProp === 'font-weight') {
+        isActive = styles[styleProp] === 'bold' || styles[styleProp] === '700';
+      } else if (styleProp === 'font-style') {
+        isActive = styles[styleProp] === 'italic';
+      } else if (styleProp === 'text-decoration') {
+        isActive = styles[styleProp] === styleValue;
+      }
+
+      if (isActive) {
+        // 🎯 فقط این استایل رو حذف کن، بقیه رو نگه دار
+        delete styles[styleProp];
+
+        // ساخت style string جدید
+        const newStyleString = Object.entries(styles)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join('; ');
+
+        if (newStyleString.trim()) {
+          // اگر استایل‌های دیگه مونده، بذارشون
+          parentElement.setAttribute('style', newStyleString);
+        } else {
+          // اگر هیچ استایلی نمونده، attribute style رو بردار (ولی span رو نگه دار)
+          parentElement.removeAttribute('style');
+        }
+
+        // حفظ انتخاب روی همون span
+        const newRange = doc.createRange();
+        newRange.selectNodeContents(parentElement);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+
+        e.getWrapper().view.render();
+        return;
+
+      } else {
+        // 🎯 اضافه کردن استایل جدید به استایل‌های موجود
+        styles[styleProp] = styleValue;
+
+        const newStyleString = Object.entries(styles)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join('; ');
+
+        parentElement.setAttribute('style', newStyleString);
+
+        // حفظ انتخاب
+        const newRange = doc.createRange();
+        newRange.selectNodeContents(parentElement);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+
+        e.getWrapper().view.render();
+        return;
+      }
+    }
+
+    // ✅ اگر span نیست یا استایل نداره، span جدید بساز
+    const span = doc.createElement('span');
+    span.style[styleProp] = styleValue;
+    span.textContent = selectedText;
+
+    range.deleteContents();
+    range.insertNode(span);
+
+    const newRange = doc.createRange();
+    newRange.selectNodeContents(span);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+
+    e.getWrapper().view.render();
+  };
+
+  e.Commands.add('bold', {
+    run(editor) {
+      applyTextStyle('font-weight', 'bold');
+    }
+  });
+
+  e.Commands.add('italic', {
+    run(editor) {
+      applyTextStyle('font-style', 'italic');
+    }
+  });
+
+  e.Commands.add('underline', {
+    run(editor) {
+      applyTextStyle('text-decoration', 'underline');
+    }
+  });
+
+  e.Commands.add('strikethrough', {
+    run(editor) {
+      applyTextStyle('text-decoration', 'line-through');
+    }
+  });
+
+  e.Commands.add('bold', {
+    run(editor) {
+      applyTextStyle('font-weight', 'bold');
+    }
+  });
+
+  e.Commands.add('italic', {
+    run(editor) {
+      applyTextStyle('font-style', 'italic');
+    }
+  });
+
+  e.Commands.add('underline', {
+    run(editor) {
+      applyTextStyle('text-decoration', 'underline');
+    }
+  });
+
+  e.Commands.add('strikethrough', {
+    run(editor) {
+      applyTextStyle('text-decoration', 'line-through');
+    }
+  });
+
+  // ===========================
+  // 🎯 تولبار + حفظ انتخاب + نشانگر Active
+  // ===========================
+  let lastSelected = null;
+
+  // 🆕 تابع چک کردن استایل فعال
+  const hasActiveStyle = (component, styleProp, styleValue) => {
+    if (!component) return false;
+
+    const currentStyle = component.getStyle(styleProp);
+    return currentStyle === styleValue;
+  };
+
   e.on('component:selected', (component) => {
+    lastSelected = component;
+
     if (component.get('tagName') === 'body') {
       component.set('stylable', [
         'padding',
@@ -153,17 +377,208 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
         'margin',
       ]);
     }
+
+    component.set('toolbar', []);
+
+    let toolbar = [];
+    const tagName = component.get('tagName');
+    const componentType = component.get('type');
+
+    // 🔗 دکمه لینک
+    toolbar.push({
+      attributes: {
+        class: 'fa fa-link',
+        title: '🔗 افزودن لینک',
+        style: 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;'
+      },
+      command: 'open-link-modal',
+    });
+
+    // 📝 دکمه‌های متن
+    const textElements = ['text', 'link', 'default', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'a'];
+
+    if (textElements.includes(componentType) || textElements.includes(tagName)) {
+      // 🆕 چک کردن استایل‌های فعال
+      const isBold = hasActiveStyle(component, 'font-weight', 'bold') || hasActiveStyle(component, 'font-weight', '700');
+      const isItalic = hasActiveStyle(component, 'font-style', 'italic');
+      const isUnderline = component.getStyle('text-decoration')?.includes('underline');
+      const isStrike = component.getStyle('text-decoration')?.includes('line-through');
+
+      toolbar.push(
+        {
+          attributes: {
+            class: 'fa fa-bold',
+            title: 'بولد',
+            style: `background: ${isBold ? '#4f46e5' : '#1f2937'}; color: white; ${isBold ? 'box-shadow: 0 0 0 2px #818cf8;' : ''}`
+          },
+          command(editor) {
+            editor.runCommand('bold');
+            setTimeout(() => {
+              if (lastSelected) editor.select(lastSelected);
+            }, 50);
+          },
+        },
+        {
+          attributes: {
+            class: 'fa fa-italic',
+            title: 'ایتالیک',
+            style: `background: ${isItalic ? '#4f46e5' : '#374151'}; color: white; ${isItalic ? 'box-shadow: 0 0 0 2px #818cf8;' : ''}`
+          },
+          command(editor) {
+            editor.runCommand('italic');
+            setTimeout(() => {
+              if (lastSelected) editor.select(lastSelected);
+            }, 50);
+          },
+        },
+        {
+          attributes: {
+            class: 'fa fa-underline',
+            title: 'خط زیر',
+            style: `background: ${isUnderline ? '#4f46e5' : '#4b5563'}; color: white; ${isUnderline ? 'box-shadow: 0 0 0 2px #818cf8;' : ''}`
+          },
+          command(editor) {
+            editor.runCommand('underline');
+            setTimeout(() => {
+              if (lastSelected) editor.select(lastSelected);
+            }, 50);
+          },
+        },
+        {
+          attributes: {
+            class: 'fa fa-strikethrough',
+            title: 'خط خورده',
+            style: `background: ${isStrike ? '#4f46e5' : '#6b7280'}; color: white; ${isStrike ? 'box-shadow: 0 0 0 2px #818cf8;' : ''}`
+          },
+          command(editor) {
+            editor.runCommand('strikethrough');
+            setTimeout(() => {
+              if (lastSelected) editor.select(lastSelected);
+            }, 50);
+          },
+        }
+      );
+    }
+
+    // 🖼️ دکمه‌های تراز تصویر - اصلاح شده
+    if (tagName === 'img') {
+      // 🆕 چک کردن تراز فعال
+      const float = component.getStyle('float');
+      const marginRight = component.getStyle('margin-right');
+      const marginLeft = component.getStyle('margin-left');
+
+      const isRight = float === 'right';
+      const isCenter = marginRight === 'auto' && marginLeft === 'auto';
+      const isLeft = float === 'left';
+
+      toolbar.push(
+        {
+          attributes: {
+            class: 'fa fa-align-right',
+            title: 'تراز راست',
+            style: `background: ${isRight ? '#059669' : '#10b981'}; color: white; ${isRight ? 'box-shadow: 0 0 0 2px #34d399;' : ''}`
+          },
+          command: {
+            run: (editor, sender, options) => {
+              const img = options.target;
+
+              img.setStyle({
+                'display': 'block',
+                'float': 'right',
+                'margin-right': '0',
+                'margin-left': '20px',
+                'margin-top': '10px',
+                'margin-bottom': '10px',
+                'clear': 'none'
+              });
+
+              setTimeout(() => editor.select(img), 50);
+            },
+          },
+        },
+        {
+          attributes: {
+            class: 'fa fa-align-center',
+            title: 'تراز وسط',
+            style: `background: ${isCenter ? '#0d9488' : '#14b8a6'}; color: white; ${isCenter ? 'box-shadow: 0 0 0 2px #2dd4bf;' : ''}`
+          },
+          command: {
+            run: (editor, sender, options) => {
+              const img = options.target;
+
+              img.setStyle({
+                'display': 'block',
+                'float': 'none',
+                'margin-right': 'auto',
+                'margin-left': 'auto',
+                'margin-top': '10px',
+                'margin-bottom': '10px',
+                'clear': 'both'
+              });
+
+              setTimeout(() => editor.select(img), 50);
+            },
+          },
+        },
+        {
+          attributes: {
+            class: 'fa fa-align-left',
+            title: 'تراز چپ',
+            style: `background: ${isLeft ? '#0891b2' : '#06b6d4'}; color: white; ${isLeft ? 'box-shadow: 0 0 0 2px #22d3ee;' : ''}`
+          },
+          command: {
+            run: (editor, sender, options) => {
+              const img = options.target;
+
+              img.setStyle({
+                'display': 'block',
+                'float': 'left',
+                'margin-right': '20px',
+                'margin-left': '0',
+                'margin-top': '10px',
+                'margin-bottom': '10px',
+                'clear': 'none'
+              });
+
+              setTimeout(() => editor.select(img), 50);
+            },
+          },
+        }
+      );
+    }
+
+    // 🎬 دکمه‌های عمومی
+    toolbar.push(
+      {
+        attributes: {
+          class: 'fa fa-copy',
+          title: '📋 کپی',
+          style: 'background: #3b82f6; color: white;'
+        },
+        command: 'tlb-clone',
+      },
+      {
+        attributes: {
+          class: 'fa fa-trash',
+          title: '🗑️ حذف',
+          style: 'background: #ef4444; color: white;'
+        },
+        command: 'tlb-delete',
+      }
+    );
+
+    component.set('toolbar', toolbar);
   });
 
   // ===========================
-  // 🎬 تابع باز کردن مودال آپلود
+  // 🎬 تابع آپلود
   // ===========================
   function openUploadModal(accept, onUpload) {
     return new Promise((resolve, reject) => {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = accept;
-      
+
       input.onchange = async (ev) => {
         const file = ev.target.files[0];
         if (!file) {
@@ -192,7 +607,6 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       category: b.category,
     };
 
-    // ✅ بلوک آپلود ویدیو
     if (b.id === 'video-upload') {
       blockConfig.activate = true;
       blockConfig.select = true;
@@ -241,7 +655,6 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       });
     }
 
-    // ✅ بلوک آپلود صوت
     else if (b.id === 'audio-upload') {
       blockConfig.activate = true;
       blockConfig.select = true;
@@ -288,7 +701,6 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       });
     }
 
-    // ✅ بلوک آپلود فایل
     else if (b.id === 'file-upload') {
       blockConfig.activate = true;
       blockConfig.select = true;
@@ -367,7 +779,6 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       });
     }
 
-    // لیست آیکن
     else if (b.id === 'icon-list') {
       blockConfig.activate = true;
       blockConfig.select = true;
@@ -446,9 +857,6 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     e.BlockManager.add(b.id, blockConfig);
   });
 
-  // ===========================
-  // 🎨 Component Type: file-download-box (قابل ویرایش)
-  // ===========================
   e.DomComponents.addType('file-download-box', {
     model: {
       defaults: {
@@ -479,9 +887,6 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     },
   });
 
-  // ===========================
-  // 📝 مقدار اولیه HTML/CSS
-  // ===========================
   if (initialHtml) e.setComponents(initialHtml);
   if (initialCss) e.setStyle(initialCss);
 

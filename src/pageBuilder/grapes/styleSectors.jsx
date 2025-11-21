@@ -1,4 +1,4 @@
-// grapes/styleSectors.js - نسخه نهایی با Color Picker
+// grapes/styleSectors.js - نسخه نهایی با قابلیت لینک‌دهی
 const styleSectors = [
   {
     id: 'spacing',
@@ -83,10 +83,10 @@ const styleSectors = [
         property: 'padding',
         type: 'composite',
         properties: [
-          { id: 'padding-top',    name: 'بالا',  property: 'padding-top',    type: 'integer', units: ['px', 'rem'], defaults: '0' },
-          { id: 'padding-right',  name: 'راست',  property: 'padding-right',  type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'padding-top', name: 'بالا', property: 'padding-top', type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'padding-right', name: 'راست', property: 'padding-right', type: 'integer', units: ['px', 'rem'], defaults: '0' },
           { id: 'padding-bottom', name: 'پایین', property: 'padding-bottom', type: 'integer', units: ['px', 'rem'], defaults: '0' },
-          { id: 'padding-left',   name: 'چپ',    property: 'padding-left',   type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'padding-left', name: 'چپ', property: 'padding-left', type: 'integer', units: ['px', 'rem'], defaults: '0' },
         ],
       },
       {
@@ -95,10 +95,10 @@ const styleSectors = [
         property: 'margin',
         type: 'composite',
         properties: [
-          { id: 'margin-top',    name: 'بالا',  property: 'margin-top',    type: 'integer', units: ['px', 'rem'],        defaults: '0' },
-          { id: 'margin-right',  name: 'راست',  property: 'margin-right',  type: 'integer', units: ['px', 'rem', 'auto'], defaults: '0' },
-          { id: 'margin-bottom', name: 'پایین', property: 'margin-bottom', type: 'integer', units: ['px', 'rem'],        defaults: '0' },
-          { id: 'margin-left',   name: 'چپ',    property: 'margin-left',   type: 'integer', units: ['px', 'rem', 'auto'], defaults: '0' },
+          { id: 'margin-top', name: 'بالا', property: 'margin-top', type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'margin-right', name: 'راست', property: 'margin-right', type: 'integer', units: ['px', 'rem', 'auto'], defaults: '0' },
+          { id: 'margin-bottom', name: 'پایین', property: 'margin-bottom', type: 'integer', units: ['px', 'rem'], defaults: '0' },
+          { id: 'margin-left', name: 'چپ', property: 'margin-left', type: 'integer', units: ['px', 'rem', 'auto'], defaults: '0' },
         ],
       },
     ],
@@ -186,47 +186,6 @@ const styleSectors = [
     open: false,
     properties: [
       { name: 'رنگ پس‌زمینه', property: 'background-color', type: 'color', defaults: 'transparent' },
-      { name: 'تصویر پس‌زمینه', property: 'background-image', type: 'file', defaults: 'none' },
-      {
-        name: 'اندازه پس‌زمینه',
-        property: 'background-size',
-        type: 'select',
-        defaults: 'cover',
-        list: [
-          { value: 'auto', name: 'خودکار' },
-          { value: 'cover', name: 'پوشش کامل' },
-          { value: 'contain', name: 'نمایش کامل' },
-        ],
-      },
-      {
-        name: 'موقعیت پس‌زمینه',
-        property: 'background-position',
-        type: 'select',
-        defaults: 'center center',
-        list: [
-          { value: 'top left', name: 'بالا چپ' },
-          { value: 'top center', name: 'بالا وسط' },
-          { value: 'top right', name: 'بالا راست' },
-          { value: 'center left', name: 'وسط چپ' },
-          { value: 'center center', name: 'وسط وسط' },
-          { value: 'center right', name: 'وسط راست' },
-          { value: 'bottom left', name: 'پایین چپ' },
-          { value: 'bottom center', name: 'پایین وسط' },
-          { value: 'bottom right', name: 'پایین راست' },
-        ],
-      },
-      {
-        name: 'تکرار پس‌زمینه',
-        property: 'background-repeat',
-        type: 'select',
-        defaults: 'repeat',
-        list: [
-          { value: 'repeat', name: 'تکرار' },
-          { value: 'repeat-x', name: 'تکرار افقی' },
-          { value: 'repeat-y', name: 'تکرار عمودی' },
-          { value: 'no-repeat', name: 'بدون تکرار' },
-        ],
-      },
     ],
   },
   {
@@ -254,29 +213,6 @@ const styleSectors = [
             ],
           },
           { name: 'رنگ', property: 'border-color', type: 'color', defaults: '#000000' },
-        ],
-      },
-      {
-        name: 'سایه جعبه',
-        property: 'box-shadow',
-        type: 'stack',
-        properties: [
-          { name: 'افقی', property: 'box-shadow-h', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'عمودی', property: 'box-shadow-v', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'بلور', property: 'box-shadow-blur', type: 'integer', units: ['px'], defaults: '5', min: 0 },
-          { name: 'گسترش', property: 'box-shadow-spread', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'رنگ', property: 'box-shadow-color', type: 'color', defaults: 'rgba(0,0,0,0.5)' },
-        ],
-      },
-      {
-        name: 'سایه متن',
-        property: 'text-shadow',
-        type: 'stack',
-        properties: [
-          { name: 'افقی', property: 'text-shadow-h', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'عمودی', property: 'text-shadow-v', type: 'integer', units: ['px'], defaults: '0' },
-          { name: 'بلور', property: 'text-shadow-blur', type: 'integer', units: ['px'], defaults: '0', min: 0 },
-          { name: 'رنگ', property: 'text-shadow-color', type: 'color', defaults: '#000000' },
         ],
       },
     ],
@@ -314,59 +250,6 @@ const styleSectors = [
       },
       { name: 'شفافیت', property: 'opacity', type: 'slider', defaults: '1', min: 0, max: 1, step: 0.1 },
       { name: 'z-index', property: 'z-index', type: 'integer', defaults: 'auto', min: -10, max: 100 },
-    ],
-  },
-  {
-    name: '🎯 فلکس (Flexbox)',
-    open: false,
-    properties: [
-      {
-        name: 'جهت',
-        property: 'flex-direction',
-        type: 'radio',
-        defaults: 'row',
-        list: [
-          { value: 'row', name: 'افقی →', title: 'ردیف' },
-          { value: 'row-reverse', name: '← افقی', title: 'ردیف معکوس' },
-          { value: 'column', name: 'عمودی ↓', title: 'ستون' },
-          { value: 'column-reverse', name: '↑ عمودی', title: 'ستون معکوس' },
-        ],
-      },
-      {
-        name: 'تراز افقی',
-        property: 'justify-content',
-        type: 'radio',
-        defaults: 'flex-start',
-        list: [
-          { value: 'flex-start', name: 'ابتدا', title: 'شروع' },
-          { value: 'center', name: 'وسط', title: 'وسط' },
-          { value: 'flex-end', name: 'انتها', title: 'پایان' },
-          { value: 'space-between', name: 'فاصله بین', title: 'فاصله بین' },
-          { value: 'space-around', name: 'فاصله دور', title: 'فاصله اطراف' },
-          { value: 'space-evenly', name: 'فاصله یکسان', title: 'فاصله یکسان' },
-        ],
-      },
-      {
-        name: 'تراز عمودی',
-        property: 'align-items',
-        type: 'radio',
-        defaults: 'stretch',
-        list: [
-          { value: 'flex-start', name: 'بالا', title: 'بالا' },
-          { value: 'center', name: 'وسط', title: 'وسط' },
-          { value: 'flex-end', name: 'پایین', title: 'پایین' },
-          { value: 'stretch', name: 'کشیده', title: 'کشیده' },
-          { value: 'baseline', name: 'خط پایه', title: 'خط پایه' },
-        ],
-      },
-      { name: 'شکستن', property: 'flex-wrap', type: 'select', defaults: 'nowrap',
-        list: [
-          { value: 'nowrap', name: 'بدون شکستن' },
-          { value: 'wrap', name: 'شکستن' },
-          { value: 'wrap-reverse', name: 'شکستن معکوس' },
-        ],
-      },
-      { name: 'فاصله بین', property: 'gap', type: 'integer', units: ['px', 'rem'], defaults: '0', min: 0, max: 100 },
     ],
   },
 ];
