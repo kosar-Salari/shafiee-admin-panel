@@ -318,306 +318,439 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
   // ✅ این کد رو جایگزین قسمت component:selected در initEditor.js کن
 
   e.on('component:selected', (component) => {
-    lastSelected = component;
+    // ===========================
+    // 🎯 تولبار + حفظ انتخاب + نشانگر Active
+    // ===========================
+    let lastSelected = null;
 
-    if (component.get('tagName') === 'body') {
-      component.set('stylable', [
-        'padding',
-        'padding-top',
-        'padding-right',
-        'padding-bottom',
-        'padding-left',
-        'background-color',
-        'margin',
-      ]);
-    }
+    const hasActiveStyle = (component, styleProp, styleValue) => {
+      if (!component) return false;
+      const currentStyle = component.getStyle(styleProp);
+      return currentStyle === styleValue;
+    };
 
-    component.set('toolbar', []);
+    e.on('component:selected', (component) => {
+      lastSelected = component;
 
-    let toolbar = [];
-    const tagName = component.get('tagName');
-    const componentType = component.get('type');
+      // محدود کردن استایل برای body
+      if (component.get('tagName') === 'body') {
+        component.set('stylable', [
+          'padding',
+          'padding-top',
+          'padding-right',
+          'padding-bottom',
+          'padding-left',
+          'background-color',
+          'margin',
+        ]);
+      }
 
-    const isButton =
-      tagName === 'a' &&
-      !!(component.getAttributes() || {})['data-button-variant'];
-
-    toolbar.push({
-      attributes: {
-        class: 'fa fa-link',
-        title: isButton ? '⚙️ تنظیمات دکمه' : '🔗 افزودن لینک',
-        style: 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;'
-      },
-      command: isButton ? 'open-button-modal' : 'open-link-modal',
-    });
-
-
-    const textElements = ['text', 'link', 'default', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'a'];
-
-    if (textElements.includes(componentType) || textElements.includes(tagName)) {
-      const isBold = hasActiveStyle(component, 'font-weight', 'bold') || hasActiveStyle(component, 'font-weight', '700');
-      const isItalic = hasActiveStyle(component, 'font-style', 'italic');
-      const isUnderline = component.getStyle('text-decoration')?.includes('underline');
-      const isStrike = component.getStyle('text-decoration')?.includes('line-through');
-
-      toolbar.push(
-        {
-          attributes: {
-            class: 'fa fa-bold',
-            title: 'بولد',
-            style: `background: ${isBold ? '#4f46e5' : '#1f2937'}; color: white; ${isBold ? 'box-shadow: 0 0 0 2px #818cf8;' : ''}`
-          },
-          command(editor) {
-            editor.runCommand('bold');
-            setTimeout(() => {
-              if (lastSelected) editor.select(lastSelected);
-            }, 50);
-          },
-        },
-        {
-          attributes: {
-            class: 'fa fa-italic',
-            title: 'ایتالیک',
-            style: `background: ${isItalic ? '#4f46e5' : '#374151'}; color: white; ${isItalic ? 'box-shadow: 0 0 0 2px #818cf8;' : ''}`
-          },
-          command(editor) {
-            editor.runCommand('italic');
-            setTimeout(() => {
-              if (lastSelected) editor.select(lastSelected);
-            }, 50);
-          },
-        },
-        {
-          attributes: {
-            class: 'fa fa-underline',
-            title: 'خط زیر',
-            style: `background: ${isUnderline ? '#4f46e5' : '#4b5563'}; color: white; ${isUnderline ? 'box-shadow: 0 0 0 2px #818cf8;' : ''}`
-          },
-          command(editor) {
-            editor.runCommand('underline');
-            setTimeout(() => {
-              if (lastSelected) editor.select(lastSelected);
-            }, 50);
-          },
-        },
-        {
-          attributes: {
-            class: 'fa fa-strikethrough',
-            title: 'خط خورده',
-            style: `background: ${isStrike ? '#4f46e5' : '#6b7280'}; color: white; ${isStrike ? 'box-shadow: 0 0 0 2px #818cf8;' : ''}`
-          },
-          command(editor) {
-            editor.runCommand('strikethrough');
-            setTimeout(() => {
-              if (lastSelected) editor.select(lastSelected);
-            }, 50);
-          },
+      // ----------------- پیدا کردن نزدیک‌ترین <a> (برای متن داخل لینک) -----------------
+      let linkComponent = null;
+      let cur = component;
+      while (cur) {
+        if (cur.get('tagName') === 'a') {
+          linkComponent = cur;
+          break;
         }
-      );
-    }
+        cur = cur.parent && cur.parent();
+      }
 
-    // ✅ دکمه‌های تراز برای همه المان‌ها (بجز body)
-    if (tagName !== 'body') {
-      toolbar.push(
-        {
+      const tagName = component.get('tagName');
+      const componentType = component.get('type');
+
+      const isButton =
+        !!linkComponent &&
+        !!((linkComponent.getAttributes() || {})['data-button-variant']);
+
+      // تولبار را از اول بساز
+      const toolbar = [];
+
+      // ===========================
+      // 🔗 دکمه لینک / تنظیمات دکمه
+      // ===========================
+      if (isButton) {
+        // برای دکمه‌ها فقط تنظیمات دکمه
+        toolbar.push({
           attributes: {
-            class: 'fa fa-align-right',
-            title: '→ تراز راست',
-            style: 'background: #10b981; color: white;'
+            class: 'fa fa-cog',
+            title: '⚙️ تنظیمات دکمه',
+            style:
+              'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;',
           },
           command(editor) {
-            const selected = editor.getSelected();
-            if (!selected) return;
-
-            const tagName = selected.get('tagName');
-            const currentDisplay = selected.getStyle('display');
-
-            // ✅ برای دکمه‌ها از float استفاده کن
-            const isButton = tagName === 'a' && (
-              currentDisplay === 'inline-block' ||
-              currentDisplay === 'inline-flex'
+            editor.runCommand('open-button-modal');
+          },
+        });
+      } else {
+        // برای متن/لینک‌ معمولی – همیشه آیکن لینک را نشان بده
+        toolbar.push({
+          attributes: {
+            class: 'fa fa-link',
+            title: linkComponent ? '🔗 ویرایش لینک' : '🔗 افزودن لینک',
+            style:
+              'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;',
+          },
+          command() {
+            const target = linkComponent || component;
+            window.dispatchEvent(
+              new CustomEvent('grapes:open-link-modal', {
+                detail: { component: target },
+              }),
             );
+          },
+        });
+      }
 
-            if (isButton) {
-              selected.removeStyle('margin-left');
-              selected.removeStyle('margin-right');
-              selected.removeStyle('float');
+      // ===========================
+      // 🔓 دکمه حذف لینک + پاک کردن استایل‌های لینک
+      // ===========================
+      if (linkComponent && !isButton) {
+        toolbar.push({
+          attributes: {
+            class: 'fa fa-unlink',
+            title: '🔓 حذف لینک',
+            style: 'background: #ef4444; color: white;',
+          },
+          command(editor) {
+            const link = linkComponent;
+            const parent = link.parent();
+            if (!parent) return;
 
-              selected.addStyle({
-                'float': 'right',
-                'clear': 'both'
-              });
-            } else {
-              // برای بقیه المان‌ها
-              selected.removeStyle('float');
-              selected.removeStyle('margin-left');
-              selected.removeStyle('margin-right');
+            const children = link.components().models.slice();
+            const index = link.index();
 
-              selected.addStyle({
-                'display': 'block',
-                'margin-left': '0',
-                'margin-right': 'auto',
-              });
+            // ۱) CSS هاور مربوط به متن لینک را از CSS کلی ادیتور پاک کن
+            let css = editor.getCss() || '';
+            children.forEach((child) => {
+              const childId = child.getId && child.getId();
+              if (childId) {
+                const re = new RegExp(`#${childId}:hover[\\s\\S]*?}`, 'g');
+                css = css.replace(re, '');
+              }
+
+              // ۲) استایل‌های لینک‌طور روی خود متن را پاک کن
+              child.removeStyle('color');
+              child.removeStyle('text-decoration');
+              child.removeStyle('transition');
+              child.removeStyle('transform');
+            });
+            editor.setStyle(css);
+
+            // ۳) children را از داخل <a> در بیار و بنداز سر جای خود لینک
+            children.forEach((child, i) => {
+              parent.append(child, { at: index + i });
+            });
+
+            // ۴) خود لینک را حذف کن
+            link.remove();
+
+            // ۵) دوباره یکی از بچه‌ها را انتخاب کن
+            if (children[0]) {
+              editor.select(children[0]);
             }
-
-            editor.trigger('component:update', selected);
-            setTimeout(() => {
-              selected.view.render();
-              editor.select(selected);
-            }, 100);
           },
-        },
-        {
-          attributes: {
-            class: 'fa fa-align-center',
-            title: '○ تراز وسط',
-            style: 'background: #14b8a6; color: white;'
+        });
+      }
+
+      // ===========================
+      // 📝 ابزارهای متنی (Bold/Italic/Underline/Strike)
+      // ===========================
+      const textElements = [
+        'text',
+        'link',
+        'default',
+        'p',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'span',
+        'div',
+        'a',
+      ];
+
+      if (
+        textElements.includes(componentType) ||
+        textElements.includes(tagName)
+      ) {
+        const isBold =
+          hasActiveStyle(component, 'font-weight', 'bold') ||
+          hasActiveStyle(component, 'font-weight', '700');
+        const isItalic = hasActiveStyle(component, 'font-style', 'italic');
+        const textDecoration = component.getStyle('text-decoration') || '';
+        const isUnderline = String(textDecoration).includes('underline');
+        const isStrike = String(textDecoration).includes('line-through');
+
+        toolbar.push(
+          {
+            attributes: {
+              class: 'fa fa-bold',
+              title: 'بولد',
+              style: `background: ${isBold ? '#4f46e5' : '#1f2937'
+                }; color: white; ${isBold ? 'box-shadow: 0 0 0 2px #818cf8;' : ''
+                }`,
+            },
+            command(editor) {
+              editor.runCommand('bold');
+              setTimeout(() => {
+                if (lastSelected) editor.select(lastSelected);
+              }, 50);
+            },
           },
-          command(editor) {
-            const selected = editor.getSelected();
-            if (!selected) return;
+          {
+            attributes: {
+              class: 'fa fa-italic',
+              title: 'ایتالیک',
+              style: `background: ${isItalic ? '#4f46e5' : '#374151'
+                }; color: white; ${isItalic ? 'box-shadow: 0 0 0 2px #818cf8;' : ''
+                }`,
+            },
+            command(editor) {
+              editor.runCommand('italic');
+              setTimeout(() => {
+                if (lastSelected) editor.select(lastSelected);
+              }, 50);
+            },
+          },
+          {
+            attributes: {
+              class: 'fa fa-underline',
+              title: 'خط زیر',
+              style: `background: ${isUnderline ? '#4f46e5' : '#4b5563'
+                }; color: white; ${isUnderline ? 'box-shadow: 0 0 0 2px #818cf8;' : ''
+                }`,
+            },
+            command(editor) {
+              editor.runCommand('underline');
+              setTimeout(() => {
+                if (lastSelected) editor.select(lastSelected);
+              }, 50);
+            },
+          },
+          {
+            attributes: {
+              class: 'fa fa-strikethrough',
+              title: 'خط خورده',
+              style: `background: ${isStrike ? '#4f46e5' : '#6b7280'
+                }; color: white; ${isStrike ? 'box-shadow: 0 0 0 2px #818cf8;' : ''
+                }`,
+            },
+            command(editor) {
+              editor.runCommand('strikethrough');
+              setTimeout(() => {
+                if (lastSelected) editor.select(lastSelected);
+              }, 50);
+            },
+          },
+        );
+      }
 
-            const tagName = selected.get('tagName');
-            const currentDisplay = selected.getStyle('display');
+      // ===========================
+      // 📐 تراز راست/وسط/چپ (برای همه جز body)
+      // ===========================
+      if (tagName !== 'body') {
+        toolbar.push(
+          {
+            attributes: {
+              class: 'fa fa-align-right',
+              title: '→ تراز راست',
+              style: 'background: #10b981; color: white;',
+            },
+            command(editor) {
+              const selected = editor.getSelected();
+              if (!selected) return;
 
-            // ✅ چک می‌کنیم اگه width مشخص داره
-            const currentWidth = selected.getStyle('width');
-            const hasWidth = currentWidth && currentWidth !== 'auto' && currentWidth !== '100%';
+              const tagName = selected.get('tagName');
+              const currentDisplay = selected.getStyle('display');
 
-            const isButton = tagName === 'a' && (
-              currentDisplay === 'inline-block' ||
-              currentDisplay === 'inline-flex'
-            );
+              const isButtonAlign =
+                tagName === 'a' &&
+                (currentDisplay === 'inline-block' ||
+                  currentDisplay === 'inline-flex');
 
-            // پاک کردن float
-            selected.removeStyle('float');
-            selected.removeStyle('margin-left');
-            selected.removeStyle('margin-right');
+              if (isButtonAlign) {
+                selected.removeStyle('margin-left');
+                selected.removeStyle('margin-right');
+                selected.removeStyle('float');
 
-            if (isButton) {
-              // ✅ برای دکمه: اگه width نداره، width بهش بده
-              if (!hasWidth) {
-                // محاسبه عرض فعلی دکمه از DOM
-                const view = selected.view;
-                if (view && view.el) {
-                  const computedWidth = view.el.offsetWidth;
-                  if (computedWidth > 0) {
-                    selected.addStyle({
-                      'width': `${computedWidth}px`,
-                      'display': 'block',
-                      'margin-left': 'auto',
-                      'margin-right': 'auto',
-                    });
+                selected.addStyle({
+                  float: 'right',
+                  clear: 'both',
+                });
+              } else {
+                selected.removeStyle('float');
+                selected.removeStyle('margin-left');
+                selected.removeStyle('margin-right');
+
+                selected.addStyle({
+                  display: 'block',
+                  'margin-left': '0',
+                  'margin-right': 'auto',
+                });
+              }
+
+              editor.trigger('component:update', selected);
+              setTimeout(() => {
+                selected.view.render();
+                editor.select(selected);
+              }, 100);
+            },
+          },
+          {
+            attributes: {
+              class: 'fa fa-align-center',
+              title: '○ تراز وسط',
+              style: 'background: #14b8a6; color: white;',
+            },
+            command(editor) {
+              const selected = editor.getSelected();
+              if (!selected) return;
+
+              const tagName = selected.get('tagName');
+              const currentDisplay = selected.getStyle('display');
+              const currentWidth = selected.getStyle('width');
+              const hasWidth =
+                currentWidth &&
+                currentWidth !== 'auto' &&
+                currentWidth !== '100%';
+
+              const isButtonAlign =
+                tagName === 'a' &&
+                (currentDisplay === 'inline-block' ||
+                  currentDisplay === 'inline-flex');
+
+              selected.removeStyle('float');
+              selected.removeStyle('margin-left');
+              selected.removeStyle('margin-right');
+
+              if (isButtonAlign) {
+                if (!hasWidth) {
+                  const view = selected.view;
+                  if (view && view.el) {
+                    const computedWidth = view.el.offsetWidth;
+                    if (computedWidth > 0) {
+                      selected.addStyle({
+                        width: `${computedWidth}px`,
+                        display: 'block',
+                        'margin-left': 'auto',
+                        'margin-right': 'auto',
+                      });
+                    } else {
+                      selected.addStyle({
+                        width: 'fit-content',
+                        display: 'block',
+                        'margin-left': 'auto',
+                        'margin-right': 'auto',
+                      });
+                    }
                   } else {
-                    // اگه نتونست عرض بگیره، width پیش‌فرض بده
                     selected.addStyle({
-                      'width': 'fit-content',
-                      'display': 'block',
+                      width: 'fit-content',
+                      display: 'block',
                       'margin-left': 'auto',
                       'margin-right': 'auto',
                     });
                   }
                 } else {
                   selected.addStyle({
-                    'width': 'fit-content',
-                    'display': 'block',
+                    display: 'block',
                     'margin-left': 'auto',
                     'margin-right': 'auto',
                   });
                 }
               } else {
-                // اگه width داره، فقط margin بده
                 selected.addStyle({
-                  'display': 'block',
+                  display: 'block',
                   'margin-left': 'auto',
                   'margin-right': 'auto',
                 });
               }
-            } else {
-              // برای بقیه المان‌ها روش معمولی
-              selected.addStyle({
-                'display': 'block',
-                'margin-left': 'auto',
-                'margin-right': 'auto',
-              });
-            }
 
-            editor.trigger('component:update', selected);
-            setTimeout(() => {
-              selected.view.render();
-              editor.select(selected);
-            }, 100);
+              editor.trigger('component:update', selected);
+              setTimeout(() => {
+                selected.view.render();
+                editor.select(selected);
+              }, 100);
+            },
           },
+          {
+            attributes: {
+              class: 'fa fa-align-left',
+              title: '← تراز چپ',
+              style: 'background: #06b6d4; color: white;',
+            },
+            command(editor) {
+              const selected = editor.getSelected();
+              if (!selected) return;
+
+              const tagName = selected.get('tagName');
+              const currentDisplay = selected.getStyle('display');
+
+              const isButtonAlign =
+                tagName === 'a' &&
+                (currentDisplay === 'inline-block' ||
+                  currentDisplay === 'inline-flex');
+
+              if (isButtonAlign) {
+                selected.removeStyle('margin-left');
+                selected.removeStyle('margin-right');
+                selected.removeStyle('float');
+
+                selected.addStyle({
+                  float: 'left',
+                  clear: 'both',
+                });
+              } else {
+                selected.removeStyle('float');
+                selected.removeStyle('margin-left');
+                selected.removeStyle('margin-right');
+
+                selected.addStyle({
+                  display: 'block',
+                  'margin-left': 'auto',
+                  'margin-right': '0',
+                });
+              }
+
+              editor.trigger('component:update', selected);
+              setTimeout(() => {
+                selected.view.render();
+                editor.select(selected);
+              }, 100);
+            },
+          },
+        );
+      }
+
+      // ===========================
+      // 📋 کپی / حذف
+      // ===========================
+      toolbar.push(
+        {
+          attributes: {
+            class: 'fa fa-copy',
+            title: '📋 کپی',
+            style: 'background: #3b82f6; color: white;',
+          },
+          command: 'tlb-clone',
         },
         {
           attributes: {
-            class: 'fa fa-align-left',
-            title: '← تراز چپ',
-            style: 'background: #06b6d4; color: white;'
+            class: 'fa fa-trash',
+            title: '🗑️ حذف',
+            style: 'background: #ef4444; color: white;',
           },
-          command(editor) {
-            const selected = editor.getSelected();
-            if (!selected) return;
-
-            const tagName = selected.get('tagName');
-            const currentDisplay = selected.getStyle('display');
-
-            const isButton = tagName === 'a' && (
-              currentDisplay === 'inline-block' ||
-              currentDisplay === 'inline-flex'
-            );
-
-            if (isButton) {
-              selected.removeStyle('margin-left');
-              selected.removeStyle('margin-right');
-              selected.removeStyle('float');
-
-              selected.addStyle({
-                'float': 'left',
-                'clear': 'both'
-              });
-            } else {
-              selected.removeStyle('float');
-              selected.removeStyle('margin-left');
-              selected.removeStyle('margin-right');
-
-              selected.addStyle({
-                'display': 'block',
-                'margin-left': 'auto',
-                'margin-right': '0',
-              });
-            }
-
-            editor.trigger('component:update', selected);
-            setTimeout(() => {
-              selected.view.render();
-              editor.select(selected);
-            }, 100);
-          },
-        }
+          command: 'tlb-delete',
+        },
       );
-    }
 
-    toolbar.push(
-      {
-        attributes: {
-          class: 'fa fa-copy',
-          title: '📋 کپی',
-          style: 'background: #3b82f6; color: white;'
-        },
-        command: 'tlb-clone',
-      },
-      {
-        attributes: {
-          class: 'fa fa-trash',
-          title: '🗑️ حذف',
-          style: 'background: #ef4444; color: white;'
-        },
-        command: 'tlb-delete',
-      }
-    );
+      component.set('toolbar', toolbar);
+    });
 
-    component.set('toolbar', toolbar);
+
   });
   // ===========================
   // ✅ اضافه کردن Commands برای تراز
@@ -670,6 +803,124 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       selected.view.render();
     }
   });
+
+
+  // ✅ Command برای باز کردن مدال لینک (افزودن / ویرایش)
+  e.Commands.add('toggle-link', {
+    run(editor) {
+      const selected = editor.getSelected();
+      if (!selected) return;
+
+      let componentForModal = selected;
+
+      // اگر داخل یک <a> هستیم، خودِ <a> را برای مدال بفرست
+      const parent = selected.parent();
+      if (selected.get('tagName') !== 'a' && parent && parent.get('tagName') === 'a') {
+        componentForModal = parent;
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('grapes:open-link-modal', {
+          detail: { component: componentForModal },
+        })
+      );
+    },
+  });
+
+  // ✅ Command برای «حذف لینک»
+  e.Commands.add('remove-link', {
+    run(editor) {
+      const selected = editor.getSelected();
+      if (!selected) return;
+
+      let linkComponent = selected;
+
+      // اگر خود انتخاب <a> نیست، ببین داخل لینک هست یا نه
+      if (linkComponent.get('tagName') !== 'a') {
+        const parent = linkComponent.parent();
+        if (parent && parent.get('tagName') === 'a') {
+          linkComponent = parent;
+        } else {
+          // چیزی برای حذف نیست
+          return;
+        }
+      }
+
+      const parent = linkComponent.parent();
+      if (!parent) return;
+
+      const index = linkComponent.index();
+      const children = [...linkComponent.components().models];
+
+      // بچه‌های لینک را به جای خودش در والد قرار بده
+      children.forEach((child, i) => {
+        parent.append(child, { at: index + i });
+      });
+
+      linkComponent.remove();
+
+      if (children[0]) {
+        editor.select(children[0]);
+      }
+    },
+  });
+  // 🎯 باز کردن مدال لینک (برای ساخت یا ویرایش)
+  e.Commands.add('open-link-settings', {
+    run(editor) {
+      const selected = editor.getSelected();
+      if (!selected) return;
+
+      // اگر داخل یک لینک است، خود <a> را برای مدال بفرست
+      let component = selected;
+      let current = selected;
+      while (current) {
+        if (current.get && current.get('tagName') === 'a') {
+          component = current;
+          break;
+        }
+        current = current.parent && current.parent();
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('grapes:open-link-modal', {
+          detail: { component },
+        }),
+      );
+    },
+  });
+  // 🔓 حذف لینک و نگه داشتن محتوا
+  e.Commands.add('remove-link', {
+    run(editor) {
+      const selected = editor.getSelected();
+      if (!selected) return;
+
+      // پیدا کردن نزدیک‌ترین <a>
+      let linkComponent = selected;
+      while (linkComponent && linkComponent.get('tagName') !== 'a') {
+        linkComponent =
+          linkComponent.parent && linkComponent.parent();
+      }
+
+      if (!linkComponent || linkComponent.get('tagName') !== 'a') return;
+
+      const parent = linkComponent.parent();
+      const index = linkComponent.index();
+      const children = [...linkComponent.components().models];
+
+      if (parent && children.length) {
+        children.forEach((child, i) => {
+          parent.append(child, { at: index + i });
+        });
+
+        linkComponent.remove();
+
+        // انتخاب اولین بچه بعد از حذف
+        editor.select(children[0]);
+      }
+    },
+  });
+
+
 
   // ===========================
   // 🎬 تابع آپلود

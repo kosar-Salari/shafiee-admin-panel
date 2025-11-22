@@ -272,11 +272,75 @@ export default function PageBuilder() {
       }
     };
   }, [scriptsLoaded]);
-
+  // useEffect مربوط به event لینک
+  // ----------------- لیسنر مدال لینک -----------------
   useEffect(() => {
     if (!editor) return;
 
-    // 🔗 Command برای باز کردن مدال لینک
+    const handleOpenLinkModal = (event) => {
+      let component = event.detail.component;
+      if (!component) return;
+
+      // اگر روی متن داخل لینک کلیک شده، نزدیک‌ترین <a> رو پیدا کن
+      let linkComponent = component;
+      while (linkComponent && linkComponent.get('tagName') !== 'a') {
+        linkComponent = linkComponent.parent();
+      }
+
+      // اگر اصلاً لینک نداریم، همون کامپوننت انتخاب‌شده رو استفاده کن
+      const targetComponent = linkComponent || component;
+
+      setSelectedComponent(targetComponent);
+
+      const attrs = targetComponent.getAttributes() || {};
+      const styles = targetComponent.getStyle() || {};
+
+      // اگر لینک یک بچه متنی دارد (span/p/...) رنگ و underline را از آن بخوان
+      let textColor = styles.color || '#3b82f6';
+      let underline = false;
+
+      if (targetComponent.components().length > 0) {
+        const child = targetComponent.components().at(0);
+        const childStyles = child.getStyle() || {};
+        textColor = childStyles.color || textColor;
+        const td = String(childStyles['text-decoration'] || '');
+        underline = td.includes('underline');
+      } else {
+        const td = String(styles['text-decoration'] || '');
+        underline = td.includes('underline');
+      }
+
+      const rel = attrs.rel || '';
+      const hoverColorAttr = attrs['data-hover-color'] || '#1d4ed8';
+      const hoverScaleAttr = attrs['data-hover-scale'] || '1';
+
+      const isTextElement = true; // فعلاً همه لینک‌های ما متنی هستند
+
+      setLinkModalData({
+        url: attrs.href || '',
+        target: attrs.target || '_self',
+        nofollow: rel.includes('nofollow'),
+        noopener: rel.includes('noopener'),
+        color: textColor,
+        underline,
+        hoverScale: hoverScaleAttr === '1',
+        hoverColor: hoverColorAttr,
+        isText: isTextElement,
+      });
+
+      setShowLinkModal(true);
+    };
+
+    window.addEventListener('grapes:open-link-modal', handleOpenLinkModal);
+    return () => {
+      window.removeEventListener('grapes:open-link-modal', handleOpenLinkModal);
+    };
+  }, [editor]);
+
+
+  // ✅ useEffect دوم: Command دکمه
+  useEffect(() => {
+    if (!editor) return;
 
     editor.Commands.add('open-button-modal', {
       run(editor, sender, opts = {}) {
@@ -292,18 +356,13 @@ export default function PageBuilder() {
         const styles = selected.getStyle() || {};
 
         setButtonModalData({
-          // لینک
           href: attrs.href || '',
           target: attrs.target || '_self',
-          linkType: attrs['data-link-type'] || 'url', // 'url' | 'anchor' | 'none'
+          linkType: attrs['data-link-type'] || 'url',
           anchorId: attrs['data-anchor-id'] || '',
-
-          // استایل نرمال
           bg: styles['background-color'] || '#4f46e5',
           color: styles.color || '#ffffff',
           borderColor: styles['border-color'] || '',
-
-          // استایل هاور
           hoverBg: attrs['data-hover-bg'] || '#4338ca',
           hoverColor: attrs['data-hover-color'] || '#ffffff',
           hoverBorderColor: attrs['data-hover-border-color'] || styles['border-color'] || '',
@@ -312,38 +371,9 @@ export default function PageBuilder() {
         setShowButtonModal(true);
       },
     });
-
-    // ✅ وقتی دکمه انتخاب میشه، مدال باز بشه
-    editor.on('component:selected', (component) => {
-      const attrs = component.getAttributes() || {};
-
-      // چک کن که دکمه باشه
-      if (component.get('tagName') === 'a' && attrs['data-button-variant']) {
-        // دیلی کوچیک بذار تا toolbar رندر بشه
-        setTimeout(() => {
-          setSelectedComponent(component);
-
-          const styles = component.getStyle() || {};
-
-          setButtonModalData({
-            href: attrs.href || '',
-            target: attrs.target || '_self',
-            linkType: attrs['data-link-type'] || 'url',
-            anchorId: attrs['data-anchor-id'] || '',
-            bg: styles['background-color'] || '#4f46e5',
-            color: styles.color || '#ffffff',
-            borderColor: styles['border-color'] || '',
-            hoverBg: attrs['data-hover-bg'] || '#4338ca',
-            hoverColor: attrs['data-hover-color'] || '#ffffff',
-            hoverBorderColor: attrs['data-hover-border-color'] || styles['border-color'] || '',
-          });
-
-          setShowButtonModal(true);
-        }, 100);
-      }
-    });
-
   }, [editor]);
+
+
   // ----------------- اعمال content روی ادیتور -----------------
   useEffect(() => {
     if (!editor) return;
@@ -592,7 +622,17 @@ export default function PageBuilder() {
     console.log('💾 ذخیره لینک با داده:', formData);
 
     try {
-      const { url, target, nofollow, noopener, color, underline, hoverScale, hoverColor, isText } = formData;
+      const {
+        url,
+        target,
+        nofollow,
+        noopener,
+        color,
+        underline,
+        hoverScale,
+        hoverColor,
+        isText,
+      } = formData;
 
       // ساخت rel attribute
       const relParts = [];
@@ -600,97 +640,114 @@ export default function PageBuilder() {
       if (noopener) relParts.push('noopener');
       const rel = relParts.join(' ');
 
-      const selected = editor.getSelected();
-      if (!selected) {
-        console.error('هیچ المانی انتخاب نشده است');
-        return;
-      }
-
-      // منطق ایجاد/آپدیت لینک - روش ساده‌تر و مطمئن‌تر
+      let selected = selectedComponent;
       let linkComponent;
 
+      // اگر خود المان <a> است، از خودش استفاده کن
       if (selected.get('tagName') === 'a') {
-        // اگر المان انتخاب شده خودش لینک است
         linkComponent = selected;
-        linkComponent.addAttributes({
-          href: url,
-          target: target || '_self'
-        });
       } else {
-        // اگر المان انتخاب شده لینک نیست - ایجاد لینک جدید
-        const wrapper = selected.parent();
-        const index = selected.index();
+        // اگر نیست، ببین آیا والد لینک دارد
+        let parentLink = selected;
+        while (parentLink && parentLink.get('tagName') !== 'a') {
+          parentLink = parentLink.parent();
+        }
 
-        // ایجاد لینک جدید
-        linkComponent = editor.getWrapper().append({
-          type: 'link',
-          attributes: {
-            href: url,
-            target: target || '_self'
-          },
-          components: [selected.clone()],
-        })[0];
+        if (parentLink) {
+          linkComponent = parentLink;
+        } else {
+          // هیچ لینکی وجود ندارد → لینک جدید بساز
+          const parent = selected.parent();
+          const index = selected.index();
 
-        // حذف المان اصلی و جایگزینی
-        selected.remove();
+          linkComponent = parent.append(
+            {
+              type: 'link',
+              components: [selected.clone()],
+            },
+            { at: index },
+          )[0];
 
-        // انتقال لینک به موقعیت اصلی
-        if (wrapper && index !== undefined) {
-          wrapper.components().add(linkComponent, { at: index });
+          // المان اصلی را حذف کن
+          selected.remove();
         }
       }
 
-      // تنظیم rel
+      // آپدیت attributes لینک
+      const linkAttrs = {
+        href: url,
+        target: target || '_self',
+      };
+
       if (rel) {
-        linkComponent.addAttributes({ rel });
+        linkAttrs.rel = rel;
       } else {
+        // اگر قبلاً rel داشت و الان لازم نیست
         linkComponent.removeAttributes('rel');
       }
 
-      // استایل‌های متن
-      if (isText && linkComponent.components().length > 0) {
-        const textElement = linkComponent.components().at(0);
+      // ذخیره تنظیمات ظاهری روی خود <a> برای دفعه‌های بعد
+      linkAttrs['data-hover-color'] = hoverColor || '#1d4ed8';
+      linkAttrs['data-hover-scale'] = hoverScale ? '1' : '0';
+      linkAttrs['data-color'] = color || '#3b82f6';
+      linkAttrs['data-underline'] = underline ? '1' : '0';
 
-        if (textElement) {
-          textElement.addStyle({
-            color: color || '#3b82f6',
-            textDecoration: underline ? 'underline' : 'none',
-            transition: 'all 0.3s ease',
-          });
+      linkComponent.addAttributes(linkAttrs);
 
-          // افزودن استایل هاور
-          const componentId = textElement.getId();
-          if (componentId) {
-            const hoverStyles = `
-            #${componentId}:hover {
-              color: ${hoverColor || '#1d4ed8'} !important;
-              ${hoverScale ? 'transform: scale(1.05);' : ''}
-            }
-          `;
-            // اضافه کردن استایل به ادیتور
-            const currentCss = editor.getCss();
-            if (!currentCss.includes(`#${componentId}:hover`)) {
-              editor.setStyle(currentCss + hoverStyles);
-            }
+      // استایل‌های متن داخل لینک
+      if (isText) {
+        let textElement;
+
+        if (linkComponent.components().length > 0) {
+          textElement = linkComponent.components().at(0);
+        } else {
+          // اگر داخل لینک خالی بود، یک span بساز
+          textElement = linkComponent.append({
+            tagName: 'span',
+            type: 'text',
+            content: linkComponent.get('content') || 'لینک',
+          })[0];
+        }
+
+        textElement.addStyle({
+          color: color || '#3b82f6',
+          'text-decoration': underline ? 'underline' : 'none',
+          transition: 'all 0.3s ease',
+        });
+
+        // استایل هاور برای متن
+        const componentId = textElement.getId();
+        if (componentId) {
+          const currentCss = editor.getCss();
+
+          const hoverRule = `
+#${componentId}:hover {
+  color: ${hoverColor || '#1d4ed8'} !important;
+  ${hoverScale ? 'transform: scale(1.05);' : ''}
+}
+`;
+
+          if (!currentCss.includes(`#${componentId}:hover`)) {
+            editor.setStyle(currentCss + hoverRule);
           }
         }
       }
 
-      // انتخاب لینک جدید
+      // انتخاب خود لینک
       editor.select(linkComponent);
 
       console.log('✅ لینک با موفقیت ذخیره شد');
-
     } catch (error) {
       console.error('❌ خطا در ذخیره لینک:', error);
       alert('خطا در ذخیره لینک. لطفاً دوباره تلاش کنید.');
     } finally {
-      // حتماً در نهایت مدال بسته شود
       setShowLinkModal(false);
       setSelectedComponent(null);
       setLinkModalData({});
     }
   };
+
+
   const handleSaveButton = (formData) => {
     if (!selectedComponent || !editor) {
       console.error('کامپوننت یا ادیتور برای دکمه انتخاب نشده');
