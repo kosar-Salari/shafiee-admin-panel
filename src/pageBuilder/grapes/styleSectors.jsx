@@ -1,4 +1,4 @@
-// grapes/styleSectors.js - با قابلیت تراز کامل
+// src/pageBuilder/grapes/styleSectors.js
 const styleSectors = [
   {
     id: 'spacing',
@@ -104,57 +104,39 @@ const styleSectors = [
     ],
   },
   {
-    name: '↔️ تراز و چیدمان',
-    open: true,
+    name: '📍 تراز المان',
+    open: false,
     properties: [
       {
-        name: 'تراز متن',
+        name: '🔹 تراز افقی',
         property: 'text-align',
         type: 'radio',
         defaults: 'right',
         list: [
-          { value: 'right', title: 'راست', className: 'fa fa-align-right' },
-          { value: 'center', title: 'وسط', className: 'fa fa-align-center' },
-          { value: 'left', title: 'چپ', className: 'fa fa-align-left' },
-          { value: 'justify', title: 'جاستیفای', className: 'fa fa-align-justify' },
+          { value: 'right', title: '→ راست' },
+          { value: 'center', title: '○ وسط' },
+          { value: 'left', title: '← چپ' },
         ],
-      },
-      {
-        name: 'نوع نمایش',
-        property: 'display',
-        type: 'select',
-        defaults: 'block',
-        list: [
-          { value: 'block', name: 'بلوکی (Block)' },
-          { value: 'inline', name: 'درون‌خطی (Inline)' },
-          { value: 'inline-block', name: 'درون‌خطی-بلوکی' },
-          { value: 'flex', name: 'فلکس (Flex)' },
-          { value: 'grid', name: 'گرید (Grid)' },
-          { value: 'none', name: 'مخفی (None)' },
-        ],
-      },
-      {
-        name: 'Float (شناوری)',
-        property: 'float',
-        type: 'radio',
-        defaults: 'none',
-        list: [
-          { value: 'none', title: 'ندارد', className: 'fa fa-times' },
-          { value: 'right', title: 'راست', className: 'fa fa-arrow-right' },
-          { value: 'left', title: 'چپ', className: 'fa fa-arrow-left' },
-        ],
-      },
-      {
-        name: 'Clear',
-        property: 'clear',
-        type: 'select',
-        defaults: 'none',
-        list: [
-          { value: 'none', name: 'ندارد' },
-          { value: 'both', name: 'هر دو طرف' },
-          { value: 'left', name: 'چپ' },
-          { value: 'right', name: 'راست' },
-        ],
+        onChange: (value, prop, opts = {}) => {
+          const { selected, editor } = opts;
+          if (!selected || !Array.isArray(selected)) return;
+
+          selected.forEach((cmp) => {
+            console.log('🎯 اعمال تراز افقی:', value, 'برای:', cmp.get('tagName'));
+            
+            cmp.setStyle({
+              'text-align': value,
+              'float': value === 'right' ? 'right' : value === 'left' ? 'left' : 'none',
+              'margin': value === 'center' ? '0 auto' : '0'
+            });
+
+            if (editor) {
+              setTimeout(() => {
+                editor.refresh();
+              }, 100);
+            }
+          });
+        },
       },
     ],
   },
@@ -189,6 +171,18 @@ const styleSectors = [
         ],
       },
       { name: 'رنگ متن', property: 'color', type: 'color', defaults: '#333333' },
+      {
+        name: 'تراز متن',
+        property: 'text-align',
+        type: 'radio',
+        defaults: 'right',
+        list: [
+          { value: 'right', title: 'راست' },
+          { value: 'center', title: 'وسط' },
+          { value: 'left', title: 'چپ' },
+          { value: 'justify', title: 'جاستیفای' },
+        ],
+      },
       {
         name: 'تزیین متن',
         property: 'text-decoration',
@@ -261,24 +255,43 @@ const styleSectors = [
     ],
   },
   {
-    name: '📍 موقعیت و نمایش',
+    name: '👁️ نمایش و مخفی کردن',
     open: false,
     properties: [
       {
-        name: 'موقعیت',
+        name: 'وضعیت نمایش',
+        property: 'display',
+        type: 'select',
+        defaults: 'block',
+        list: [
+          { value: 'block', name: '✅ نمایش عادی (بلوک کامل)' },
+          { value: 'inline-block', name: '📦 نمایش در کنار هم' },
+          { value: 'flex', name: '🎯 نمایش انعطاف‌پذیر (برای تراز)' },
+          { value: 'none', name: '❌ مخفی کردن' },
+        ],
+      },
+      { name: 'میزان شفافیت (0 = نامرئی، 1 = کاملا واضح)', property: 'opacity', type: 'slider', defaults: '1', min: 0, max: 1, step: 0.1 },
+      {
+        name: 'نوع موقعیت قرارگیری',
         property: 'position',
         type: 'select',
         defaults: 'static',
         list: [
-          { value: 'static', name: 'استاتیک' },
-          { value: 'relative', name: 'نسبی' },
-          { value: 'absolute', name: 'مطلق' },
-          { value: 'fixed', name: 'ثابت' },
-          { value: 'sticky', name: 'چسبان' },
+          { value: 'static', name: '📍 عادی (در جریان صفحه)' },
+          { value: 'relative', name: '↔️ نسبی (قابل جابجایی)' },
+          { value: 'absolute', name: '🎯 مستقل از صفحه' },
+          { value: 'fixed', name: '📌 ثابت در صفحه (حتی با اسکرول)' },
+          { value: 'sticky', name: '📎 چسبنده (ثابت هنگام اسکرول)' },
         ],
       },
-      { name: 'شفافیت', property: 'opacity', type: 'slider', defaults: '1', min: 0, max: 1, step: 0.1 },
-      { name: 'z-index', property: 'z-index', type: 'integer', defaults: 'auto', min: -10, max: 100 },
+      { 
+        name: 'لایه‌بندی (عدد بالاتر = جلوتر)', 
+        property: 'z-index', 
+        type: 'integer', 
+        defaults: 'auto', 
+        min: -10, 
+        max: 100 
+      },
     ],
   },
 ];
