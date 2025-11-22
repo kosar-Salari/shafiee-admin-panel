@@ -139,19 +139,85 @@ const blocks = [
 
 
   {
-    id: 'button-primary', label: '🔘 دکمه اصلی', category: 'دکمه‌ها',
-    content: '<a href="#" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; transition: transform 0.2s;">کلیک کنید</a>'
+    id: 'button-primary',
+    label: '🔘 دکمه اصلی',
+    category: 'دکمه‌ها',
+    content: `
+    <a
+      href="#"
+      data-button-variant="primary"
+      style="
+        display: inline-block;
+        padding: 14px 32px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        transition: transform 0.2s;
+      "
+    >
+      کلیک کنید
+    </a>
+  `,
   },
   {
-    id: 'button-secondary', label: '⚪ دکمه فرعی', category: 'دکمه‌ها',
-    content: '<a href="#" style="display: inline-block; padding: 14px 32px; background: white; color: #4f46e5; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; border: 2px solid #4f46e5; transition: all 0.2s;">مشاهده بیشتر</a>'
+    id: 'button-secondary',
+    label: '⚪ دکمه فرعی',
+    category: 'دکمه‌ها',
+    content: `
+    <a
+      href="#"
+      data-button-variant="secondary"
+      style="
+        display: inline-block;
+        padding: 14px 32px;
+        background: white;
+        color: #4f46e5;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        border: 2px solid #4f46e5;
+        transition: all 0.2s;
+      "
+    >
+      مشاهده بیشتر
+    </a>
+  `,
   },
   {
-    id: 'button-with-icon', label: '🎯 دکمه با آیکن/عکس', category: 'دکمه‌ها',
-    content: `<a href="#" style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: #10b981; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px;">
-      <img src="https://via.placeholder.com/20x20/ffffff/10b981?text=↓" style="width: 20px; height: 20px; object-fit: cover; border-radius: 3px;" data-gjs-type="image" />
+    id: 'button-with-icon',
+    label: '🎯 دکمه با آیکن/عکس',
+    category: 'دکمه‌ها',
+    content: `
+    <a
+      href="#"
+      data-button-variant="with-icon"
+      style="
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 32px;
+        background: #10b981;
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.2s;
+      "
+    >
+      <img
+        src="https://via.placeholder.com/20x20/ffffff/10b981?text=↓"
+        style="width: 20px; height: 20px; object-fit: cover; border-radius: 3px;"
+        data-gjs-type="image"
+      />
       <span>دانلود فایل</span>
-    </a>` },
+    </a>
+  `,
+  },
 
 
 

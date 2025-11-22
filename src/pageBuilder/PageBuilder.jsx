@@ -21,6 +21,7 @@ import initEditor from './grapes/initEditor';
 import { getSettings, updateSettings } from '../services/settingsService';
 import TopBar from './components/TopBar';
 import CodeModal from './components/CodeModal';
+import ButtonModal from './components/ButtonModal';
 
 import {
   getArticleById,
@@ -93,6 +94,9 @@ export default function PageBuilder() {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkModalData, setLinkModalData] = useState({});
   const [selectedComponent, setSelectedComponent] = useState(null);
+  const [showButtonModal, setShowButtonModal] = useState(false);
+  const [buttonModalData, setButtonModalData] = useState({});
+
   // بارگذاری فونت لحظه (اختیاری)
   useEffect(() => {
     const link = document.createElement('link');
@@ -273,49 +277,72 @@ export default function PageBuilder() {
     if (!editor) return;
 
     // 🔗 Command برای باز کردن مدال لینک
-    editor.Commands.add('open-link-modal', {
-      run(editor, sender, options) {
+
+    editor.Commands.add('open-button-modal', {
+      run(editor, sender, opts = {}) {
         const selected = editor.getSelected();
         if (!selected) {
-          alert('لطفاً ابتدا یک المان را انتخاب کنید');
+          alert('لطفاً ابتدا یک دکمه را انتخاب کنید');
           return;
         }
 
         setSelectedComponent(selected);
 
-        // بررسی نوع المان
-        const tagName = selected.get('tagName');
-        const isText = ['text', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div'].includes(tagName) ||
-          selected.get('type') === 'text';
+        const attrs = selected.getAttributes() || {};
+        const styles = selected.getStyle() || {};
 
-        // پیدا کردن لینک والد اگر وجود دارد
-        let existingLink = null;
-        let current = selected;
-        while (current) {
-          if (current.get('tagName') === 'a') {
-            existingLink = current;
-            break;
-          }
-          current = current.parent();
-        }
+        setButtonModalData({
+          // لینک
+          href: attrs.href || '',
+          target: attrs.target || '_self',
+          linkType: attrs['data-link-type'] || 'url', // 'url' | 'anchor' | 'none'
+          anchorId: attrs['data-anchor-id'] || '',
 
-        const linkAttrs = existingLink?.getAttributes() || {};
+          // استایل نرمال
+          bg: styles['background-color'] || '#4f46e5',
+          color: styles.color || '#ffffff',
+          borderColor: styles['border-color'] || '',
 
-        setLinkModalData({
-          url: linkAttrs.href || '',
-          target: linkAttrs.target || '_self',
-          nofollow: linkAttrs.rel?.includes('nofollow') || false,
-          noopener: linkAttrs.rel?.includes('noopener') || false,
-          isText,
-          color: selected.getStyle('color') || '#3b82f6',
-          underline: selected.getStyle('text-decoration') === 'underline',
-          hoverScale: true,
-          hoverColor: '#1d4ed8',
+          // استایل هاور
+          hoverBg: attrs['data-hover-bg'] || '#4338ca',
+          hoverColor: attrs['data-hover-color'] || '#ffffff',
+          hoverBorderColor: attrs['data-hover-border-color'] || styles['border-color'] || '',
         });
 
-        setShowLinkModal(true);
+        setShowButtonModal(true);
       },
     });
+
+    // ✅ وقتی دکمه انتخاب میشه، مدال باز بشه
+    editor.on('component:selected', (component) => {
+      const attrs = component.getAttributes() || {};
+
+      // چک کن که دکمه باشه
+      if (component.get('tagName') === 'a' && attrs['data-button-variant']) {
+        // دیلی کوچیک بذار تا toolbar رندر بشه
+        setTimeout(() => {
+          setSelectedComponent(component);
+
+          const styles = component.getStyle() || {};
+
+          setButtonModalData({
+            href: attrs.href || '',
+            target: attrs.target || '_self',
+            linkType: attrs['data-link-type'] || 'url',
+            anchorId: attrs['data-anchor-id'] || '',
+            bg: styles['background-color'] || '#4f46e5',
+            color: styles.color || '#ffffff',
+            borderColor: styles['border-color'] || '',
+            hoverBg: attrs['data-hover-bg'] || '#4338ca',
+            hoverColor: attrs['data-hover-color'] || '#ffffff',
+            hoverBorderColor: attrs['data-hover-border-color'] || styles['border-color'] || '',
+          });
+
+          setShowButtonModal(true);
+        }, 100);
+      }
+    });
+
   }, [editor]);
   // ----------------- اعمال content روی ادیتور -----------------
   useEffect(() => {
@@ -664,6 +691,90 @@ export default function PageBuilder() {
       setLinkModalData({});
     }
   };
+  const handleSaveButton = (formData) => {
+    if (!selectedComponent || !editor) {
+      console.error('کامپوننت یا ادیتور برای دکمه انتخاب نشده');
+      return;
+    }
+
+    const {
+      href,
+      target,
+      linkType,
+      anchorId,
+      bg,
+      color,
+      borderColor,
+      hoverBg,
+      hoverColor,
+      hoverBorderColor,
+    } = formData;
+
+    const btn = selectedComponent;
+
+    // تنظیم attributes لینک
+    const attrs = {
+      target: target || '_self',
+      'data-link-type': linkType,
+      'data-anchor-id': linkType === 'anchor' ? anchorId : '',
+      'data-hover-bg': hoverBg,
+      'data-hover-color': hoverColor,
+      'data-hover-border-color': hoverBorderColor,
+    };
+
+    if (linkType === 'none') {
+      attrs.href = '#';
+    } else if (linkType === 'url') {
+      attrs.href = href || '#';
+    } else if (linkType === 'anchor') {
+      attrs.href = anchorId ? `#${anchorId}` : '#';
+    }
+
+    btn.addAttributes(attrs);
+
+    // ✅ پاک کردن background و background-image قبلی (برای دکمه‌های gradient)
+    btn.removeStyle('background');
+    btn.removeStyle('background-image');
+
+    // استایل نرمال دکمه
+    btn.addStyle({
+      'background-color': bg,
+      'color': color,
+      ...(borderColor
+        ? {
+          'border-color': borderColor,
+          'border-style': btn.getStyle('border-style') || 'solid',
+          'border-width': btn.getStyle('border-width') || '1px',
+        }
+        : {}),
+      'transition': 'all 0.2s ease',
+    });
+
+    // استایل هاور (CSS اضافه به ادیتور)
+    const componentId = btn.getId();
+    if (componentId) {
+      const currentCss = editor.getCss();
+      const hoverRule = `
+      #${componentId}:hover {
+        background-color: ${hoverBg} !important;
+        color: ${hoverColor} !important;
+        ${hoverBorderColor ? `border-color: ${hoverBorderColor} !important;` : ''}
+        transform: scale(1.02);
+      }
+    `;
+
+      if (!currentCss.includes(`#${componentId}:hover`)) {
+        editor.setStyle(currentCss + hoverRule);
+      }
+    }
+
+    editor.select(btn);
+
+    setShowButtonModal(false);
+    setSelectedComponent(null);
+    setButtonModalData({});
+  };
+
   const handleBack = () => {
     if (origin === 'articles') navigate('/articles');
     else if (origin === 'news') navigate('/news');
@@ -934,10 +1045,10 @@ ${html}
                   style={{ display: activeTab === 'styles' ? 'block' : 'none' }}
                 >
                   <div id="styles-panel" className="p-4" />
-                  <div
+                  {/* <div
                     id="traits-panel"
                     className="p-4 border-t border-gray-200"
-                  />
+                  /> */}
                 </div>
                 <div
                   id="layers-panel"
@@ -994,12 +1105,20 @@ ${html}
         htmlCode={htmlCode}
         cssCode={cssCode}
       />
+      <ButtonModal
+        open={showButtonModal}
+        onClose={() => setShowButtonModal(false)}
+        onSave={handleSaveButton}
+        initialData={buttonModalData}
+      />
+
       <LinkModal
         open={showLinkModal}
         onClose={() => setShowLinkModal(false)}
         onSave={handleSaveLink}
         initialData={linkModalData}
       />
+
       <style>{`
         /* Reset کامل */
         * {
@@ -1667,7 +1786,8 @@ select.gjs-field,
   cursor: pointer !important;
   border: none !important;
   font-size: 14px !important;
-  min-width: 36px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1686,9 +1806,9 @@ select.gjs-field,
 .gjs-toolbar-item svg,
 .gjs-toolbar-item i,
 .gjs-toolbar-item .fa {
-  width: 16px !important;
-  height: 16px !important;
-  font-size: 14px !important;
+  width: 18px !important;
+  height: 18px !important;
+  font-size: 16px !important;
   pointer-events: none !important;
 }
 

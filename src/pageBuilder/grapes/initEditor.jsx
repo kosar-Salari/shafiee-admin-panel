@@ -3,6 +3,7 @@ import styleSectors from './styleSectors';
 import blocks from './blocks';
 import { askItemCount, openFormModal } from '../utils/formModal';
 import { uploadFileToS3 } from '../../services/filesService';
+import { setupButtonBehavior } from './buttonSetup';
 
 export default function initEditor({ container, panels, initialHtml, initialCss }) {
   const e = window.grapesjs.init({
@@ -120,6 +121,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     },
   });
 
+  setupButtonBehavior(e);
   // ===========================
   // 🎨 RTL
   // ===========================
@@ -336,14 +338,19 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     const tagName = component.get('tagName');
     const componentType = component.get('type');
 
+    const isButton =
+      tagName === 'a' &&
+      !!(component.getAttributes() || {})['data-button-variant'];
+
     toolbar.push({
       attributes: {
         class: 'fa fa-link',
-        title: '🔗 افزودن لینک',
+        title: isButton ? '⚙️ تنظیمات دکمه' : '🔗 افزودن لینک',
         style: 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;'
       },
-      command: 'open-link-modal',
+      command: isButton ? 'open-button-modal' : 'open-link-modal',
     });
+
 
     const textElements = ['text', 'link', 'default', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'a'];
 
