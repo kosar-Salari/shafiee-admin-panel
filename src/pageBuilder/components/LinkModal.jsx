@@ -249,22 +249,26 @@ export default function LinkModal({ open, onClose, onSave, initialData = {} }) {
                                     style={{
                                         color: formData.color,
                                         textDecoration: formData.underline ? 'underline' : 'none',
-                                        transition: 'all 0.3s ease',
+                                        transition: 'all 0.2s ease',
+                                        transformOrigin: 'center center',
                                     }}
                                     onMouseEnter={(e) => {
                                         e.target.style.color = formData.hoverColor;
                                         if (formData.hoverScale) {
-                                            e.target.style.transform = 'scale(1.05)';
+                                            e.target.style.transform = 'scale(1.02)'; // قبلاً 1.05 بود
+                                            e.target.style.transformOrigin = 'center center';
                                         }
                                     }}
                                     onMouseLeave={(e) => {
                                         e.target.style.color = formData.color;
                                         e.target.style.transform = 'scale(1)';
+                                        e.target.style.transformOrigin = 'center center';
                                     }}
                                     className="text-lg font-medium inline-block"
                                 >
                                     این یک لینک نمونه است
                                 </a>
+
                             </div>
                         </div>
                     )}

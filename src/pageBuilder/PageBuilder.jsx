@@ -711,8 +711,10 @@ export default function PageBuilder() {
 
         textElement.addStyle({
           color: color || '#3b82f6',
-          'text-decoration': underline ? 'underline' : 'none',
-          transition: 'all 0.3s ease',
+          textDecoration: underline ? 'underline' : 'none',
+          transition: 'all 0.2s ease',
+          display: 'inline-block',          // ✅ که scale از وسط باشه، نه از کنار
+          transformOrigin: 'center center', // ✅ نقطه‌ی اسکیل از وسط
         });
 
         // استایل هاور برای متن
