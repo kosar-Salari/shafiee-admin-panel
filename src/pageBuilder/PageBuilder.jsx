@@ -22,6 +22,7 @@ import { getSettings, updateSettings } from '../services/settingsService';
 import TopBar from './components/TopBar';
 import CodeModal from './components/CodeModal';
 import ButtonModal from './components/ButtonModal';
+import MediaModal from './components/MediaModal';
 
 import {
   getArticleById,
@@ -96,6 +97,9 @@ export default function PageBuilder() {
   const [selectedComponent, setSelectedComponent] = useState(null);
   const [showButtonModal, setShowButtonModal] = useState(false);
   const [buttonModalData, setButtonModalData] = useState({});
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [mediaModalData, setMediaModalData] = useState({ type: null });
+  const [selectedMediaComponent, setSelectedMediaComponent] = useState(null);
 
   // بارگذاری فونت لحظه (اختیاری)
   useEffect(() => {
@@ -373,6 +377,25 @@ export default function PageBuilder() {
     });
   }, [editor]);
 
+  // 🆕 باز شدن مدال مدیا از سمت GrapesJS
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleOpenMediaModal = (event) => {
+      const { type, component } = event.detail || {};
+      if (!component) return;
+
+      setSelectedMediaComponent(component);
+      setMediaModalData({ type: type || 'video' });
+      setShowMediaModal(true);
+    };
+
+    window.addEventListener('grapes:open-media-modal', handleOpenMediaModal);
+
+    return () => {
+      window.removeEventListener('grapes:open-media-modal', handleOpenMediaModal);
+    };
+  }, [editor]);
 
   // ----------------- اعمال content روی ادیتور -----------------
   useEffect(() => {
@@ -833,6 +856,120 @@ export default function PageBuilder() {
     setSelectedComponent(null);
     setButtonModalData({});
   };
+  const handleSaveMedia = (data) => {
+    if (!selectedMediaComponent || !editor) {
+      console.error('هیچ کامپوننت مدیایی انتخاب نشده');
+      return;
+    }
+
+    const { type, url, fileName, fileSize } = data;
+    const component = selectedMediaComponent;
+
+    let html = '';
+    const safeUrl = url || '';
+
+    if (type === 'video') {
+      html = `
+      <video 
+        controls 
+        src="${safeUrl}"
+        style="
+          width: 100%; 
+          max-width: 800px; 
+          height: auto; 
+          border-radius: 16px; 
+          box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+          display: block; 
+          margin: 20px auto; 
+          background: #000;
+        "
+        data-gjs-type="video"
+      >
+        مرورگر شما از ویدیو پشتیبانی نمی‌کند.
+      </video>
+    `;
+    } else if (type === 'audio') {
+      html = `
+      <audio 
+        controls 
+        src="${safeUrl}"
+        style="
+          width: 100%; 
+          max-width: 600px; 
+          display: block; 
+          margin: 20px auto; 
+          border-radius: 12px; 
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        "
+        data-gjs-type="audio"
+      >
+        مرورگر شما از صوت پشتیبانی نمی‌کند.
+      </audio>
+    `;
+    } else if (type === 'file') {
+      const prettyName = fileName || safeUrl.split('/').pop() || 'فایل';
+      const sizeMb = fileSize ? (fileSize / 1024 / 1024).toFixed(2) : '';
+      const sizeText = sizeMb ? `حجم: ${sizeMb} MB` : '';
+
+      html = `
+      <div 
+        style="
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+          padding: 24px 32px; 
+          border-radius: 16px; 
+          box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+          display: inline-flex; 
+          align-items: center; 
+          gap: 16px; 
+          margin: 20px 0; 
+          max-width: 500px;
+        "
+        data-gjs-type="file-download-box"
+      >
+        <div style="
+          width: 48px; 
+          height: 48px; 
+          background: rgba(255,255,255,0.2); 
+          border-radius: 12px; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          flex-shrink: 0;
+        ">
+          <i class="fas fa-file" style="font-size: 24px; color: white;"></i>
+        </div>
+        <div style="flex: 1;">
+          <h4 style="margin: 0 0 4px 0; color: white; font-size: 16px; font-weight: 600;">${prettyName}</h4>
+          <p style="margin: 0; color: rgba(255,255,255,0.8); font-size: 13px;">${sizeText}</p>
+        </div>
+        <a 
+          href="${safeUrl}" 
+          download="${prettyName}" 
+          style="
+            padding: 10px 20px; 
+            background: white; 
+            color: #667eea; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            font-size: 14px; 
+            flex-shrink: 0;
+          "
+        >
+          دانلود
+        </a>
+      </div>
+    `;
+    }
+
+    if (html) {
+      component.replaceWith(html);
+    }
+
+    setShowMediaModal(false);
+    setSelectedMediaComponent(null);
+    setMediaModalData({ type: null });
+  };
 
   const handleBack = () => {
     if (origin === 'articles') navigate('/articles');
@@ -1176,6 +1313,16 @@ ${html}
         onClose={() => setShowLinkModal(false)}
         onSave={handleSaveLink}
         initialData={linkModalData}
+      />
+      <MediaModal
+        open={showMediaModal}
+        onClose={() => {
+          setShowMediaModal(false);
+          setSelectedMediaComponent(null);
+          setMediaModalData({ type: null });
+        }}
+        onSave={handleSaveMedia}
+        initialData={mediaModalData}
       />
 
       <style>{`
