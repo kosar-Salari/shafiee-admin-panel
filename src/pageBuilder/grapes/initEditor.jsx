@@ -1019,7 +1019,32 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
         }
       });
     }
+    // 🌐 آیفریم
+    else if (b.id === 'iframe-embed') {
+      blockConfig.activate = true;
+      blockConfig.select = true;
+      blockConfig.content = { type: 'iframe-upload-temp' };
 
+      e.DomComponents.addType('iframe-upload-temp', {
+        model: {
+          defaults: {
+            droppable: false,
+            content:
+              '<div style="padding: 20px; text-align: center; color: #999; border: 2px dashed #22c55e; border-radius: 12px; background: #f9fafb;">از مدال، آدرس آیفریم را وارد کنید...</div>',
+          },
+        },
+      });
+
+      e.on('block:drag:stop', (component) => {
+        if (component && component.get('type') === 'iframe-upload-temp') {
+          window.dispatchEvent(
+            new CustomEvent('grapes:open-media-modal', {
+              detail: { type: 'iframe', component }, // 🟣 همون type که به MediaModal دادیم
+            }),
+          );
+        }
+      });
+    }
 
     // ✅ FIX: لیست با آیکن - اصلاح کامل
     else if (b.id === 'icon-list') {

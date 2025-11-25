@@ -865,18 +865,29 @@ export default function PageBuilder() {
     const { type, url, fileName, fileSize } = data;
     const component = selectedMediaComponent;
 
+    // 🆕 کمک: اگر کاربر کل کد embed داد، src رو جدا کن
+    const extractIframeSrc = (raw) => {
+      if (!raw) return '';
+      const trimmed = raw.trim();
+
+      // اگر فقط یه لینک ساده است
+      if (!trimmed.includes('<')) return trimmed;
+
+      // اگر HTML کامل embed است، از داخلش src رو پیدا کن
+      const match = trimmed.match(/src=["']([^"']+)["']/i);
+      return match ? match[1] : trimmed;
+    };
+
     let html = '';
-    const safeUrl = url || '';
+    let safeUrl = url || '';
 
     // 🖼 تصویر
     if (type === 'image') {
       if (!safeUrl) return;
 
-      // اگر خود المان img است، فقط src را عوض کن (هیچ replaceWithـی در کار نیست)
       if (component.get('tagName') === 'img') {
         component.addAttributes({ src: safeUrl });
 
-        // کمی استایل پیش‌فرض ریسپانسیو اگر چیزی تنظیم نشده بود
         const currentStyle = component.getStyle() || {};
         if (!currentStyle.width && !currentStyle.height) {
           component.addStyle({
@@ -888,7 +899,6 @@ export default function PageBuilder() {
 
         editor.select(component);
       } else {
-        // اگر یک placeholder سفارشی مثل video-upload-temp بود، با یک img تمیز جایگزینش کن
         html = `
         <img 
           src="${safeUrl}" 
@@ -1006,7 +1016,49 @@ export default function PageBuilder() {
     `;
     }
 
-    // فقط وقتی html داریم (ویدیو/صوت/فایل یا placeholder تصویر) replaceWith می‌کنیم
+    // 🌐 آیفریم (آپارات / یوتیوب / هر embed دیگری)
+    else if (type === 'iframe') {
+      const finalSrc = extractIframeSrc(safeUrl);
+
+      if (!finalSrc) {
+        alert('آدرس آیفریم معتبر نیست');
+        return;
+      }
+
+      html = `
+      <div 
+        style="
+          position: relative;
+          padding-bottom: 56.25%;
+          height: 0;
+          overflow: hidden;
+          border-radius: 16px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+          margin: 20px 0;
+        "
+        data-gjs-type="iframe-wrapper"
+      >
+        <iframe
+          src="${finalSrc}"
+          style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+          "
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen
+          webkitallowfullscreen="true"
+          mozallowfullscreen="true"
+        ></iframe>
+      </div>
+    `;
+    }
+
+    // ✅ جایگزینی placeholder با HTML نهایی
     if (html) {
       const newComponents = component.replaceWith(html);
       if (newComponents && newComponents[0] && editor) {
@@ -1018,6 +1070,7 @@ export default function PageBuilder() {
     setSelectedMediaComponent(null);
     setMediaModalData({ type: null });
   };
+
 
 
 

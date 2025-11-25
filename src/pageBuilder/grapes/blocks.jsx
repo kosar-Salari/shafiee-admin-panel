@@ -39,6 +39,13 @@ const blocks = [
     id: 'video-embed', label: '📺 ویدیو یوتیوب', category: 'رسانه',
     content: '<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe></div>'
   },
+  {
+    id: 'iframe-embed',
+    label: '🌐 آیفریم (Embed)',
+    category: 'رسانه',
+    content: '', // تو initEditor با placeholder پر می‌شه
+  },
+
 
   // ✅ ویدیو با دکمه آپلود
   {

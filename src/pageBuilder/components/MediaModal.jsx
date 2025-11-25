@@ -7,15 +7,17 @@ import {
   FileVideo,
   FileAudio,
   FileText,
-  Image as ImageIcon, // 🆕 آیکن تصویر
+  Image as ImageIcon,
+  Monitor,
 } from 'lucide-react';
 import { uploadFileToS3 } from '../../services/filesService';
 
 const TYPE_LABELS = {
-  image: { icon: ImageIcon, label: 'تصویر' }, // 🆕
+  image: { icon: ImageIcon, label: 'تصویر' },
   video: { icon: FileVideo, label: 'ویدیو' },
   audio: { icon: FileAudio, label: 'صوت' },
-  file: { icon: FileText, label: 'فایل' },
+  file:  { icon: FileText,  label: 'فایل' },
+  iframe: { icon: Monitor, label: 'آیفریم / Embed' }, // 🆕
 };
 
 export default function MediaModal({ open, onClose, onSave, initialData = {} }) {
@@ -24,13 +26,15 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
   const [file, setFile] = useState(null);
   const [url, setUrl] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0); // ✅ درصد آپلود
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (open) {
-      setMode('upload');
-      setType(initialData.type || 'video');
+      const initialType = initialData.type || 'video';
+      setType(initialType);
+      // 🆕 آیفریم فقط از طریق URL
+      setMode(initialType === 'iframe' ? 'url' : 'upload');
       setFile(null);
       setUrl('');
       setUploading(false);
@@ -107,8 +111,21 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
     }
   };
 
-  const typeConfig = TYPE_LABELS[type] || TYPE_LABELS.image; // 🆕 برای image هم درست کار کنه
+  const typeConfig = TYPE_LABELS[type] || TYPE_LABELS.image;
   const TypeIcon = typeConfig.icon;
+
+  const urlPlaceholder =
+    type === 'video'
+      ? 'https://example.com/video.mp4'
+      : type === 'audio'
+      ? 'https://example.com/audio.mp3'
+      : type === 'image'
+      ? 'https://example.com/image.jpg'
+      : type === 'file'
+      ? 'https://example.com/file.pdf'
+      : type === 'iframe'
+      ? 'https://www.youtube.com/embed/VIDEO_ID'
+      : 'https://example.com';
 
   return (
     <div
@@ -121,7 +138,7 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
         onClick={(e) => e.stopPropagation()}
       >
         {/* هدر */}
-        <div className="sticky top-0 bg-gradient-to-l from-indigo-600 to-purple-600 text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
+        <div className="sticky top-0 bg-gradient-to-l from-indigo-600 to-indigo-500 text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
               <TypeIcon size={20} />
@@ -129,7 +146,9 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
             <div>
               <h2 className="text-xl font-bold">افزودن {typeConfig.label}</h2>
               <p className="text-sm text-white/80">
-                فایل را آپلود کنید یا آدرس آماده وارد کنید
+                {type === 'iframe'
+                  ? 'آدرس آیفریم (Embed) را وارد کنید'
+                  : 'فایل را آپلود کنید یا آدرس آماده وارد کنید'}
               </p>
             </div>
           </div>
@@ -137,24 +156,25 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
             type="button"
             onClick={onClose}
             disabled={uploading}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg سفید/20 transition-all disabled:opacity-50"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition disabled:opacity-50"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
+        {/* بدنه */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* انتخاب روش */}
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setMode('upload')}
+              onClick={() => type !== 'iframe' && setMode('upload')}
               className={`flex-1 px-4 py-3 rounded-xl border-2 text-sm font-bold flex items-center justify-center gap-2 transition-all ${
                 mode === 'upload'
                   ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                   : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-              disabled={uploading}
+              } ${type === 'iframe' ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={uploading || type === 'iframe'}
             >
               <UploadCloud size={18} />
               آپلود فایل
@@ -164,24 +184,31 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
               onClick={() => setMode('url')}
               className={`flex-1 px-4 py-3 rounded-xl border-2 text-sm font-bold flex items-center justify-center gap-2 transition-all ${
                 mode === 'url'
-                  ? 'border-purple-500 bg-purple-50 text-purple-700'
+                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                   : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
               }`}
               disabled={uploading}
             >
               <LinkIcon size={18} />
-              آدرس آماده (URL)
+              استفاده از آدرس آماده
             </button>
           </div>
 
-          {/* محتوای تب‌ها */}
-          {mode === 'upload' ? (
+          {/* پیام خطا */}
+          {error && (
+            <div className="px-4 py-2 rounded-xl bg-red-50 text-red-700 text-sm border border-red-200">
+              {error}
+            </div>
+          )}
+
+          {/* تب آپلود */}
+          {mode === 'upload' && type !== 'iframe' && (
             <div className="space-y-4">
-              <label className="block text-sm font-bold text-gray-700">
+              <label className="block text-sm font-semibold text-gray-700">
                 فایل {typeConfig.label} را انتخاب کنید
               </label>
 
-              <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-2xl py-8 px-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/40 transition-all">
+              <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-2xl px-6 py-10 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/40 transition-all">
                 <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
                   <UploadCloud className="text-indigo-600" size={24} />
                 </div>
@@ -198,51 +225,30 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
                   className="hidden"
                   onChange={handleFileChange}
                   disabled={uploading}
-                  accept={
-                    type === 'video'
-                      ? 'video/*'
-                      : type === 'audio'
-                      ? 'audio/*'
-                      : type === 'image' // 🆕 فقط عکس‌ها
-                      ? 'image/*'
-                      : '*/*'
-                  }
                 />
               </label>
 
               {file && (
-                <div className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="font-bold truncate max-w-[260px]">
-                      {file.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setFile(null)}
-                    disabled={uploading}
-                    className="text-xs text-red-500 hover:text-red-600"
-                  >
-                    حذف
-                  </button>
+                <div className="flex items-center justify-between text-xs text-gray-600 bg-gray-50 rounded-xl px-3 py-2">
+                  <span className="truncate max-w-[70%]">{file.name}</span>
+                  <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
                 </div>
               )}
             </div>
-          ) : (
+          )}
+
+          {/* تب URL */}
+          {mode === 'url' && (
             <div className="space-y-3">
-              <label className="block text-sm font-bold text-gray-700">
-                آدرس (URL) {typeConfig.label}
+              <label className="block text-sm font-semibold text-gray-700">
+                آدرس مستقیم {typeConfig.label}
               </label>
               <input
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                dir="ltr"
-                placeholder="https://example.com/media.mp4"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none text-left text-sm"
+                placeholder={urlPlaceholder}
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 disabled={uploading}
               />
               <p className="text-xs text-gray-500">
@@ -259,36 +265,29 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
                 <span>در حال آپلود فایل...</span>
                 <span>%{uploadProgress}</span>
               </div>
-              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-l from-indigo-500 to-purple-500 transition-all"
+                  className="h-full bg-indigo-500 transition-all"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
             </div>
           )}
 
-          {/* خطا */}
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-              {error}
-            </div>
-          )}
-
           {/* دکمه‌ها */}
-          <div className="flex gap-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
               disabled={uploading}
-              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all disabled:opacity-50"
+              className="px-4 py-2 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-60"
             >
               انصراف
             </button>
             <button
               type="submit"
               disabled={uploading}
-              className="flex-1 px-6 py-3 bg-gradient-to-l from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-60 disabled:hover:scale-100"
+              className="flex-1 px-6 py-3 bg-gradient-to-l from-indigo-600 to-indigo-500 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-60 disabled:hover:scale-100"
             >
               {uploading ? 'در حال آپلود...' : '✅ درج در صفحه'}
             </button>
