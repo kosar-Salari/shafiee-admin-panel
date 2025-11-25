@@ -335,6 +335,16 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     };
 
     e.on('component:selected', (component) => {
+      // 🆕 اگر روی خود iframe کلیک شده، والد iframe-wrapper را انتخاب کن
+      if (component.get('tagName') === 'iframe') {
+        const parent = component.parent && component.parent();
+        const attrs = parent?.getAttributes ? parent.getAttributes() : {};
+        if (attrs && attrs['data-gjs-type'] === 'iframe-wrapper') {
+          e.select(parent);
+          return; // دوباره event برای parent صدا زده می‌شود
+        }
+      }
+
       lastSelected = component;
 
       // محدود کردن استایل برای body
@@ -556,10 +566,6 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       // ===========================
       // 📐 تراز راست/وسط/چپ (برای همه جز body)
       // ===========================
-      // ===========================
-      // ===========================
-      // 📐 تراز راست/وسط/چپ (برای همه جز body)
-      // ===========================
       if (tagName !== 'body') {
         // پیدا کردن نزدیک‌ترین دکمه (<a data-button-variant>)
         const findButton = (comp) => {
@@ -571,6 +577,25 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
                 return cur;
               }
             }
+            cur = cur.parent && cur.parent();
+          }
+          return null;
+        };
+
+        // 🆕 پیدا کردن نزدیک‌ترین wrapper آیفریم
+        const findIframeWrapper = (comp) => {
+          let cur = comp;
+          while (cur) {
+            const attrs = cur.getAttributes ? cur.getAttributes() : {};
+            const type = cur.get ? cur.get('type') : null;
+
+            if (
+              attrs['data-gjs-type'] === 'iframe-wrapper' ||
+              type === 'iframe-wrapper'
+            ) {
+              return cur;
+            }
+
             cur = cur.parent && cur.parent();
           }
           return null;
@@ -638,7 +663,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           const selected = editor.getSelected();
           if (!selected) return;
 
-          // ۱) اگر داخل دکمه‌ایم → والد دکمه را تراز کن (عرض دکمه دست نخورَد)
+          // ۱) اگر داخل دکمه‌ایم → والد دکمه را تراز کن
           const btn = findButton(selected);
           if (btn) {
             const parent = btn.parent && btn.parent();
@@ -650,21 +675,30 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
               parent.addStyle({
                 display: 'block',
                 'text-align':
-                  pos === 'right' ? 'right' :
-                    pos === 'center' ? 'center' :
-                      'left',
+                  pos === 'right'
+                    ? 'right'
+                    : pos === 'center'
+                      ? 'center'
+                      : 'left',
               });
             }
             return;
           }
 
-          // ۲) اگر خود المان img بود → تراز روی خود عکس
+          // 🆕 ۲) اگر آیفریم یا داخل wrapper آیفریم هستیم → خود wrapper را تراز کن
+          const iframeWrapper = findIframeWrapper(selected);
+          if (iframeWrapper) {
+            alignBlock(iframeWrapper, pos);
+            return;
+          }
+
+          // ۳) اگر خود المان img بود → تراز روی خود عکس
           if (selected.get('tagName') === 'img') {
             alignImage(selected, pos);
             return;
           }
 
-          // ۳) بقیه‌ی المان‌ها (div, p, ...) → مثل قبل با margin
+          // ۴) بقیه‌ی المان‌ها (div, p, ...) → مثل قبل با margin
           alignBlock(selected, pos);
         };
 
@@ -696,8 +730,6 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
         );
       }
 
-
-
       // ===========================
       // 📋 کپی / حذف
       // ===========================
@@ -722,6 +754,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
 
       component.set('toolbar', toolbar);
     });
+
 
 
   });
@@ -1158,6 +1191,24 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
             name: 'data-download-url',
             changeProp: 1,
           },
+        ],
+      },
+    },
+  });
+  // ✅ کامپوننت مخصوص رَپر آیفریم – قابل ریسایز
+  e.DomComponents.addType('iframe-wrapper', {
+    model: {
+      defaults: {
+        tagName: 'div',
+        draggable: true,
+        droppable: false,
+        resizable: 1,
+        stylable: [
+          'width',
+          'max-width',
+          'margin',
+          'border-radius',
+          'box-shadow',
         ],
       },
     },

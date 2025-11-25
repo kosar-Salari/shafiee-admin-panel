@@ -1017,6 +1017,8 @@ export default function PageBuilder() {
     }
 
     // 🌐 آیفریم (آپارات / یوتیوب / هر embed دیگری)
+    // 🌐 آیفریم (آپارات / یوتیوب / هر embed دیگری)
+    // 🌐 آیفریم (آپارات / یوتیوب / هر embed دیگری)
     else if (type === 'iframe') {
       const finalSrc = extractIframeSrc(safeUrl);
 
@@ -1027,36 +1029,46 @@ export default function PageBuilder() {
 
       html = `
       <div 
-        style="
-          position: relative;
-          padding-bottom: 56.25%;
-          height: 0;
-          overflow: hidden;
-          border-radius: 16px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-          margin: 20px 0;
-        "
         data-gjs-type="iframe-wrapper"
+        style="
+          margin: 20px auto;
+          max-width: 800px;
+          width: 100%;
+        "
       >
-        <iframe
-          src="${finalSrc}"
+        <div
           style="
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: relative;
             width: 100%;
-            height: 100%;
-            border: 0;
+            padding-bottom: 56.25%; /* 16:9 */
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
           "
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          allowfullscreen
-          webkitallowfullscreen="true"
-          mozallowfullscreen="true"
-        ></iframe>
+        >
+          <iframe
+            src="${finalSrc}"
+            style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              border: 0;
+              display: block;
+            "
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+            webkitallowfullscreen="true"
+            mozallowfullscreen="true"
+          ></iframe>
+        </div>
       </div>
     `;
     }
+
+
 
     // ✅ جایگزینی placeholder با HTML نهایی
     if (html) {
