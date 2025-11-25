@@ -15,20 +15,27 @@ import {
 import useFileUpload from "../../hooks/useFileUpload";
 import { updateSettings, getSettings } from "../../services/settingsService";
 
+// گزینه‌های ثابت هدر
 const SPECIAL_TARGETS = [
-  { value: "__HOME__", label: "صفحه اصلی", path: "/" },
-  { value: "__NEWS_ROOT__", label: "صفحه اخبار", path: "/news" },
-  { value: "__ARTICLES_ROOT__", label: "صفحه مقالات", path: "/articles" },
+  { value: "", label: "صفحه اصلی", path: "/" },
+  { value: "news", label: "صفحه اخبار", path: "/news" },
+  { value: "articles", label: "صفحه مقالات", path: "/articles" },
 ];
 
-
-
+// value مخصوص placeholder سلکت
+const PLACEHOLDER_VALUE = "__placeholder";
 
 // تابع کمکی: تبدیل مقدار ذخیره‌شده به آدرس قابل نمایش
 function getDisplayPathFromSlug(slug) {
+  // صفحه اصلی: slug خالی
+  if (slug === "") {
+    const specialHome = SPECIAL_TARGETS.find((s) => s.value === "");
+    return specialHome?.path || "/";
+  }
+
   if (!slug) return "";
 
-  // گزینه‌های ثابت
+  // گزینه‌های ثابت دیگر
   const special = SPECIAL_TARGETS.find((s) => s.value === slug);
   if (special) return special.path;
 
@@ -37,6 +44,18 @@ function getDisplayPathFromSlug(slug) {
 
   // در غیر این صورت، یک / اولش اضافه می‌کنیم
   return `/${slug}`;
+}
+
+function getTargetDisplayPath(target) {
+  if (!target) return "";
+
+  if (target.type === "article") return `/articles/${target.slug}`;
+  if (target.type === "news") return `/news/${target.slug}`;
+
+  // صفحات معمولی
+  if (target.path) return target.path;
+
+  return getDisplayPathFromSlug(target.slug || "");
 }
 
 const MenuItem = ({
@@ -55,6 +74,17 @@ const MenuItem = ({
   const canMoveUp = itemIndex > 0;
   const canMoveDown = itemIndex < siblings.length - 1;
 
+  // پیدا کردن صفحه/مقاله/خبر مربوط به این منو بر اساس slug
+  const target = Array.isArray(pages)
+    ? pages.find((p) => p.slug === item.pageSlug)
+    : null;
+
+  const displayPath = target
+    ? getTargetDisplayPath(target) // مثل /articles/slug یا /news/slug یا /pages/slug
+    : getDisplayPathFromSlug(item.pageSlug);
+
+  const typeLabel = target?.typeLabel || ""; // مثل [مقاله]، [خبر]، [صفحه]
+
   return (
     <div className="mb-2">
       <div
@@ -68,20 +98,22 @@ const MenuItem = ({
               <button
                 onClick={() => onMove(item.id, "up", parentId)}
                 disabled={!canMoveUp}
-                className={`p-0.5 rounded ${canMoveUp
-                  ? "hover:bg-gray-100 text-gray-600"
-                  : "text-gray-300 cursor-not-allowed"
-                  }`}
+                className={`p-0.5 rounded ${
+                  canMoveUp
+                    ? "hover:bg-gray-100 text-gray-600"
+                    : "text-gray-300 cursor-not-allowed"
+                }`}
               >
                 <ChevronUp className="w-3 h-3" />
               </button>
               <button
                 onClick={() => onMove(item.id, "down", parentId)}
                 disabled={!canMoveDown}
-                className={`p-0.5 rounded ${canMoveDown
-                  ? "hover:bg-gray-100 text-gray-600"
-                  : "text-gray-300 cursor-not-allowed"
-                  }`}
+                className={`p-0.5 rounded ${
+                  canMoveDown
+                    ? "hover:bg-gray-100 text-gray-600"
+                    : "text-gray-300 cursor-not-allowed"
+                }`}
               >
                 <ChevronDown className="w-3 h-3" />
               </button>
@@ -108,10 +140,14 @@ const MenuItem = ({
                 </span>
               </div>
 
-              {item.pageSlug && (
+              {/* نمایش مسیر لینک (حتی برای صفحه اصلی که slug خالی دارد) */}
+              {item.pageSlug !== undefined && (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Link2 className="w-3 h-3" />
-                  <span dir="ltr">{getDisplayPathFromSlug(item.pageSlug)}</span>
+                  <span dir="ltr">
+                    {typeLabel && <span>{typeLabel} </span>}
+                    {displayPath}
+                  </span>
                 </div>
               )}
             </div>
@@ -193,7 +229,7 @@ export default function HeaderMenuManagement({
       // 3. ارسال کل settings با logo جدید
       await updateSettings({
         ...currentSettings,
-        logo: url
+        logo: url,
       });
 
       // 4. آپدیت state و بستن modal
@@ -203,7 +239,6 @@ export default function HeaderMenuManagement({
 
       // 5. نمایش پیام موفقیت
       alert("لوگو با موفقیت ذخیره و آپلود شد ✅");
-
     } catch (e) {
       console.error("خطا در ذخیره لوگو:", e);
       alert("خطا در ذخیره لوگو");
@@ -226,7 +261,7 @@ export default function HeaderMenuManagement({
       // ارسال با logo خالی
       await updateSettings({
         ...currentSettings,
-        logo: ""
+        logo: "",
       });
 
       // آپدیت state
@@ -241,7 +276,7 @@ export default function HeaderMenuManagement({
   // ====== Menu tree ops ======
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [menuLabel, setMenuLabel] = useState("");
-  const [menuPageSlug, setMenuPageSlug] = useState("");
+  const [menuPageSlug, setMenuPageSlug] = useState(PLACEHOLDER_VALUE);
   const [menuParentId, setMenuParentId] = useState("");
   const [editingMenuItem, setEditingMenuItem] = useState(null);
 
@@ -274,7 +309,10 @@ export default function HeaderMenuManagement({
   const handleEditMenuItem = (item) => {
     setEditingMenuItem(item);
     setMenuLabel(item.label);
-    setMenuPageSlug(item.pageSlug);
+    // اگر slug خالی است یعنی صفحه اصلی
+    setMenuPageSlug(
+      item.pageSlug === undefined ? PLACEHOLDER_VALUE : item.pageSlug
+    );
     setMenuParentId("");
     setShowMenuModal(true);
   };
@@ -292,7 +330,8 @@ export default function HeaderMenuManagement({
 
   const handleSaveMenuItem = () => {
     if (!menuLabel.trim()) return alert("عنوان منو را وارد کنید");
-    if (!menuPageSlug) return alert("صفحه مورد نظر را انتخاب کنید");
+    if (menuPageSlug === PLACEHOLDER_VALUE)
+      return alert("صفحه مورد نظر را انتخاب کنید");
 
     const nextTopOrder = (arr) => {
       if (!Array.isArray(arr) || arr.length === 0) return 1;
@@ -302,12 +341,13 @@ export default function HeaderMenuManagement({
     const newItem = {
       id: editingMenuItem?.id || `m-${Date.now()}`,
       label: menuLabel.trim(),
-      pageSlug: menuPageSlug, // اینجا هرچی انتخاب شده همان ذخیره می‌شود
+      // صفحه اصلی: slug خالی ذخیره می‌کنیم
+      pageSlug: menuPageSlug === "/" ? "" : menuPageSlug,
       order: editingMenuItem
         ? editingMenuItem.order || 1
         : menuParentId
-          ? 1
-          : nextTopOrder(menuItems),
+        ? 1
+        : nextTopOrder(menuItems),
       children: editingMenuItem?.children || [],
     };
 
@@ -377,7 +417,7 @@ export default function HeaderMenuManagement({
 
     setShowMenuModal(false);
     setMenuLabel("");
-    setMenuPageSlug("");
+    setMenuPageSlug(PLACEHOLDER_VALUE);
     setMenuParentId("");
     setEditingMenuItem(null);
   };
@@ -385,7 +425,7 @@ export default function HeaderMenuManagement({
   const openNewMenuModal = () => {
     setEditingMenuItem(null);
     setMenuLabel("");
-    setMenuPageSlug("");
+    setMenuPageSlug(PLACEHOLDER_VALUE);
     setMenuParentId("");
     setShowMenuModal(true);
   };
@@ -500,66 +540,6 @@ export default function HeaderMenuManagement({
         </div>
       </div>
 
-      {/* Modal آپلود/تأیید لوگو */}
-      {showLogoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={handleCancelLogo}
-          />
-          <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-xl p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">
-              آپلود لوگو
-            </h3>
-
-            <div className="bg-gray-50 rounded-xl p-6 mb-5 border-2 border-gray-200">
-              {tempFile ? (
-                <div className="text-sm">
-                  <div className="mb-2 font-medium">فایل انتخاب‌شده:</div>
-                  <div className="text-gray-700">
-                    {tempFile.name} ({Math.round(tempFile.size / 1024)} KB)
-                  </div>
-                </div>
-              ) : (
-                <div className="text-gray-500">فایلی انتخاب نشده</div>
-              )}
-              {uploading && (
-                <div className="mt-4">
-                  <div className="h-2 bg-gray-200 rounded">
-                    <div
-                      className="h-2 bg-indigo-600 rounded"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {progress}%
-                  </div>
-                </div>
-              )}
-              {error && (
-                <div className="text-red-600 mt-3 text-sm">{error}</div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={handleCancelLogo}
-                className="px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium"
-              >
-                انصراف
-              </button>
-              <button
-                onClick={handleConfirmLogo}
-                disabled={!tempFile || uploading}
-                className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-medium shadow-sm disabled:opacity-60"
-              >
-                {uploading ? "در حال آپلود…" : "آپلود و ثبت"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* مدیریت آیتم‌های منو */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-700">آیتم‌های منوی هدر</h2>
@@ -641,28 +621,27 @@ export default function HeaderMenuManagement({
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                 >
                   {/* Placeholder واقعی که در لیست دیده نمی‌شود */}
-                  {!menuPageSlug && (
-                    <option value="" hidden>
+                  {menuPageSlug === PLACEHOLDER_VALUE && (
+                    <option value={PLACEHOLDER_VALUE} hidden>
                       انتخاب کنید
                     </option>
                   )}
 
-                  {/* ابتدا ۳ مقصد ثابت */}
+                  {/* ابتدا ۳ مقصد ثابت: خانه / اخبار / مقالات */}
                   {SPECIAL_TARGETS.map((s) => (
                     <option key={s.value} value={s.value}>
                       {s.label} ({s.path})
                     </option>
                   ))}
 
-                  {/* سپس صفحات داینامیک */}
+                  {/* سپس صفحات داینامیک (صفحه، مقاله، خبر) که از HeaderFooterPage به‌صورت targets پاس داده شده‌اند */}
                   {pages.map((page) => (
                     <option key={page.id} value={page.slug}>
-                      {page.title} ({getDisplayPathFromSlug(page.slug)})
+                      {page.typeLabel ? `${page.typeLabel} ` : ""}
+                      {page.title} ({getTargetDisplayPath(page)})
                     </option>
                   ))}
                 </select>
-
-
               </div>
 
               {!editingMenuItem && (

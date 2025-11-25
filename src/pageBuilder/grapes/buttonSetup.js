@@ -23,42 +23,38 @@ export function setupButtonBehavior(editor) {
     editor.runCommand('open-button-modal', { componentId: btn.getId() });
   });
 
-  // ✅ Command برای تعویض آیکن/عکس
+  // ✅ Command برای تعویض آیکن/عکس → باز کردن MediaModal
   editor.Commands.add('change-button-icon', {
-    async run(editor) {
+    run(editor) {
       const selected = editor.getSelected();
       if (!selected) return;
 
-      // پیدا کردن img داخل دکمه
       const imgComponent = selected.find('img[data-gjs-type="image"]')[0];
       if (!imgComponent) {
         alert('این دکمه آیکن/عکس ندارد');
         return;
       }
 
-      // باز کردن Asset Manager
-      const am = editor.AssetManager;
-      
-      am.open({
-        select: (asset) => {
-          imgComponent.addAttributes({ src: asset.get('src') });
-          am.close();
-        },
-        types: ['image'],
-        accept: 'image/*',
-      });
+      // 🆕 باز کردن MediaModal برای تصویر
+      window.dispatchEvent(
+        new CustomEvent('grapes:open-media-modal', {
+          detail: { 
+            type: 'image', 
+            component: imgComponent 
+          },
+        })
+      );
     },
   });
 
   // ✅ اضافه کردن دکمه تعویض آیکن به تولبار
   editor.on('component:selected', (component) => {
-    const attrs = component.getAttributes() || {};
-    
+    const attrs = component.getAttributes ? component.getAttributes() : {};
     if (attrs['data-button-variant'] === 'with-icon') {
       const toolbar = component.get('toolbar') || [];
-      
-      const hasIconButton = toolbar.some(item => 
-        item.command === 'change-button-icon'
+
+      const hasIconButton = toolbar.some(
+        (item) => item.command === 'change-button-icon',
       );
 
       if (!hasIconButton) {
@@ -66,7 +62,7 @@ export function setupButtonBehavior(editor) {
           attributes: {
             class: 'fa fa-image',
             title: '🖼️ تعویض آیکن/عکس',
-            style: 'background: #10b981; color: white;'
+            style: 'background: #10b981; color: white;',
           },
           command: 'change-button-icon',
         });

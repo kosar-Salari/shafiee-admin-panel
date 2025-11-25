@@ -1,3 +1,7 @@
+
+
+
+
 // src/pageBuilder/grapes/initEditor.js
 import styleSectors from './styleSectors';
 import blocks from './blocks';
@@ -93,25 +97,23 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
             uploadedAssets.push(asset);
           }
 
-          if (uploadedAssets.length) {
-            const selected = e.getSelected();
-            if (selected) {
-              const tagName = selected.get('tagName');
-              const uploadedAsset = uploadedAssets[0];
+          if (!uploadedAssets.length) return;
 
-              if (tagName === 'img') {
-                selected.addAttributes({ src: uploadedAsset.get('src') });
-              } else if (tagName === 'video') {
-                selected.addAttributes({ src: uploadedAsset.get('src') });
-              } else if (tagName === 'audio') {
-                selected.addAttributes({ src: uploadedAsset.get('src') });
-              } else if (tagName === 'a') {
-                selected.addAttributes({
-                  href: uploadedAsset.get('src'),
-                  download: uploadedAsset.get('name') || 'file'
-                });
-              }
-            }
+          const selected = e.getSelected();
+          if (!selected) return;
+
+          const uploadedAsset = uploadedAssets[0];
+          const src = uploadedAsset.get('src');
+          const tagName = (selected.get('tagName') || '').toLowerCase();
+
+          if (tagName === 'img' || tagName === 'video' || tagName === 'audio') {
+            // فقط همون رفتاری که قبلش داشتی
+            selected.addAttributes({ src });
+          } else if (tagName === 'a') {
+            selected.addAttributes({
+              href: src,
+              download: uploadedAsset.get('name') || 'file',
+            });
           }
         } catch (err) {
           console.error('خطا در آپلود فایل به S3:', err);
@@ -119,9 +121,12 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
         }
       },
     },
+
   });
 
   setupButtonBehavior(e);
+
+
   // ===========================
   // 🎨 RTL
   // ===========================
@@ -551,7 +556,118 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       // ===========================
       // 📐 تراز راست/وسط/چپ (برای همه جز body)
       // ===========================
+      // ===========================
+      // ===========================
+      // 📐 تراز راست/وسط/چپ (برای همه جز body)
+      // ===========================
       if (tagName !== 'body') {
+        // پیدا کردن نزدیک‌ترین دکمه (<a data-button-variant>)
+        const findButton = (comp) => {
+          let cur = comp;
+          while (cur) {
+            if (cur.get && cur.get('tagName') === 'a') {
+              const aAttrs = cur.getAttributes ? cur.getAttributes() : {};
+              if (aAttrs['data-button-variant']) {
+                return cur;
+              }
+            }
+            cur = cur.parent && cur.parent();
+          }
+          return null;
+        };
+
+        const alignImage = (img, pos) => {
+          if (!img) return;
+          img.removeStyle('float');
+          img.removeStyle('margin-left');
+          img.removeStyle('margin-right');
+
+          const base = { display: 'block' };
+
+          if (pos === 'right') {
+            img.addStyle({
+              ...base,
+              'margin-left': '0',
+              'margin-right': 'auto',
+            });
+          } else if (pos === 'center') {
+            img.addStyle({
+              ...base,
+              'margin-left': 'auto',
+              'margin-right': 'auto',
+            });
+          } else if (pos === 'left') {
+            img.addStyle({
+              ...base,
+              'margin-left': 'auto',
+              'margin-right': '0',
+            });
+          }
+        };
+
+        const alignBlock = (el, pos) => {
+          if (!el) return;
+          el.removeStyle('float');
+          el.removeStyle('margin-left');
+          el.removeStyle('margin-right');
+
+          const base = { display: 'block' };
+
+          if (pos === 'right') {
+            el.addStyle({
+              ...base,
+              'margin-left': '0',
+              'margin-right': 'auto',
+            });
+          } else if (pos === 'center') {
+            el.addStyle({
+              ...base,
+              'margin-left': 'auto',
+              'margin-right': 'auto',
+            });
+          } else if (pos === 'left') {
+            el.addStyle({
+              ...base,
+              'margin-left': 'auto',
+              'margin-right': '0',
+            });
+          }
+        };
+
+        const alignCommand = (pos) => (editor) => {
+          const selected = editor.getSelected();
+          if (!selected) return;
+
+          // ۱) اگر داخل دکمه‌ایم → والد دکمه را تراز کن (عرض دکمه دست نخورَد)
+          const btn = findButton(selected);
+          if (btn) {
+            const parent = btn.parent && btn.parent();
+            if (parent) {
+              parent.removeStyle('margin-left');
+              parent.removeStyle('margin-right');
+              parent.removeStyle('float');
+
+              parent.addStyle({
+                display: 'block',
+                'text-align':
+                  pos === 'right' ? 'right' :
+                    pos === 'center' ? 'center' :
+                      'left',
+              });
+            }
+            return;
+          }
+
+          // ۲) اگر خود المان img بود → تراز روی خود عکس
+          if (selected.get('tagName') === 'img') {
+            alignImage(selected, pos);
+            return;
+          }
+
+          // ۳) بقیه‌ی المان‌ها (div, p, ...) → مثل قبل با margin
+          alignBlock(selected, pos);
+        };
+
         toolbar.push(
           {
             attributes: {
@@ -559,45 +675,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
               title: '→ تراز راست',
               style: 'background: #10b981; color: white;',
             },
-            command(editor) {
-              const selected = editor.getSelected();
-              if (!selected) return;
-
-              const tagName = selected.get('tagName');
-              const currentDisplay = selected.getStyle('display');
-
-              const isButtonAlign =
-                tagName === 'a' &&
-                (currentDisplay === 'inline-block' ||
-                  currentDisplay === 'inline-flex');
-
-              if (isButtonAlign) {
-                selected.removeStyle('margin-left');
-                selected.removeStyle('margin-right');
-                selected.removeStyle('float');
-
-                selected.addStyle({
-                  float: 'right',
-                  clear: 'both',
-                });
-              } else {
-                selected.removeStyle('float');
-                selected.removeStyle('margin-left');
-                selected.removeStyle('margin-right');
-
-                selected.addStyle({
-                  display: 'block',
-                  'margin-left': '0',
-                  'margin-right': 'auto',
-                });
-              }
-
-              editor.trigger('component:update', selected);
-              setTimeout(() => {
-                selected.view.render();
-                editor.select(selected);
-              }, 100);
-            },
+            command: alignCommand('right'),
           },
           {
             attributes: {
@@ -605,76 +683,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
               title: '○ تراز وسط',
               style: 'background: #14b8a6; color: white;',
             },
-            command(editor) {
-              const selected = editor.getSelected();
-              if (!selected) return;
-
-              const tagName = selected.get('tagName');
-              const currentDisplay = selected.getStyle('display');
-              const currentWidth = selected.getStyle('width');
-              const hasWidth =
-                currentWidth &&
-                currentWidth !== 'auto' &&
-                currentWidth !== '100%';
-
-              const isButtonAlign =
-                tagName === 'a' &&
-                (currentDisplay === 'inline-block' ||
-                  currentDisplay === 'inline-flex');
-
-              selected.removeStyle('float');
-              selected.removeStyle('margin-left');
-              selected.removeStyle('margin-right');
-
-              if (isButtonAlign) {
-                if (!hasWidth) {
-                  const view = selected.view;
-                  if (view && view.el) {
-                    const computedWidth = view.el.offsetWidth;
-                    if (computedWidth > 0) {
-                      selected.addStyle({
-                        width: `${computedWidth}px`,
-                        display: 'block',
-                        'margin-left': 'auto',
-                        'margin-right': 'auto',
-                      });
-                    } else {
-                      selected.addStyle({
-                        width: 'fit-content',
-                        display: 'block',
-                        'margin-left': 'auto',
-                        'margin-right': 'auto',
-                      });
-                    }
-                  } else {
-                    selected.addStyle({
-                      width: 'fit-content',
-                      display: 'block',
-                      'margin-left': 'auto',
-                      'margin-right': 'auto',
-                    });
-                  }
-                } else {
-                  selected.addStyle({
-                    display: 'block',
-                    'margin-left': 'auto',
-                    'margin-right': 'auto',
-                  });
-                }
-              } else {
-                selected.addStyle({
-                  display: 'block',
-                  'margin-left': 'auto',
-                  'margin-right': 'auto',
-                });
-              }
-
-              editor.trigger('component:update', selected);
-              setTimeout(() => {
-                selected.view.render();
-                editor.select(selected);
-              }, 100);
-            },
+            command: alignCommand('center'),
           },
           {
             attributes: {
@@ -682,48 +691,12 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
               title: '← تراز چپ',
               style: 'background: #06b6d4; color: white;',
             },
-            command(editor) {
-              const selected = editor.getSelected();
-              if (!selected) return;
-
-              const tagName = selected.get('tagName');
-              const currentDisplay = selected.getStyle('display');
-
-              const isButtonAlign =
-                tagName === 'a' &&
-                (currentDisplay === 'inline-block' ||
-                  currentDisplay === 'inline-flex');
-
-              if (isButtonAlign) {
-                selected.removeStyle('margin-left');
-                selected.removeStyle('margin-right');
-                selected.removeStyle('float');
-
-                selected.addStyle({
-                  float: 'left',
-                  clear: 'both',
-                });
-              } else {
-                selected.removeStyle('float');
-                selected.removeStyle('margin-left');
-                selected.removeStyle('margin-right');
-
-                selected.addStyle({
-                  display: 'block',
-                  'margin-left': 'auto',
-                  'margin-right': '0',
-                });
-              }
-
-              editor.trigger('component:update', selected);
-              setTimeout(() => {
-                selected.view.render();
-                editor.select(selected);
-              }, 100);
-            },
+            command: alignCommand('left'),
           },
         );
       }
+
+
 
       // ===========================
       // 📋 کپی / حذف
@@ -926,6 +899,36 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
   // 🎬 تابع آپلود
   // ===========================
 
+  // ✅ باز کردن مدال مدیا برای تصویر
+  e.Commands.add('open-image-media-modal', {
+    run(editor) {
+      const selected = editor.getSelected();
+      if (!selected) {
+        alert('لطفاً ابتدا یک تصویر را انتخاب کنید');
+        return;
+      }
+
+      // اگر خود المان img نیست، سعی کن نزدیک‌ترین img را پیدا کنی
+      let target = selected;
+      if (target.get('tagName') !== 'img') {
+        const imgInside = target.find && target.find('img')[0];
+        if (imgInside) {
+          target = imgInside;
+        }
+      }
+
+      if (target.get('tagName') !== 'img') {
+        alert('این المان تصویر نیست');
+        return;
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('grapes:open-media-modal', {
+          detail: { type: 'image', component: target },
+        }),
+      );
+    },
+  });
 
   // ===========================
   // 📦 بلوک‌ها
@@ -1144,3 +1147,5 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
 
   return e;
 }
+
+

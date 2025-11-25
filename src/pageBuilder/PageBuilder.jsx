@@ -868,7 +868,45 @@ export default function PageBuilder() {
     let html = '';
     const safeUrl = url || '';
 
-    if (type === 'video') {
+    // 🖼 تصویر
+    if (type === 'image') {
+      if (!safeUrl) return;
+
+      // اگر خود المان img است، فقط src را عوض کن (هیچ replaceWithـی در کار نیست)
+      if (component.get('tagName') === 'img') {
+        component.addAttributes({ src: safeUrl });
+
+        // کمی استایل پیش‌فرض ریسپانسیو اگر چیزی تنظیم نشده بود
+        const currentStyle = component.getStyle() || {};
+        if (!currentStyle.width && !currentStyle.height) {
+          component.addStyle({
+            maxWidth: '100%',
+            height: 'auto',
+            display: 'block',
+          });
+        }
+
+        editor.select(component);
+      } else {
+        // اگر یک placeholder سفارشی مثل video-upload-temp بود، با یک img تمیز جایگزینش کن
+        html = `
+        <img 
+          src="${safeUrl}" 
+          style="
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            border-radius: 16px;
+          "
+          data-gjs-type="image"
+        />
+      `;
+      }
+    }
+
+    // 🎬 ویدیو
+    else if (type === 'video') {
       html = `
       <video 
         controls 
@@ -888,7 +926,10 @@ export default function PageBuilder() {
         مرورگر شما از ویدیو پشتیبانی نمی‌کند.
       </video>
     `;
-    } else if (type === 'audio') {
+    }
+
+    // 🎧 صوت
+    else if (type === 'audio') {
       html = `
       <audio 
         controls 
@@ -906,7 +947,10 @@ export default function PageBuilder() {
         مرورگر شما از صوت پشتیبانی نمی‌کند.
       </audio>
     `;
-    } else if (type === 'file') {
+    }
+
+    // 📁 فایل
+    else if (type === 'file') {
       const prettyName = fileName || safeUrl.split('/').pop() || 'فایل';
       const sizeMb = fileSize ? (fileSize / 1024 / 1024).toFixed(2) : '';
       const sizeText = sizeMb ? `حجم: ${sizeMb} MB` : '';
@@ -962,14 +1006,20 @@ export default function PageBuilder() {
     `;
     }
 
+    // فقط وقتی html داریم (ویدیو/صوت/فایل یا placeholder تصویر) replaceWith می‌کنیم
     if (html) {
-      component.replaceWith(html);
+      const newComponents = component.replaceWith(html);
+      if (newComponents && newComponents[0] && editor) {
+        editor.select(newComponents[0]);
+      }
     }
 
     setShowMediaModal(false);
     setSelectedMediaComponent(null);
     setMediaModalData({ type: null });
   };
+
+
 
   const handleBack = () => {
     if (origin === 'articles') navigate('/articles');
@@ -2064,5 +2114,6 @@ select.gjs-field,
     </div>
   );
 }
+
 
 

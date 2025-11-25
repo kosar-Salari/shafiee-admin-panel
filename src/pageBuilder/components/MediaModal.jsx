@@ -7,10 +7,12 @@ import {
   FileVideo,
   FileAudio,
   FileText,
+  Image as ImageIcon, // 🆕 آیکن تصویر
 } from 'lucide-react';
 import { uploadFileToS3 } from '../../services/filesService';
 
 const TYPE_LABELS = {
+  image: { icon: ImageIcon, label: 'تصویر' }, // 🆕
   video: { icon: FileVideo, label: 'ویدیو' },
   audio: { icon: FileAudio, label: 'صوت' },
   file: { icon: FileText, label: 'فایل' },
@@ -77,7 +79,9 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
       } catch (err) {
         console.error('❌ خطا در آپلود مدیا:', err);
         if (err.code === 'ECONNABORTED') {
-          setError('زمان آپلود به پایان رسید. لطفاً دوباره تلاش کنید یا فایل را کوچک‌تر کنید.');
+          setError(
+            'زمان آپلود به پایان رسید. لطفاً دوباره تلاش کنید یا فایل را کوچک‌تر کنید.'
+          );
         } else {
           setError('خطا در آپلود فایل. لطفاً دوباره تلاش کنید.');
         }
@@ -103,7 +107,7 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
     }
   };
 
-  const typeConfig = TYPE_LABELS[type] || TYPE_LABELS.video;
+  const typeConfig = TYPE_LABELS[type] || TYPE_LABELS.image; // 🆕 برای image هم درست کار کنه
   const TypeIcon = typeConfig.icon;
 
   return (
@@ -199,6 +203,8 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
                       ? 'video/*'
                       : type === 'audio'
                       ? 'audio/*'
+                      : type === 'image' // 🆕 فقط عکس‌ها
+                      ? 'image/*'
                       : '*/*'
                   }
                 />
@@ -240,7 +246,8 @@ export default function MediaModal({ open, onClose, onSave, initialData = {} }) 
                 disabled={uploading}
               />
               <p className="text-xs text-gray-500">
-                اگر فایل را در جای دیگری آپلود کرده‌اید، می‌توانید URL مستقیم آن را اینجا وارد کنید.
+                اگر فایل را در جای دیگری آپلود کرده‌اید، می‌توانید URL مستقیم آن
+                را اینجا وارد کنید.
               </p>
             </div>
           )}
