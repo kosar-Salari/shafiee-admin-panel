@@ -27,6 +27,25 @@ const SPECIAL_TARGETS = [
 // value مخصوص placeholder سلکت
 const PLACEHOLDER_VALUE = "__placeholder";
 
+// نرمال‌سازی اسلاگ صفحات: حذف "pages/" و "/pages/" از ابتدای اسلاگ
+const normalizePageSlug = (slug) => {
+  if (!slug || slug === NO_LINK_PATH) return slug;
+  let s = String(slug).trim();
+
+  // لینک‌های خارجی را دست نزن
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+
+  // حذف اسلش ابتدایی
+  if (s.startsWith("/")) s = s.slice(1);
+
+  // حذف "pages/" در ابتدای مسیر (case-insensitive)
+  if (s.toLowerCase().startsWith("pages/")) {
+    s = s.slice("pages/".length);
+  }
+
+  return s;
+};
+
 // تابع کمکی: تبدیل مقدار ذخیره‌شده به آدرس قابل نمایش
 function getDisplayPathFromSlug(slug) {
   if (slug === NO_LINK_PATH) return "بدون لینک";
@@ -47,8 +66,11 @@ function getTargetDisplayPath(target) {
   if (!target) return "";
   if (target.type === "article") return `/articles/${target.slug}`;
   if (target.type === "news") return `/news/${target.slug}`;
-  if (target.path) return target.path;
-  return getDisplayPathFromSlug(target.slug || "");
+
+  // برای صفحات معمولی یا هر نوع دیگری: اسلاگ نرمال‌شده بدون "/pages"
+  const raw = target.slug || target.path || "";
+  const normalized = normalizePageSlug(raw);
+  return getDisplayPathFromSlug(normalized);
 }
 
 const MenuItem = ({
@@ -67,16 +89,21 @@ const MenuItem = ({
   const canMoveUp = itemIndex > 0;
   const canMoveDown = itemIndex < siblings.length - 1;
 
+  const itemSlugNormalized = normalizePageSlug(item.pageSlug);
+
   const target = Array.isArray(pages)
-    ? pages.find((p) => p.slug === item.pageSlug)
+    ? pages.find(
+        (p) => normalizePageSlug(p.slug) === itemSlugNormalized
+      )
     : null;
 
   const isNoLink = item.pageSlug === NO_LINK_PATH;
+
   const displayPath = isNoLink
     ? "بدون لینک"
     : target
     ? getTargetDisplayPath(target)
-    : getDisplayPathFromSlug(item.pageSlug);
+    : getDisplayPathFromSlug(itemSlugNormalized);
 
   const typeLabel = target?.typeLabel || "";
 
@@ -256,9 +283,22 @@ export default function HeaderMenuManagement({
   const handleEditMenuItem = (item) => {
     setEditingMenuItem(item);
     setMenuLabel(item.label);
-    setMenuPageSlug(
-      item.pageSlug === undefined ? PLACEHOLDER_VALUE : item.pageSlug
-    );
+
+    const storedSlug = item.pageSlug;
+    let initialSlug;
+
+    if (storedSlug === undefined) {
+      initialSlug = PLACEHOLDER_VALUE;
+    } else if (storedSlug === NO_LINK_PATH) {
+      initialSlug = NO_LINK_PATH;
+    } else if (storedSlug === "") {
+      // صفحه اصلی
+      initialSlug = "";
+    } else {
+      initialSlug = normalizePageSlug(storedSlug);
+    }
+
+    setMenuPageSlug(initialSlug);
     setMenuParentId("");
     setShowMenuModal(true);
   };
@@ -284,10 +324,20 @@ export default function HeaderMenuManagement({
       return Math.max(...arr.map((x) => Number(x.order || 0))) + 1;
     };
 
+    let finalSlug;
+    if (menuPageSlug === NO_LINK_PATH) {
+      finalSlug = NO_LINK_PATH;
+    } else if (menuPageSlug === "") {
+      // صفحه اصلی
+      finalSlug = "";
+    } else {
+      finalSlug = normalizePageSlug(menuPageSlug);
+    }
+
     const newItem = {
       id: editingMenuItem?.id || `m-${Date.now()}`,
       label: menuLabel.trim(),
-      pageSlug: menuPageSlug === "/" ? "" : menuPageSlug,
+      pageSlug: finalSlug,
       order: editingMenuItem
         ? editingMenuItem.order || 1
         : menuParentId
@@ -417,6 +467,7 @@ export default function HeaderMenuManagement({
 
   return (
     <>
+      {/* بخش لوگو */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-700">لوگوی هدر</h2>
@@ -478,6 +529,7 @@ export default function HeaderMenuManagement({
         </div>
       </div>
 
+      {/* هدر منو */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-700">آیتم‌های منوی هدر</h2>
         <button
@@ -504,7 +556,7 @@ export default function HeaderMenuManagement({
 
       <div className="space-y-2">
         {menuItems.length === 0 && (
-          <div className="p-6 bg-white border border-gray-200 rounded-xl text-center text-gray-500">
+          <div className="پ-6 bg-white border border-gray-200 rounded-xl text-center text-gray-500">
             هنوز آیتمی به منو اضافه نشده است.
           </div>
         )}
@@ -524,6 +576,7 @@ export default function HeaderMenuManagement({
           ))}
       </div>
 
+      {/* مودال منو */}
       {showMenuModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -569,18 +622,22 @@ export default function HeaderMenuManagement({
                     </option>
                   ))}
 
-                  {pages.map((page) => (
-                    <option key={page.id} value={page.slug}>
-                      {page.typeLabel ? `${page.typeLabel} ` : ""}
-                      {page.title} ({getTargetDisplayPath(page)})
-                    </option>
-                  ))}
+                  {pages.map((page) => {
+                    const normalizedSlug = normalizePageSlug(page.slug);
+                    return (
+                      <option key={page.id} value={normalizedSlug}>
+                        {page.typeLabel ? `${page.typeLabel} ` : ""}
+                        {page.title} ({getTargetDisplayPath(page)})
+                      </option>
+                    );
+                  })}
                 </select>
-                
+
                 {menuPageSlug === NO_LINK_PATH && (
                   <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                     <Tag className="w-3 h-3" />
-                    این منو فقط به عنوان عنوان نمایش داده می‌شود و لینک ندارد (مناسب برای منوهای والد)
+                    این منو فقط به عنوان عنوان نمایش داده می‌شود و لینک ندارد
+                    (مناسب برای منوهای والد)
                   </p>
                 )}
               </div>
@@ -626,9 +683,13 @@ export default function HeaderMenuManagement({
         </div>
       )}
 
+      {/* مودال تأیید لوگو */}
       {showLogoModal && tempFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={handleCancelLogo} />
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={handleCancelLogo}
+          />
           <div className="relative bg-white w-full max-w-md rounded-2xl shadow-xl p-5">
             <h3 className="text-lg font-bold mb-4">تأیید لوگو</h3>
             <div className="mb-4 flex justify-center">
