@@ -1,4 +1,3 @@
-// src/components/pages/HeaderMenuManagement.jsx
 import React, { useState } from "react";
 import {
   Plus,
@@ -8,18 +7,21 @@ import {
   Link2,
   Pencil,
   Trash2,
-  Image as ImageIcon,
+  Image,
   Upload,
   X,
+  Tag,
 } from "lucide-react";
-import useFileUpload from "../../hooks/useFileUpload";
-import { updateSettings, getSettings } from "../../services/settingsService";
+
+// مقدار خاص برای نشان‌دادن که این منو فقط عنوان است و لینک ندارد
+const NO_LINK_PATH = "#NO_LINK_CATEGORY#";
 
 // گزینه‌های ثابت هدر
 const SPECIAL_TARGETS = [
   { value: "", label: "صفحه اصلی", path: "/" },
   { value: "news", label: "صفحه اخبار", path: "/news" },
   { value: "articles", label: "صفحه مقالات", path: "/articles" },
+  { value: NO_LINK_PATH, label: "فقط عنوان (بدون لینک)", path: NO_LINK_PATH },
 ];
 
 // value مخصوص placeholder سلکت
@@ -27,34 +29,25 @@ const PLACEHOLDER_VALUE = "__placeholder";
 
 // تابع کمکی: تبدیل مقدار ذخیره‌شده به آدرس قابل نمایش
 function getDisplayPathFromSlug(slug) {
-  // صفحه اصلی: slug خالی
+  if (slug === NO_LINK_PATH) return "بدون لینک";
   if (slug === "") {
     const specialHome = SPECIAL_TARGETS.find((s) => s.value === "");
     return specialHome?.path || "/";
   }
-
   if (!slug) return "";
 
-  // گزینه‌های ثابت دیگر
   const special = SPECIAL_TARGETS.find((s) => s.value === slug);
   if (special) return special.path;
 
-  // اگر خود slug از قبل با / شروع شده
   if (slug.startsWith("/")) return slug;
-
-  // در غیر این صورت، یک / اولش اضافه می‌کنیم
   return `/${slug}`;
 }
 
 function getTargetDisplayPath(target) {
   if (!target) return "";
-
   if (target.type === "article") return `/articles/${target.slug}`;
   if (target.type === "news") return `/news/${target.slug}`;
-
-  // صفحات معمولی
   if (target.path) return target.path;
-
   return getDisplayPathFromSlug(target.slug || "");
 }
 
@@ -74,16 +67,18 @@ const MenuItem = ({
   const canMoveUp = itemIndex > 0;
   const canMoveDown = itemIndex < siblings.length - 1;
 
-  // پیدا کردن صفحه/مقاله/خبر مربوط به این منو بر اساس slug
   const target = Array.isArray(pages)
     ? pages.find((p) => p.slug === item.pageSlug)
     : null;
 
-  const displayPath = target
-    ? getTargetDisplayPath(target) // مثل /articles/slug یا /news/slug یا /pages/slug
+  const isNoLink = item.pageSlug === NO_LINK_PATH;
+  const displayPath = isNoLink
+    ? "بدون لینک"
+    : target
+    ? getTargetDisplayPath(target)
     : getDisplayPathFromSlug(item.pageSlug);
 
-  const typeLabel = target?.typeLabel || ""; // مثل [مقاله]، [خبر]، [صفحه]
+  const typeLabel = target?.typeLabel || "";
 
   return (
     <div className="mb-2">
@@ -93,7 +88,6 @@ const MenuItem = ({
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
-            {/* دکمه‌های جابه‌جایی */}
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => onMove(item.id, "up", parentId)}
@@ -119,7 +113,6 @@ const MenuItem = ({
               </button>
             </div>
 
-            {/* باز/بسته کردن زیرمنو */}
             {item.children && item.children.length > 0 && (
               <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -138,12 +131,21 @@ const MenuItem = ({
                 <span className="font-semibold text-gray-800">
                   {item.label}
                 </span>
+                {isNoLink && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">
+                    <Tag className="w-3 h-3" />
+                    فقط عنوان
+                  </span>
+                )}
               </div>
 
-              {/* نمایش مسیر لینک (حتی برای صفحه اصلی که slug خالی دارد) */}
               {item.pageSlug !== undefined && (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Link2 className="w-3 h-3" />
+                  {isNoLink ? (
+                    <Tag className="w-3 h-3" />
+                  ) : (
+                    <Link2 className="w-3 h-3" />
+                  )}
                   <span dir="ltr">
                     {typeLabel && <span>{typeLabel} </span>}
                     {displayPath}
@@ -153,7 +155,6 @@ const MenuItem = ({
             </div>
           </div>
 
-          {/* اکشن‌ها */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => onEdit(item)}
@@ -171,7 +172,6 @@ const MenuItem = ({
         </div>
       </div>
 
-      {/* رندر بچه‌ها */}
       {isOpen && item.children && item.children.length > 0 && (
         <div className="mt-2">
           {item.children.map((child) => (
@@ -200,10 +200,8 @@ export default function HeaderMenuManagement({
   logo,
   setLogo,
 }) {
-  // ====== Logo upload via backend (S3) ======
   const [showLogoModal, setShowLogoModal] = useState(false);
   const [tempFile, setTempFile] = useState(null);
-  const { doUpload, uploading, progress, error } = useFileUpload("logos");
 
   const handleLogoPick = (e) => {
     const file = e.target.files?.[0];
@@ -216,64 +214,25 @@ export default function HeaderMenuManagement({
     setShowLogoModal(true);
   };
 
-  const handleConfirmLogo = async () => {
-    try {
-      if (!tempFile) return;
-
-      // 1. آپلود فایل به S3
-      const url = await doUpload(tempFile, "logos");
-
-      // 2. گرفتن settings فعلی از بک‌اند
-      const currentSettings = await getSettings();
-
-      // 3. ارسال کل settings با logo جدید
-      await updateSettings({
-        ...currentSettings,
-        logo: url,
-      });
-
-      // 4. آپدیت state و بستن modal
+  const handleConfirmLogo = () => {
+    if (tempFile) {
+      const url = URL.createObjectURL(tempFile);
       setLogo(url);
-      setShowLogoModal(false);
-      setTempFile(null);
-
-      // 5. نمایش پیام موفقیت
-      alert("لوگو با موفقیت ذخیره و آپلود شد ✅");
-    } catch (e) {
-      console.error("خطا در ذخیره لوگو:", e);
-      alert("خطا در ذخیره لوگو");
-      // Modal رو نبند تا کاربر بتونه دوباره تلاش کنه
     }
+    setShowLogoModal(false);
+    setTempFile(null);
   };
+
   const handleCancelLogo = () => {
     setShowLogoModal(false);
     setTempFile(null);
   };
 
-  const handleRemoveLogo = async () => {
+  const handleRemoveLogo = () => {
     const ok = confirm("لوگو حذف شود؟");
-    if (!ok) return;
-
-    try {
-      // گرفتن settings فعلی
-      const currentSettings = await getSettings();
-
-      // ارسال با logo خالی
-      await updateSettings({
-        ...currentSettings,
-        logo: "",
-      });
-
-      // آپدیت state
-      setLogo("");
-      alert("لوگو با موفقیت حذف شد ✅");
-    } catch (e) {
-      console.error("خطا در حذف لوگو:", e);
-      alert("خطا در حذف لوگو");
-    }
+    if (ok) setLogo("");
   };
 
-  // ====== Menu tree ops ======
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [menuLabel, setMenuLabel] = useState("");
   const [menuPageSlug, setMenuPageSlug] = useState(PLACEHOLDER_VALUE);
@@ -294,22 +253,9 @@ export default function HeaderMenuManagement({
     setMenuItems((prev) => deleteFromTree([...prev]));
   };
 
-  const handleToggleMenuItem = (itemId) => {
-    const updateInTree = (items) =>
-      items.map((item) => {
-        if (item.id === itemId) return { ...item };
-        if (item.children)
-          return { ...item, children: updateInTree(item.children) };
-        return item;
-      });
-
-    setMenuItems((prev) => updateInTree([...prev]));
-  };
-
   const handleEditMenuItem = (item) => {
     setEditingMenuItem(item);
     setMenuLabel(item.label);
-    // اگر slug خالی است یعنی صفحه اصلی
     setMenuPageSlug(
       item.pageSlug === undefined ? PLACEHOLDER_VALUE : item.pageSlug
     );
@@ -341,7 +287,6 @@ export default function HeaderMenuManagement({
     const newItem = {
       id: editingMenuItem?.id || `m-${Date.now()}`,
       label: menuLabel.trim(),
-      // صفحه اصلی: slug خالی ذخیره می‌کنیم
       pageSlug: menuPageSlug === "/" ? "" : menuPageSlug,
       order: editingMenuItem
         ? editingMenuItem.order || 1
@@ -352,7 +297,6 @@ export default function HeaderMenuManagement({
     };
 
     if (editingMenuItem) {
-      // ویرایش
       const updateInTree = (items) =>
         items.map((item) => {
           if (item.id === editingMenuItem.id) return newItem;
@@ -364,7 +308,6 @@ export default function HeaderMenuManagement({
       let updated = updateInTree([...menuItems]);
 
       if (menuParentId) {
-        // اگر ویرایش هم‌زمان والد را عوض کرده‌ایم:
         const removeFromTree = (items) =>
           items
             .map((item) => {
@@ -395,7 +338,6 @@ export default function HeaderMenuManagement({
 
       setMenuItems(updated);
     } else {
-      // آیتم جدید
       if (menuParentId) {
         const addToTree = (items) =>
           items.map((item) => {
@@ -475,19 +417,16 @@ export default function HeaderMenuManagement({
 
   return (
     <>
-      {/* بخش مدیریت لوگو */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-700">لوگوی هدر</h2>
         </div>
 
         <div className="flex items-start gap-6">
-          {/* Preview */}
           <div className="flex-shrink-0">
             {logo ? (
               <div className="relative group">
                 <div className="w-40 h-40 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
-                  {/* eslint-disable-next-line */}
                   <img
                     src={logo}
                     alt="Logo"
@@ -503,13 +442,12 @@ export default function HeaderMenuManagement({
               </div>
             ) : (
               <div className="w-40 h-40 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-gray-400">
-                <ImageIcon className="w-12 h-12 mb-2" />
+                <Image className="w-12 h-12 mb-2" />
                 <span className="text-sm">بدون لوگو</span>
               </div>
             )}
           </div>
 
-          {/* Controls */}
           <div className="flex-1">
             <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer transition-colors shadow-sm">
               <Upload className="w-4 h-4" />
@@ -540,7 +478,6 @@ export default function HeaderMenuManagement({
         </div>
       </div>
 
-      {/* مدیریت آیتم‌های منو */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-700">آیتم‌های منوی هدر</h2>
         <button
@@ -559,6 +496,7 @@ export default function HeaderMenuManagement({
         </div>
         <ul className="text-sm text-gray-700 space-y-1 mr-6">
           <li>• هر آیتم منو به یک صفحه از صفحات شما لینک می‌شود</li>
+          <li>• می‌توانید برای منوهای والد گزینه "فقط عنوان (بدون لینک)" را انتخاب کنید</li>
           <li>• می‌توانید زیرمنو (منوی آبشاری) ایجاد کنید</li>
           <li>• ترتیب منو با دکمه‌های ↑ و ↓ قابل تغییر است</li>
         </ul>
@@ -586,7 +524,6 @@ export default function HeaderMenuManagement({
           ))}
       </div>
 
-      {/* Modal افزودن/ویرایش آیتم منو */}
       {showMenuModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -620,21 +557,18 @@ export default function HeaderMenuManagement({
                   onChange={(e) => setMenuPageSlug(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                 >
-                  {/* Placeholder واقعی که در لیست دیده نمی‌شود */}
                   {menuPageSlug === PLACEHOLDER_VALUE && (
                     <option value={PLACEHOLDER_VALUE} hidden>
                       انتخاب کنید
                     </option>
                   )}
 
-                  {/* ابتدا ۳ مقصد ثابت: خانه / اخبار / مقالات */}
                   {SPECIAL_TARGETS.map((s) => (
                     <option key={s.value} value={s.value}>
-                      {s.label} ({s.path})
+                      {s.label} {s.path !== NO_LINK_PATH && `(${s.path})`}
                     </option>
                   ))}
 
-                  {/* سپس صفحات داینامیک (صفحه، مقاله، خبر) که از HeaderFooterPage به‌صورت targets پاس داده شده‌اند */}
                   {pages.map((page) => (
                     <option key={page.id} value={page.slug}>
                       {page.typeLabel ? `${page.typeLabel} ` : ""}
@@ -642,6 +576,13 @@ export default function HeaderMenuManagement({
                     </option>
                   ))}
                 </select>
+                
+                {menuPageSlug === NO_LINK_PATH && (
+                  <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                    <Tag className="w-3 h-3" />
+                    این منو فقط به عنوان عنوان نمایش داده می‌شود و لینک ندارد (مناسب برای منوهای والد)
+                  </p>
+                )}
               </div>
 
               {!editingMenuItem && (
@@ -679,6 +620,36 @@ export default function HeaderMenuManagement({
                 className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
               >
                 {editingMenuItem ? "ذخیره تغییرات" : "افزودن"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLogoModal && tempFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={handleCancelLogo} />
+          <div className="relative bg-white w-full max-w-md rounded-2xl shadow-xl p-5">
+            <h3 className="text-lg font-bold mb-4">تأیید لوگو</h3>
+            <div className="mb-4 flex justify-center">
+              <img
+                src={URL.createObjectURL(tempFile)}
+                alt="Preview"
+                className="max-w-full max-h-60 object-contain rounded-lg border"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={handleCancelLogo}
+                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+              >
+                انصراف
+              </button>
+              <button
+                onClick={handleConfirmLogo}
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                تأیید و ذخیره
               </button>
             </div>
           </div>
