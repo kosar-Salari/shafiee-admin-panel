@@ -6,6 +6,7 @@ import { getSettings, updateSettings } from "../services/settingsService";
 import { getPages } from "../services/pagesService";
 import { getArticles } from "../services/articlesService";
 import { getNews } from "../services/newsService";
+import { uploadFile } from "../services/uploadService"; // 👈 سرویس واقعی تو
 
 // --- helpers: footerColumns ---
 function normalizeFooterColumnsFromApi(apiCols) {
@@ -13,10 +14,7 @@ function normalizeFooterColumnsFromApi(apiCols) {
   return apiCols.map((col, idx) => ({
     id: col.id || `f-${idx}`,
     title: col.title || "",
-    order:
-      typeof col.order === "number"
-        ? col.order
-        : idx + 1,
+    order: typeof col.order === "number" ? col.order : idx + 1,
     links: Array.isArray(col.items)
       ? col.items.map((item, j) => ({
           id: item.id || `l-${idx}-${j}`,
@@ -68,9 +66,7 @@ function normalizeMenuFromApi(apiItems) {
       pageSlug: linkToSlug(item.link || ""),
       active: true, // بک‌اند فیلد active ندارد؛ همه را فعال می‌گیریم
       order:
-        typeof item.position === "number"
-          ? item.position
-          : index + 1,
+        typeof item.position === "number" ? item.position : index + 1,
       children: [],
     };
     if (Array.isArray(item.children) && item.children.length) {
@@ -141,6 +137,11 @@ export default function HeaderFooterPage() {
   const [error, setError] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(null);
 
+  // وضعیت آپلود لوگو
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUploadProgress, setLogoUploadProgress] = useState(0);
+  const [logoUploadError, setLogoUploadError] = useState(null);
+
   // --------- load settings + link targets ----------
   useEffect(() => {
     let mounted = true;
@@ -150,12 +151,13 @@ export default function HeaderFooterPage() {
         setLoading(true);
         setError(null);
 
-        const [settingsData, pages, articles, news] = await Promise.all([
-          getSettings(),
-          getPages(),
-          getArticles(),
-          getNews(),
-        ]);
+        const [settingsData, pages, articles, news] =
+          await Promise.all([
+            getSettings(),
+            getPages(),
+            getArticles(),
+            getNews(),
+          ]);
 
         if (!mounted) return;
 
@@ -170,21 +172,22 @@ export default function HeaderFooterPage() {
           disableCommentsForPages: disableComments,
         });
 
-        setMenuUi(normalizeMenuFromApi(settingsData.menuItems || []));
+        setMenuUi(
+          normalizeMenuFromApi(settingsData.menuItems || [])
+        );
         setFooterUi(
           normalizeFooterColumnsFromApi(
             settingsData.footerColumns || []
           )
         );
 
-        // 🔥 اینجا path صفحات را بدون /pages می‌سازیم
         const pageTargets = (pages || []).map((p) => ({
           id: `page-${p.id}`,
           type: "page",
           typeLabel: "[صفحه]",
           slug: p.slug,
           title: p.title,
-          path: `/${p.slug}`, // قبلاً `/pages/${p.slug}` بود
+          path: `/${p.slug}`,
         }));
 
         const articleTargets = (articles || []).map((a) => ({
@@ -205,10 +208,15 @@ export default function HeaderFooterPage() {
           path: `/news/${n.slug}`,
         }));
 
-        setTargets([...pageTargets, ...articleTargets, ...newsTargets]);
+        setTargets([
+          ...pageTargets,
+          ...articleTargets,
+          ...newsTargets,
+        ]);
       } catch (e) {
         console.error(e);
-        if (mounted) setError("خطا در دریافت تنظیمات سایت");
+        if (mounted)
+          setError("خطا در دریافت تنظیمات سایت");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -220,52 +228,73 @@ export default function HeaderFooterPage() {
     };
   }, []);
 
-  // --------- handlers برای تغییر لوگو ----------
+  // --------- تغییر لوگو در state ----------
   const handleLogoChange = (updater) => {
     setSettings((prev) => {
       if (!prev) return prev;
       const nextLogo =
-        typeof updater === "function" ? updater(prev.logo) : updater;
+        typeof updater === "function"
+          ? updater(prev.logo)
+          : updater;
       return { ...prev, logo: nextLogo };
     });
   };
 
-  // --------- ذخیره تنظیمات ----------
+  // --------- helper: نرمال‌سازی و ذخیره تنظیمات روی سرور ----------
+  const saveSettings = async (settingsToSave) => {
+    const menuPayload = buildMenuPayloadFromUi(
+      menuUi,
+      targets
+    );
+    const footerPayload =
+      buildFooterColumnsPayload(footerUi);
+
+    // نرمال‌سازی لوگو: همیشه string به بک‌اند بده
+    const normalizedLogo =
+      typeof settingsToSave.logo === "string"
+        ? settingsToSave.logo
+        : settingsToSave.logo?.url ||
+          settingsToSave.logo?.image ||
+          "";
+
+    const payload = {
+      ...settingsToSave,
+      logo: normalizedLogo,
+      menuItems: menuPayload,
+      footerColumns: footerPayload,
+      disableCommentsForPages: Array.isArray(
+        settingsToSave.disableCommentsForPages
+      )
+        ? settingsToSave.disableCommentsForPages
+        : [],
+    };
+
+    const res = await updateSettings(payload);
+
+    // state را با نسخه نرمال‌شده به‌روز کن
+    setSettings((prev) =>
+      prev
+        ? {
+            ...settingsToSave,
+            menuItems: menuPayload,
+            footerColumns: footerPayload,
+            logo: normalizedLogo,
+          }
+        : prev
+    );
+
+    setLastSavedAt(new Date());
+    return res;
+  };
+
+  // --------- ذخیره دستی (دکمه "ذخیره تغییرات") ----------
   const handleSaveChanges = async () => {
     if (!settings) return;
 
     try {
       setSaving(true);
       setError(null);
-
-      const menuPayload = buildMenuPayloadFromUi(menuUi, targets);
-      const footerPayload = buildFooterColumnsPayload(footerUi);
-
-      const payload = {
-        ...settings,
-        logo: settings.logo || "",
-        menuItems: menuPayload,
-        footerColumns: footerPayload,
-        disableCommentsForPages: Array.isArray(
-          settings.disableCommentsForPages
-        )
-          ? settings.disableCommentsForPages
-          : [],
-      };
-
-      await updateSettings(payload);
-
-      setSettings((prev) =>
-        prev
-          ? {
-              ...prev,
-              menuItems: menuPayload,
-              footerColumns: footerPayload,
-            }
-          : prev
-      );
-
-      setLastSavedAt(new Date());
+      await saveSettings(settings);
       alert("تغییرات با موفقیت ذخیره شد");
     } catch (e) {
       console.error(e);
@@ -276,8 +305,43 @@ export default function HeaderFooterPage() {
     }
   };
 
+  // --------- آپلود لوگو + ذخیره روی سرور ----------
+  const handleLogoUpload = async (file) => {
+    if (!settings) return;
+
+    setLogoUploadError(null);
+    setLogoUploading(true);
+    setLogoUploadProgress(0);
+
+    try {
+      // 1. آپلود فایل روی بک‌اند فایل
+      const url = await uploadFile(file, {
+        folder: "settings", // اختیاری؛ اگر بک‌اند پوشه را قبول نکند، این را بردار
+        onProgress: (percent) => setLogoUploadProgress(percent),
+      });
+
+      // 2. بروزرسانی state محلی
+      const nextSettings = { ...settings, logo: url };
+      setSettings(nextSettings);
+
+      // 3. ذخیره تنظیمات روی /admin/settings/
+      await saveSettings(nextSettings);
+      // اگر toast می‌خواهی، می‌توانی اینجا اضافه کنی
+      // alert("لوگو با موفقیت آپلود و ذخیره شد");
+    } catch (e) {
+      console.error(e);
+      setLogoUploadError(
+        "آپلود یا ذخیره لوگو ناموفق بود، دوباره تلاش کنید."
+      );
+    } finally {
+      setLogoUploading(false);
+      setLogoUploadProgress(0);
+    }
+  };
+
   const renderLastSavedText = () => {
-    if (!lastSavedAt) return "برای ذخیره تغییرات از دکمه پایین استفاده کنید.";
+    if (!lastSavedAt)
+      return "برای ذخیره تغییرات از دکمه پایین استفاده کنید.";
     try {
       const t = lastSavedAt.toLocaleTimeString("fa-IR", {
         hour: "2-digit",
@@ -368,6 +432,11 @@ export default function HeaderFooterPage() {
                   menuItems={menuUi}
                   setMenuItems={setMenuUi}
                   pages={targets}
+                  // props مربوط به آپلود لوگو و لودر
+                  onLogoUpload={handleLogoUpload}
+                  logoUploading={logoUploading}
+                  logoUploadProgress={logoUploadProgress}
+                  logoUploadError={logoUploadError}
                 />
               )}
 

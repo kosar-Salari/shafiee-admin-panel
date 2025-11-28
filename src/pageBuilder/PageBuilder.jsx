@@ -941,21 +941,28 @@ export default function PageBuilder() {
     // 🎧 صوت
     else if (type === 'audio') {
       html = `
-      <audio 
-        controls 
-        src="${safeUrl}"
+      <div 
+        data-gjs-type="audio-wrapper"
         style="
-          width: 100%; 
-          max-width: 600px; 
-          display: block; 
-          margin: 20px auto; 
-          border-radius: 12px; 
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          margin: 20px auto;
+          max-width: 600px;
+          width: 100%;
         "
-        data-gjs-type="audio"
       >
-        مرورگر شما از صوت پشتیبانی نمی‌کند.
-      </audio>
+        <audio 
+          controls 
+          src="${safeUrl}"
+          style="
+            width: 100%; 
+            display: block; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          "
+          data-gjs-type="audio"
+        >
+          مرورگر شما از صوت پشتیبانی نمی‌کند.
+        </audio>
+      </div>
     `;
     }
 
@@ -1068,7 +1075,7 @@ export default function PageBuilder() {
     `;
     }
 
-
+    
 
     // ✅ جایگزینی placeholder با HTML نهایی
     if (html) {

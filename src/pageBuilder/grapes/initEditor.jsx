@@ -345,6 +345,16 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
         }
       }
 
+      // 🆕 اگر روی خود audio کلیک شده، والد audio-wrapper را انتخاب کن
+      if (component.get('tagName') === 'audio') {
+        const parent = component.parent && component.parent();
+        const attrs = parent?.getAttributes ? parent.getAttributes() : {};
+        if (attrs && attrs['data-gjs-type'] === 'audio-wrapper') {
+          e.select(parent);
+          return;
+        }
+      }
+
       lastSelected = component;
 
       // محدود کردن استایل برای body
@@ -582,8 +592,8 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           return null;
         };
 
-        // 🆕 پیدا کردن نزدیک‌ترین wrapper آیفریم
-        const findIframeWrapper = (comp) => {
+        // 🆕 پیدا کردن نزدیک‌ترین wrapper آیفریم یا صوت
+        const findMediaWrapper = (comp) => {
           let cur = comp;
           while (cur) {
             const attrs = cur.getAttributes ? cur.getAttributes() : {};
@@ -591,7 +601,9 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
 
             if (
               attrs['data-gjs-type'] === 'iframe-wrapper' ||
-              type === 'iframe-wrapper'
+              type === 'iframe-wrapper' ||
+              attrs['data-gjs-type'] === 'audio-wrapper' ||
+              type === 'audio-wrapper'
             ) {
               return cur;
             }
@@ -685,10 +697,10 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
             return;
           }
 
-          // 🆕 ۲) اگر آیفریم یا داخل wrapper آیفریم هستیم → خود wrapper را تراز کن
-          const iframeWrapper = findIframeWrapper(selected);
-          if (iframeWrapper) {
-            alignBlock(iframeWrapper, pos);
+          // 🆕 ۲) اگر آیفریم، صوت، یا داخل wrapper هستیم → خود wrapper را تراز کن
+          const mediaWrapper = findMediaWrapper(selected);
+          if (mediaWrapper) {
+            alignBlock(mediaWrapper, pos);
             return;
           }
 
@@ -1195,7 +1207,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       },
     },
   });
-  // ✅ کامپوننت مخصوص رَپر آیفریم – قابل ریسایز
+  // ✅ کامپوننت مخصوص رَپر آیفریم — قابل ریسایز
   e.DomComponents.addType('iframe-wrapper', {
     model: {
       defaults: {
@@ -1210,6 +1222,36 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           'border-radius',
           'box-shadow',
         ],
+      },
+    },
+  });
+
+  // ✅ کامپوننت مخصوص رَپر صوت — قابل ریسایز و سلکت
+  e.DomComponents.addType('audio-wrapper', {
+    model: {
+      defaults: {
+        tagName: 'div',
+        draggable: true,
+        droppable: true,
+        selectable: true,
+        hoverable: true,
+        resizable: 1,
+        stylable: [
+          'width',
+          'max-width',
+          'margin',
+          'border-radius',
+          'box-shadow',
+        ],
+      },
+    },
+    view: {
+      onRender() {
+        // جلوگیری از سلکت شدن audio داخلی
+        const audioEl = this.el.querySelector('audio');
+        if (audioEl) {
+          audioEl.style.pointerEvents = 'none';
+        }
       },
     },
   });

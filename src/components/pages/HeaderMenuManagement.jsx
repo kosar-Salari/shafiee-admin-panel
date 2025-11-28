@@ -226,10 +226,15 @@ export default function HeaderMenuManagement({
   pages,
   logo,
   setLogo,
+  onLogoUpload,          // 👈 از والد می‌آید
+  logoUploading,         // 👈 استیت لودر از والد
+  logoUploadProgress,    // 👈 درصد پیشرفت
+  logoUploadError,       // 👈 پیام خطا
 }) {
   const [showLogoModal, setShowLogoModal] = useState(false);
   const [tempFile, setTempFile] = useState(null);
 
+  // انتخاب اولیه فایل
   const handleLogoPick = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -237,20 +242,30 @@ export default function HeaderMenuManagement({
       return alert("لطفاً فایل تصویری انتخاب کنید");
     if (file.size > 10 * 1024 * 1024)
       return alert("حجم فایل نباید بیشتر از 10MB باشد");
+
     setTempFile(file);
     setShowLogoModal(true);
   };
 
+  // تأیید در مودال → اینجاست که آپلود واقعی را صدا می‌زنیم
   const handleConfirmLogo = () => {
-    if (tempFile) {
+    if (!tempFile) return;
+
+    if (onLogoUpload) {
+      // آپلود واقعی + ذخیره سمت بک‌اند در HeaderFooterPage انجام می‌شود
+      onLogoUpload(tempFile);
+    } else {
+      // حالت fallback: فقط پیش‌نمایش لوکال
       const url = URL.createObjectURL(tempFile);
       setLogo(url);
     }
+
     setShowLogoModal(false);
     setTempFile(null);
   };
 
   const handleCancelLogo = () => {
+    if (logoUploading) return; // وسط آپلود مودال را نبند
     setShowLogoModal(false);
     setTempFile(null);
   };
@@ -260,6 +275,7 @@ export default function HeaderMenuManagement({
     if (ok) setLogo("");
   };
 
+  // --- بقیه کد منو (مثل قبل) ---
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [menuLabel, setMenuLabel] = useState("");
   const [menuPageSlug, setMenuPageSlug] = useState(PLACEHOLDER_VALUE);
@@ -292,7 +308,6 @@ export default function HeaderMenuManagement({
     } else if (storedSlug === NO_LINK_PATH) {
       initialSlug = NO_LINK_PATH;
     } else if (storedSlug === "") {
-      // صفحه اصلی
       initialSlug = "";
     } else {
       initialSlug = normalizePageSlug(storedSlug);
@@ -328,7 +343,6 @@ export default function HeaderMenuManagement({
     if (menuPageSlug === NO_LINK_PATH) {
       finalSlug = NO_LINK_PATH;
     } else if (menuPageSlug === "") {
-      // صفحه اصلی
       finalSlug = "";
     } else {
       finalSlug = normalizePageSlug(menuPageSlug);
@@ -508,8 +522,38 @@ export default function HeaderMenuManagement({
                 accept="image/*"
                 onChange={handleLogoPick}
                 className="hidden"
+                disabled={logoUploading}
               />
             </label>
+
+            {/* لودر و فیدبک زیر دکمه */}
+            {logoUploading && (
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-2 text-xs text-gray-700">
+                  <span className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                  <span>
+                    در حال آپلود لوگو
+                    {logoUploadProgress
+                      ? `... ${logoUploadProgress}%`
+                      : "..."}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 transition-all"
+                    style={{
+                      width: `${logoUploadProgress || 10}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {logoUploadError && !logoUploading && (
+              <div className="mt-3 text-xs text-red-600">
+                {logoUploadError}
+              </div>
+            )}
 
             <div className="mt-4 space-y-2 text-sm text-gray-600">
               <p className="flex items-center gap-2">
@@ -556,7 +600,7 @@ export default function HeaderMenuManagement({
 
       <div className="space-y-2">
         {menuItems.length === 0 && (
-          <div className="پ-6 bg-white border border-gray-200 rounded-xl text-center text-gray-500">
+          <div className="p-6 bg-white border border-gray-200 rounded-xl text-center text-gray-500">
             هنوز آیتمی به منو اضافه نشده است.
           </div>
         )}
@@ -703,14 +747,16 @@ export default function HeaderMenuManagement({
               <button
                 onClick={handleCancelLogo}
                 className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+                disabled={logoUploading}
               >
                 انصراف
               </button>
               <button
                 onClick={handleConfirmLogo}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={logoUploading}
               >
-                تأیید و ذخیره
+                {logoUploading ? "در حال آپلود..." : "تأیید و آپلود"}
               </button>
             </div>
           </div>
