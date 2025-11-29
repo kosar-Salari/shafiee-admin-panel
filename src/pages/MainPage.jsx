@@ -1,12 +1,11 @@
-// src/pages/AdminMainPage.jsx
+// src/pages/AdminMainPage.jsx یا MainPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { Upload, Plus, Trash2, GripVertical, Loader2, Info } from 'lucide-react';
+import { Upload, Plus, Trash2, GripVertical, Loader2, Info, X } from 'lucide-react';
 import NewsArticlesSettings from '../components/NewsArticlesSettings';
 import LinkedImagesSettings from '../components/LinkImageManager';
 
 import { getSettings, updateSettings } from '../services/settingsService';
-
-import { localToApi, apiToLocal } from '../services/settingsMapper';
+import { apiToLocal } from '../services/settingsMapper';
 import { uploadFile } from '../services/uploadService';
 
 export default function AdminMainPage() {
@@ -33,6 +32,9 @@ export default function AdminMainPage() {
   const [articlesActive, setArticlesActive] = useState(true);
   const [newsCount, setNewsCount] = useState(3);
   const [articlesCount, setArticlesCount] = useState(3);
+
+  // پیش‌نمایش
+  const [showPreview, setShowPreview] = useState(false);
 
   /* ────────────────────────────────────────────────────────────
      Init: GET settings → fill UI
@@ -73,6 +75,7 @@ export default function AdminMainPage() {
         setNewsCount(Number(local.newsCount ?? 3));
         setArticlesCount(Number(local.articlesCount ?? 3));
       } catch (e) {
+        console.error(e);
         setError('دریافت تنظیمات با خطا مواجه شد.');
       } finally {
         setLoading(false);
@@ -91,7 +94,7 @@ export default function AdminMainPage() {
   /* ────────────────────────────────────────────────────────────
      Upload handlers (آپلود واقعی به سرور، بدون فشرده‌سازی)
   ──────────────────────────────────────────────────────────── */
-  const handleUpload = async (file, { folder = 'images', onDone }) => {
+  const handleUpload = async (file, { folder = 'images', onDone } = {}) => {
     if (!file) return;
     try {
       const url = await uploadFile(file, { folder });
@@ -106,6 +109,7 @@ export default function AdminMainPage() {
     const file = e.target.files?.[0];
     handleUpload(file, { folder: 'banners', onDone: setBannerImage });
   };
+
   const handleBannerSideCardUpload = (cardId, e) => {
     const file = e.target.files?.[0];
     handleUpload(file, {
@@ -117,6 +121,7 @@ export default function AdminMainPage() {
       },
     });
   };
+
   const handleCardImageUpload = (cardId, e) => {
     const file = e.target.files?.[0];
     handleUpload(file, {
@@ -139,6 +144,7 @@ export default function AdminMainPage() {
       { id: `c-${Date.now()}`, image: '', link: '/', position: maxPos + 1 },
     ]);
   };
+
   const deleteCard = (cardId) => {
     setLinkCards((cards) => {
       const filtered = cards.filter((c) => c.id !== cardId);
@@ -149,6 +155,7 @@ export default function AdminMainPage() {
         .map((c, i) => ({ ...c, position: i + 1 }));
     });
   };
+
   const updateCard = (cardId, field, value) => {
     setLinkCards((cards) => cards.map((c) => (c.id === cardId ? { ...c, [field]: value } : c)));
   };
@@ -185,6 +192,7 @@ export default function AdminMainPage() {
       cards.map((c) => (c.id === cardId ? { ...c, [field]: value } : c))
     );
   };
+
   const removeBannerSideCard = (cardId) => {
     setBannerSideCards((cards) =>
       cards.map((c) => (c.id === cardId ? { ...c, image: '', link: '/' } : c))
@@ -212,7 +220,6 @@ export default function AdminMainPage() {
         newsCount,
         articlesCount,
         disableCommentsForPages: currentSettings.disableCommentsForPages || null,
-
         imageLinks1: sortedCards.map((c) => ({
           image: c.image,
           link: c.link,
@@ -233,20 +240,13 @@ export default function AdminMainPage() {
   };
 
   /* ────────────────────────────────────────────────────────────
-     مقادیر کمکی برای پیش‌نمایش بنر (aspect-ratio)
+     مقادیر کمکی برای پیش‌نمایش
   ──────────────────────────────────────────────────────────── */
   const hasLeftSide = !!bannerSideCards[0]?.image;
   const hasRightSide = !!bannerSideCards[1]?.image;
 
-  // بنر وسط: 562 / 257 یا 795 / 257 یا 1028 / 257
-  let desktopBannerAspect = '562 / 257';
-  if (hasLeftSide && hasRightSide) {
-    desktopBannerAspect = '562 / 257';
-  } else if (hasLeftSide || hasRightSide) {
-    desktopBannerAspect = '795 / 257';
-  } else {
-    desktopBannerAspect = '1028 / 257';
-  }
+  const topCardsPreview = sortedCards.slice(0, 2);
+  const bottomCardsPreview = sortedCards.slice(2);
 
   if (loading) {
     return (
@@ -292,7 +292,7 @@ export default function AdminMainPage() {
               <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-3 flex items-start gap-2">
                 <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-blue-800">
-                  <strong>ابعاد روی سایت (دسکتاپ):</strong> ۲۱۹×۲۵۷ پیکسل (عرض × ارتفاع)
+                  <strong>ابعاد روی سایت (دسکتاپ):</strong> حدوداً ۲۶۰×۲۷۷ پیکسل (عرض × ارتفاع)
                 </p>
               </div>
               {bannerSideCards[1]?.image ? (
@@ -344,17 +344,13 @@ export default function AdminMainPage() {
                   <div className="text-xs text-blue-800">
                     <p className="font-bold mb-1">ابعاد روی سایت (دسکتاپ):</p>
                     <p className="mb-1">
-                      • با دو عکس کناری: <strong>۵۶۲×۲۵۷</strong> پیکسل
-                    </p>
-                    <p className="mb-1">
-                      • با یک عکس کناری: <strong>۷۹۵×۲۵۷</strong> پیکسل
-                    </p>
-                    <p>
-                      • بدون عکس کناری: <strong>۱۰۲۸×۲۵۷</strong> پیکسل
+                      بنر اصلی با نسبت تقریبی <strong>۶۶۰×۲۷۷</strong> پیکسل (عرض × ارتفاع)
+                      نمایش داده می‌شود؛ وجود یا عدم وجود عکس‌های کناری فقط عرض نسبی آن را در
+                      ردیف تغییر می‌دهد، نه نسبت تصویر را.
                     </p>
                     <p className="mt-1 text-[10px] text-blue-700">
-                      می‌توانید تصویر را در ابعاد بزرگ‌تر ولی با همین نسبت طراحی کنید تا کیفیت روی مانیتورهای
-                      بزرگ‌تر بهتر باشد.
+                      می‌توانید تصویر را در ابعاد بزرگ‌تر ولی با همین نسبت طراحی کنید تا کیفیت
+                      روی مانیتورهای بزرگ‌تر بهتر باشد.
                     </p>
                   </div>
                 </div>
@@ -395,7 +391,7 @@ export default function AdminMainPage() {
               <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-3 flex items-start gap-2">
                 <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-blue-800">
-                  <strong>ابعاد روی سایت (دسکتاپ):</strong> ۲۱۹×۲۵۷ پیکسل (عرض × ارتفاع)
+                  <strong>ابعاد روی سایت (دسکتاپ):</strong> حدوداً ۲۶۰×۲۷۷ پیکسل (عرض × ارتفاع)
                 </p>
               </div>
               {bannerSideCards[0]?.image ? (
@@ -494,28 +490,28 @@ export default function AdminMainPage() {
                           <p>
                             {isLastAndOdd ? (
                               <>
-                                <strong>عکس تمام‌عرض (بالا/پایین بنر):</strong>{' '}
-                                ۱۰۱۸×۱۶۰ پیکسل (عرض × ارتفاع)
+                                <strong>عکس تمام‌عرض (بالا/پایین بنر – دسکتاپ):</strong>{' '}
+                                حدوداً ۱۱۸۰×۱۸۰ پیکسل (عرض × ارتفاع)
                               </>
                             ) : (
                               <>
-                                <strong>عکس نصف‌عرض (بالا/پایین بنر):</strong>{' '}
-                                ۵۰۲×۱۶۰ پیکسل (عرض × ارتفاع)
+                                <strong>عکس نصف‌عرض (بالا/پایین بنر – دسکتاپ):</strong>{' '}
+                                حدوداً ۵۹۰×۱۸۰ پیکسل (عرض × ارتفاع)
                               </>
                             )}
                           </p>
                           <p className="mt-1 text-[10px] text-blue-700">
-                            در نسخه موبایل، همه این عکس‌ها به صورت دو ستون ۱۹۴×۱۴۲ پیکسل نمایش
-                            داده می‌شوند.
+                            در نسخه موبایل، این تصاویر به‌صورت دو ستون حدوداً ۱۷۲٫۵×۱۴۲ پیکسل
+                            نمایش داده می‌شوند.
                           </p>
                         </div>
                       </div>
 
-                      {/* پیش‌نمایش خود کارت */}
+                      {/* پیش‌نمایش کوچک کارت */}
                       <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
                         <div
                           style={{
-                            aspectRatio: isLastAndOdd ? '1018 / 160' : '502 / 160',
+                            aspectRatio: isLastAndOdd ? '1180 / 180' : '590 / 180',
                           }}
                         >
                           {card.image ? (
@@ -584,8 +580,14 @@ export default function AdminMainPage() {
             })}
           </div>
 
-          {/* Save only this section */}
-          <div className="mt-6 flex justify-end">
+          {/* Save + Preview buttons */}
+          <div className="mt-6 flex items-center justify-between">
+            <button
+              onClick={() => setShowPreview(true)}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              پیش‌نمایش در اندازه دسکتاپ
+            </button>
             <button
               onClick={saveHeroChanges}
               disabled={saving}
@@ -593,160 +595,6 @@ export default function AdminMainPage() {
             >
               {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
             </button>
-          </div>
-        </div>
-
-        {/* ── Preview (Hero) ──────────────────────────────────── */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">پیش‌نمایش بخش بالای صفحه (دسکتاپ)</h2>
-          <div className="border-2 rounded-lg p-4 bg-gray-50">
-            {/* Top Row (اولین دو کارت - 502 × 160) */}
-            {sortedCards.length > 0 && (
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                {sortedCards.slice(0, 2).map((card) => (
-                  <div
-                    key={card.id}
-                    className="rounded-lg overflow-hidden border-2 border-gray-300"
-                  >
-                    <div style={{ aspectRatio: '502 / 160' }}>
-                      {card.image ? (
-                        <img
-                          src={card.image}
-                          alt="کارت"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-400">بدون عکس</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Banner Row with Side Cards */}
-            <div className="grid grid-cols-12 gap-4 my-4 items-stretch">
-              {/* Right Side Card (219 × 257) */}
-              {bannerSideCards[1]?.image && (
-                <div className="col-span-3 rounded-lg overflow-hidden border-2 border-gray-300">
-                  <div style={{ aspectRatio: '219 / 257' }}>
-                    <img
-                      src={bannerSideCards[1].image}
-                      alt="کناری راست"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Center Banner */}
-              <div
-                className={[
-                  bannerSideCards[0]?.image && bannerSideCards[1]?.image
-                    ? 'col-span-6'
-                    : bannerSideCards[0]?.image || bannerSideCards[1]?.image
-                    ? 'col-span-9'
-                    : 'col-span-12',
-                  'rounded-lg overflow-hidden border-2 border-gray-300',
-                ].join(' ')}
-              >
-                <div style={{ aspectRatio: desktopBannerAspect }}>
-                  {bannerImage ? (
-                    <img
-                      src={bannerImage}
-                      alt="بنر"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                      <span className="text-gray-500">بنر اصلی</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Left Side Card (219 × 257) */}
-              {bannerSideCards[0]?.image && (
-                <div className="col-span-3 rounded-lg overflow-hidden border-2 border-gray-300">
-                  <div style={{ aspectRatio: '219 / 257' }}>
-                    <img
-                      src={bannerSideCards[0].image}
-                      alt="کناری چپ"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Rows — کارت‌های بعدی با پشتیبانی از full-width */}
-            {sortedCards.length > 2 && (
-              <div className="space-y-4">
-                {(() => {
-                  const remaining = sortedCards.slice(2);
-                  const rows = [];
-
-                  for (let i = 0; i < remaining.length; i += 2) {
-                    const isLastAndOdd = i === remaining.length - 1;
-
-                    if (isLastAndOdd) {
-                      // کارت تمام‌عرض (1018 × 160)
-                      rows.push(
-                        <div key={`row-${i}`} className="w-full">
-                          <div className="rounded-lg overflow-hidden border-2 border-gray-300">
-                            <div style={{ aspectRatio: '1018 / 160' }}>
-                              {remaining[i].image ? (
-                                <img
-                                  src={remaining[i].image}
-                                  alt="کارت"
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                  <span className="text-gray-400">بدون عکس (تمام‌عرض)</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      // ردیف دو تایی (502 × 160)
-                      rows.push(
-                        <div key={`row-${i}`} className="grid grid-cols-2 gap-4">
-                          {[remaining[i], remaining[i + 1]]
-                            .filter(Boolean)
-                            .map((card) => (
-                              <div
-                                key={card.id}
-                                className="rounded-lg overflow-hidden border-2 border-gray-300"
-                              >
-                                <div style={{ aspectRatio: '502 / 160' }}>
-                                  {card.image ? (
-                                    <img
-                                      src={card.image}
-                                      alt="کارت"
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                      <span className="text-gray-400">بدون عکس</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      );
-                    }
-                  }
-
-                  return rows;
-                })()}
-              </div>
-            )}
           </div>
         </div>
 
@@ -767,6 +615,179 @@ export default function AdminMainPage() {
         />
         <LinkedImagesSettings />
       </div>
+
+      {/* ── Preview Modal: دقیقا لایوت دسکتاپ HomePage ───────── */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h3 className="text-lg font-bold">پیش‌نمایش صفحه اصلی (نمای دسکتاپ)</h3>
+              <button
+                onClick={() => setShowPreview(false)}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="bg-gray-100">
+              <div className="w-full px-4 sm:px-6 md:px-8 lg:px-[130px] mx-auto py-4">
+                {/* لایوت دسکتاپ HomePage */}
+                <div className="mt-3">
+                  <div className="w-full space-y-4">
+                    {/* Top Row */}
+                    {topCardsPreview.length > 0 && (
+                      <div
+                        className={`grid ${topCardsPreview.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                          } gap-4`}
+                      >
+                        {topCardsPreview.map((card, index) => (
+                          <div
+                            key={card.id || index}
+                            className={`block rounded-lg overflow-hidden shadow-lg w-full ${topCardsPreview.length === 1 ? '' : 'aspect-[590/180]'
+                              }`}
+                            style={topCardsPreview.length === 1 ? { height: '180px' } : {}}
+                          >
+                            {card.image ? (
+                              <img
+                                src={card.image}
+                                alt={`تصویر ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <span className="text-gray-400">بدون تصویر</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Banner Row - بنر اصلی + عکس‌های کناری */}
+                    <div
+                      className="grid gap-3"
+                      style={{
+                        gridTemplateColumns:
+                          hasRightSide && hasLeftSide
+                            ? '21.6% 54.8% 21.6%'
+                            : hasRightSide || hasLeftSide
+                              ? '28.2% 71.8%'
+                              : '1fr',
+                      }}
+                    >
+                      {/* Right Side Card */}
+                      {hasRightSide && (
+                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/277]">
+                          {bannerSideCards[1].image ? (
+                            <img
+                              src={bannerSideCards[1].image}
+                              alt="تصویر کناری راست"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-400">بدون تصویر</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Center Banner */}
+                      <div className="rounded-lg overflow-hidden shadow-lg w-full aspect-[660/277]">
+                        {bannerImage ? (
+                          <img
+                            src={bannerImage}
+                            alt="بنر اصلی"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center">
+                            <span className="text-white text-2xl font-bold">بنر اصلی</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Left Side Card */}
+                      {hasLeftSide && (
+                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/277]">
+                          {bannerSideCards[0].image ? (
+                            <img
+                              src={bannerSideCards[0].image}
+                              alt="تصویر کناری چپ"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-400">بدون تصویر</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Rows */}
+                    {bottomCardsPreview.length > 0 && (
+                      <div className="space-y-4">
+                        {(() => {
+                          const rows = [];
+                          for (let i = 0; i < bottomCardsPreview.length; i += 2) {
+                            const card1 = bottomCardsPreview[i];
+                            const card2 = bottomCardsPreview[i + 1];
+
+                            rows.push(
+                              <div
+                                key={`bottom-${i}`}
+                                className={`grid ${card2 ? 'grid-cols-2' : 'grid-cols-1'
+                                  } gap-4`}
+                              >
+                                <div
+                                  className={`block rounded-lg overflow-hidden shadow-lg w-full ${card2 ? 'aspect-[590/180]' : ''
+                                    }`}
+                                  style={!card2 ? { height: '180px' } : {}}
+                                >
+                                  {card1.image ? (
+                                    <img
+                                      src={card1.image}
+                                      alt={`تصویر ${i + 3}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                      <span className="text-gray-400">بدون تصویر</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {card2 && (
+                                  <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[590/180]">
+                                    {card2.image ? (
+                                      <img
+                                        src={card2.image}
+                                        alt={`تصویر ${i + 4}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                        <span className="text-gray-400">بدون تصویر</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          return rows;
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
     </div>
   );
 }
