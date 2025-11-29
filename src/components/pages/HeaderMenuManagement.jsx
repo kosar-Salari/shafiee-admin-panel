@@ -93,8 +93,8 @@ const MenuItem = ({
 
   const target = Array.isArray(pages)
     ? pages.find(
-        (p) => normalizePageSlug(p.slug) === itemSlugNormalized
-      )
+      (p) => normalizePageSlug(p.slug) === itemSlugNormalized
+    )
     : null;
 
   const isNoLink = item.pageSlug === NO_LINK_PATH;
@@ -102,8 +102,8 @@ const MenuItem = ({
   const displayPath = isNoLink
     ? "بدون لینک"
     : target
-    ? getTargetDisplayPath(target)
-    : getDisplayPathFromSlug(itemSlugNormalized);
+      ? getTargetDisplayPath(target)
+      : getDisplayPathFromSlug(itemSlugNormalized);
 
   const typeLabel = target?.typeLabel || "";
 
@@ -119,22 +119,20 @@ const MenuItem = ({
               <button
                 onClick={() => onMove(item.id, "up", parentId)}
                 disabled={!canMoveUp}
-                className={`p-0.5 rounded ${
-                  canMoveUp
+                className={`p-0.5 rounded ${canMoveUp
                     ? "hover:bg-gray-100 text-gray-600"
                     : "text-gray-300 cursor-not-allowed"
-                }`}
+                  }`}
               >
                 <ChevronUp className="w-3 h-3" />
               </button>
               <button
                 onClick={() => onMove(item.id, "down", parentId)}
                 disabled={!canMoveDown}
-                className={`p-0.5 rounded ${
-                  canMoveDown
+                className={`p-0.5 rounded ${canMoveDown
                     ? "hover:bg-gray-100 text-gray-600"
                     : "text-gray-300 cursor-not-allowed"
-                }`}
+                  }`}
               >
                 <ChevronDown className="w-3 h-3" />
               </button>
@@ -355,8 +353,8 @@ export default function HeaderMenuManagement({
       order: editingMenuItem
         ? editingMenuItem.order || 1
         : menuParentId
-        ? 1
-        : nextTopOrder(menuItems),
+          ? 1
+          : nextTopOrder(menuItems),
       children: editingMenuItem?.children || [],
     };
 
@@ -491,11 +489,12 @@ export default function HeaderMenuManagement({
           <div className="flex-shrink-0">
             {logo ? (
               <div className="relative group">
-                <div className="w-40 h-40 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                {/* پیش‌نمایش شبیه هدر: نوار افقی */}
+                <div className="h-16 w-52 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center px-4">
                   <img
                     src={logo}
                     alt="Logo"
-                    className="max-w-full max-h-full object-contain"
+                    className="h-12 w-auto object-contain"
                   />
                 </div>
                 <button
@@ -506,9 +505,9 @@ export default function HeaderMenuManagement({
                 </button>
               </div>
             ) : (
-              <div className="w-40 h-40 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-gray-400">
-                <Image className="w-12 h-12 mb-2" />
-                <span className="text-sm">بدون لوگو</span>
+              <div className="h-16 w-52 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-gray-400 px-4">
+                <Image className="w-8 h-8 mb-1" />
+                <span className="text-xs">بدون لوگو</span>
               </div>
             )}
           </div>
@@ -526,24 +525,20 @@ export default function HeaderMenuManagement({
               />
             </label>
 
-            {/* لودر و فیدبک زیر دکمه */}
+            {/* لودر و فیدبک زیر دکمه مثل قبل */}
             {logoUploading && (
               <div className="mt-3 space-y-2">
                 <div className="flex items-center gap-2 text-xs text-gray-700">
                   <span className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
                   <span>
                     در حال آپلود لوگو
-                    {logoUploadProgress
-                      ? `... ${logoUploadProgress}%`
-                      : "..."}
+                    {logoUploadProgress ? `... ${logoUploadProgress}%` : "..."}
                   </span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
                   <div
                     className="h-full bg-indigo-500 transition-all"
-                    style={{
-                      width: `${logoUploadProgress || 10}%`,
-                    }}
+                    style={{ width: `${logoUploadProgress || 10}%` }}
                   />
                 </div>
               </div>
@@ -566,11 +561,15 @@ export default function HeaderMenuManagement({
               </p>
               <p className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                سایز پیشنهادی: 200x60 پیکسل
+                سایز پیشنهادی: حداقل ۲۴۰×۷۰ پیکسل
+                <span className="text-xs text-gray-500">
+                  (یا بزرگ‌تر با نسبت تقریبی ۱ به ۳٫۵)
+                </span>
               </p>
             </div>
           </div>
         </div>
+
       </div>
 
       {/* هدر منو */}
