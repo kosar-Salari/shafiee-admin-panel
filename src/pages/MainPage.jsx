@@ -388,7 +388,7 @@ export default function AdminMainPage() {
 
         logo: logo,
 
-        // بنر اصلی: موبایل = همان دسکتاپ (طبق حرف خودت)
+        // بنر اصلی: موبایل = همان دسکتاپ
         mainBanner: bannerImage,
         mainBannerMobile: bannerImage,
 
@@ -509,8 +509,8 @@ export default function AdminMainPage() {
                   className="text-blue-600 mt-0.5 flex-shrink-0"
                 />
                 <p className="text-xs text-blue-800">
-                  <strong>ابعاد روی سایت (دسکتاپ):</strong> حدوداً
-                  ۲۶۰×۲۷۷ پیکسل (عرض × ارتفاع)
+                  <strong>ابعاد روی سایت (دسکتاپ):</strong> حدوداً{' '}
+                  <strong>۲۶۰×۳۱۰</strong> پیکسل (عرض × ارتفاع)
                 </p>
               </div>
               {bannerSideCards[1] && bannerSideCards[1].image ? (
@@ -627,7 +627,7 @@ export default function AdminMainPage() {
                     </p>
                     <p className="mb-1">
                       بنر اصلی با نسبت تقریبی{' '}
-                      <strong>۶۶۰×۲۷۷</strong> پیکسل (عرض ×
+                      <strong>۶۶۰×۳۱۰</strong> پیکسل (عرض ×
                       ارتفاع) نمایش داده می‌شود؛ وجود یا عدم
                       وجود عکس‌های کناری فقط عرض نسبی آن را در
                       ردیف تغییر می‌دهد، نه نسبت تصویر را.
@@ -685,8 +685,8 @@ export default function AdminMainPage() {
                   className="text-blue-600 mt-0.5 flex-shrink-0"
                 />
                 <p className="text-xs text-blue-800">
-                  <strong>ابعاد روی سایت (دسکتاپ):</strong> حدوداً
-                  ۲۶۰×۲۷۷ پیکسل (عرض × ارتفاع)
+                  <strong>ابعاد روی سایت (دسکتاپ):</strong> حدوداً{' '}
+                  <strong>۲۶۰×۳۱۰</strong> پیکسل (عرض × ارتفاع)
                 </p>
               </div>
               {bannerSideCards[0] && bannerSideCards[0].image ? (
@@ -859,8 +859,9 @@ export default function AdminMainPage() {
                                   عکس تمام‌عرض (بالا/پایین بنر –
                                   دسکتاپ):
                                 </strong>{' '}
-                                حدوداً ۱۱۸۰×۱۸۰ پیکسل (عرض ×
-                                ارتفاع)
+                                حدوداً{' '}
+                                <strong>۱۱۸۰×۲۲۰</strong> پیکسل
+                                (عرض × ارتفاع)
                               </>
                             ) : (
                               <>
@@ -868,16 +869,20 @@ export default function AdminMainPage() {
                                   عکس نصف‌عرض (بالا/پایین بنر –
                                   دسکتاپ):
                                 </strong>{' '}
-                                حدوداً ۵۹۰×۱۸۰ پیکسل (عرض ×
-                                ارتفاع)
+                                حدوداً{' '}
+                                <strong>۵۹۰×۲۱۰</strong> پیکسل
+                                (عرض × ارتفاع)
                               </>
                             )}
                           </p>
                           <p className="mt-1 text-[10px] text-blue-700">
-                            در نسخه موبایل از{' '}
-                            <code>imageMobile</code> استفاده
-                            می‌شود؛ اگر خالی باشد، خودش برابر{' '}
-                            <code>image</code> ذخیره می‌شود.
+                            در نسخه موبایل، این تصاویر به‌صورت دو
+                            ستون حدوداً ۱۷۲٫۵×۱۴۲ پیکسل نمایش
+                            داده می‌شوند. برای نسخه موبایل
+                            می‌توانید <code>imageMobile</code> را
+                            جداگانه ست کنید؛ در غیر این صورت،
+                            خودکار از تصویر دسکتاپ استفاده
+                            می‌شود.
                           </p>
                         </div>
                       </div>
@@ -887,8 +892,8 @@ export default function AdminMainPage() {
                         <div
                           style={{
                             aspectRatio: isLastAndOdd
-                              ? '1180 / 180'
-                              : '590 / 180',
+                              ? '1180 / 220'
+                              : '590 / 210',
                           }}
                         >
                           {card.image ? (
@@ -948,7 +953,7 @@ export default function AdminMainPage() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a 2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                             />
                           </svg>
                           <span className="text-sm">
@@ -1102,11 +1107,11 @@ export default function AdminMainPage() {
                             className={`block rounded-lg overflow-hidden shadow-lg w-full ${
                               topCardsPreview.length === 1
                                 ? ''
-                                : 'aspect-[590/180]'
+                                : 'aspect-[590/210]'
                             }`}
                             style={
                               topCardsPreview.length === 1
-                                ? { height: '180px' }
+                                ? { height: '210px' }
                                 : {}
                             }
                           >
@@ -1142,7 +1147,7 @@ export default function AdminMainPage() {
                     >
                       {/* Right Side Card */}
                       {hasRightSide && (
-                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/277]">
+                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310]">
                           {bannerSideCards[1].image ? (
                             <img
                               src={bannerSideCards[1].image}
@@ -1160,7 +1165,7 @@ export default function AdminMainPage() {
                       )}
 
                       {/* Center Banner */}
-                      <div className="rounded-lg overflow-hidden shadow-lg w-full aspect-[660/277]">
+                      <div className="rounded-lg overflow-hidden shadow-lg w-full aspect-[660/310]">
                         {bannerImage ? (
                           <img
                             src={bannerImage}
@@ -1178,7 +1183,7 @@ export default function AdminMainPage() {
 
                       {/* Left Side Card */}
                       {hasLeftSide && (
-                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/277]">
+                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310]">
                           {bannerSideCards[0].image ? (
                             <img
                               src={bannerSideCards[0].image}
@@ -1223,12 +1228,12 @@ export default function AdminMainPage() {
                                 <div
                                   className={`block rounded-lg overflow-hidden shadow-lg w-full ${
                                     card2
-                                      ? 'aspect-[590/180]'
+                                      ? 'aspect-[590/210]'
                                       : ''
                                   }`}
                                   style={
                                     !card2
-                                      ? { height: '180px' }
+                                      ? { height: '220px' }
                                       : {}
                                   }
                                 >
@@ -1248,7 +1253,7 @@ export default function AdminMainPage() {
                                 </div>
 
                                 {card2 && (
-                                  <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[590/180]">
+                                  <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[590/210]">
                                     {card2.image ? (
                                       <img
                                         src={card2.image}
