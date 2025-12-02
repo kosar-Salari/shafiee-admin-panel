@@ -26,6 +26,85 @@ const blocks = [
     content: '<p style="font-size: 16px; line-height: 1.8; color: #6b7280; margin: 12px 0;">این یک پاراگراف نمونه است. روی آن کلیک کنید تا ویرایش کنید.</p>'
   },
 
+  {
+    id: 'ordered-list',
+    label: '🔢 لیست شماره‌دار',
+    category: 'متن',
+    content: `
+    <div 
+      data-gjs-type="list-wrapper"
+      style="
+        padding: 16px 20px;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        margin: 16px 0;
+      "
+    >
+      <ol style="
+        font-size: 16px; 
+        line-height: 1.8; 
+        color: #374151; 
+        margin: 0; 
+        padding-right: 24px;
+        list-style-type: decimal;
+      ">
+        <li style="margin-bottom: 8px;">آیتم اول</li>
+        <li style="margin-bottom: 8px;">آیتم دوم</li>
+        <li style="margin-bottom: 8px;">آیتم سوم</li>
+      </ol>
+    </div>
+  `
+  },
+  {
+    id: 'unordered-list',
+    label: '🔘 لیست نقطه‌ای',
+    category: 'متن',
+    content: `
+    <div 
+      data-gjs-type="list-wrapper"
+      style="
+        padding: 16px 20px;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        margin: 16px 0;
+      "
+    >
+      <ul style="
+        font-size: 16px; 
+        line-height: 1.8; 
+        color: #374151; 
+        margin: 0; 
+        padding-right: 24px;
+        list-style-type: disc;
+      ">
+        <li style="margin-bottom: 8px;">آیتم اول</li>
+        <li style="margin-bottom: 8px;">آیتم دوم</li>
+        <li style="margin-bottom: 8px;">آیتم سوم</li>
+      </ul>
+    </div>
+  `
+  },
+  {
+    id: 'unordered-list',
+    label: '🔘 لیست نقطه‌ای',
+    category: 'متن',
+    content: `
+    <ul style="
+      font-size: 16px; 
+      line-height: 1.8; 
+      color: #374151; 
+      margin: 16px 0; 
+      padding-right: 24px;
+      list-style-type: disc;
+    ">
+      <li style="margin-bottom: 8px;">آیتم اول</li>
+      <li style="margin-bottom: 8px;">آیتم دوم</li>
+      <li style="margin-bottom: 8px;">آیتم سوم</li>
+    </ul>
+  `
+  },
   // ===========================
   // 🎬 بلوک‌های رسانه
   // ===========================
@@ -35,10 +114,10 @@ const blocks = [
     content: '<img src="https://via.placeholder.com/800x400/667eea/ffffff?text=تصویر+شما" style="width: 100%; max-width: 800px; height: auto; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: block; margin: 20px auto;" />'
   },
 
-  {
-    id: 'video-embed', label: '📺 ویدیو یوتیوب', category: 'رسانه',
-    content: '<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe></div>'
-  },
+  // {
+  //   id: 'video-embed', label: '📺 ویدیو یوتیوب', category: 'رسانه',
+  //   content: '<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe></div>'
+  // },
   {
     id: 'iframe-embed',
     label: '🌐 آیفریم (Embed)',

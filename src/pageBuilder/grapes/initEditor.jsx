@@ -126,11 +126,37 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
 
   setupButtonBehavior(e);
 
+  e.on('component:add', (component) => {
+    const wrapper = e.getWrapper();
+    const parent = component.parent && component.parent();
 
+    // فقط المان‌هایی که مستقیم داخل صفحه‌اند (نه داخل کانتینرها)
+    if (parent === wrapper) {
+      const style = component.getStyle ? component.getStyle() : {};
+
+      // اگر خودش margin-bottom مشخص نکرده بود، پیش‌فرض بگذار
+      if (!style['margin-bottom'] && !style.margin) {
+        component.addStyle({
+          'margin-bottom': '50px',
+        });
+      }
+    }
+  });
   // ===========================
   // 🎨 RTL
   // ===========================
+  // ===========================
+  // 🎨 RTL + فاصله انتهای صفحه
+  // ===========================
   e.on('load', () => {
+    // ✅ به خود wrapper (ریشه‌ی صفحه) padding-bottom بده
+    const wrapper = e.getWrapper();
+    if (wrapper) {
+      wrapper.addStyle({
+        'padding-bottom': '120px',   // هرچقدر دوست داری اینجا فاصله باشه
+      });
+    }
+
     const frame = e.Canvas.getFrameEl();
     if (frame && frame.contentDocument) {
       const doc = frame.contentDocument;
@@ -143,13 +169,14 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
         doc.body.style.textAlign = 'right';
         doc.body.style.padding = '20px';
         doc.body.style.boxSizing = 'border-box';
+
+        // ❌ این خط را دیگر لازم نداریم
+        // doc.body.style.paddingBottom = '50px';
       }
     }
   });
 
-  // ===========================
-  // 🔧 غیرفعال کردن RTE toolbar پیش‌فرض
-  // ===========================
+
   e.on('rte:enable', () => {
     const rteToolbar = document.querySelector('.gjs-rte-toolbar');
     if (rteToolbar) {
@@ -354,6 +381,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           return;
         }
       }
+
 
       lastSelected = component;
 
@@ -644,31 +672,26 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
 
         const alignBlock = (el, pos) => {
           if (!el) return;
+
+          // فقط margin و float را دستکاری می‌کنیم؛ display دست‌نخورده می‌ماند
           el.removeStyle('float');
           el.removeStyle('margin-left');
           el.removeStyle('margin-right');
 
-          const base = { display: 'block' };
+          const style = {};
 
           if (pos === 'right') {
-            el.addStyle({
-              ...base,
-              'margin-left': '0',
-              'margin-right': 'auto',
-            });
+            style['margin-left'] = '0';
+            style['margin-right'] = 'auto';
           } else if (pos === 'center') {
-            el.addStyle({
-              ...base,
-              'margin-left': 'auto',
-              'margin-right': 'auto',
-            });
+            style['margin-left'] = 'auto';
+            style['margin-right'] = 'auto';
           } else if (pos === 'left') {
-            el.addStyle({
-              ...base,
-              'margin-left': 'auto',
-              'margin-right': '0',
-            });
+            style['margin-left'] = 'auto';
+            style['margin-right'] = '0';
           }
+
+          el.addStyle(style);
         };
 
         const alignCommand = (pos) => (editor) => {
@@ -709,6 +732,40 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
             alignImage(selected, pos);
             return;
           }
+          // ۴) اگر خود کامپوننت فایل است → هم خودش تراز شود هم محتوا فلکسی بماند
+          if (selected.get('type') === 'file-download-box') {
+            // حذف استایل‌های قدیمی margin/float
+            selected.removeStyle('float');
+            selected.removeStyle('margin-left');
+            selected.removeStyle('margin-right');
+
+            const style = {
+              display: 'flex',          // مطمئن شو فلکس می‌ماند
+              'align-items': 'center',
+            };
+
+            // چون صفحه RTL است:
+            // right = سمت راست، left = سمت چپ
+            if (pos === 'right') {
+              style['margin-left'] = '0';
+              style['margin-right'] = 'auto';
+              style['justify-content'] = 'flex-start';   // آیکون/متن سمت راست
+            } else if (pos === 'center') {
+              style['margin-left'] = 'auto';
+              style['margin-right'] = 'auto';
+              style['justify-content'] = 'center';
+            } else if (pos === 'left') {
+              style['margin-left'] = 'auto';
+              style['margin-right'] = '0';
+              style['justify-content'] = 'flex-end';      // آیکون/متن سمت چپ
+            }
+
+            selected.addStyle(style);
+            return; // دیگر alignBlock روی این نوع اجرا نشود
+          }
+
+          // ۵) بقیه‌ی المان‌ها (div, p, ...) → مثل قبل با margin
+          alignBlock(selected, pos);
 
           // ۴) بقیه‌ی المان‌ها (div, p, ...) → مثل قبل با margin
           alignBlock(selected, pos);
@@ -1192,6 +1249,10 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           'padding',
           'margin',
           'border-radius',
+          'border',           // ✅ اضافه شد
+          'border-width',     // ✅ اضافه شد
+          'border-style',     // ✅ اضافه شد
+          'border-color',     // ✅ اضافه شد
           'box-shadow',
           'width',
           'max-width',
@@ -1262,7 +1323,41 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
   e.addStyle(
     `body{font-family:'Lahzeh', ui-sans-serif, system-ui, sans-serif}`
   );
-
+  // ✅ کامپوننت wrapper برای لیست‌ها - راحت‌تر قابل انتخاب
+  e.DomComponents.addType('list-wrapper', {
+    model: {
+      defaults: {
+        tagName: 'div',
+        draggable: true,
+        droppable: true,
+        selectable: true,
+        hoverable: true,
+        highlightable: true,
+        stylable: [
+          'background',
+          'background-color',
+          'padding',
+          'margin',
+          'border-radius',
+          'border',
+          'border-width',
+          'border-style',
+          'border-color',
+          'box-shadow',
+          'width',
+          'max-width',
+        ],
+        traits: [],
+      },
+    },
+    view: {
+      onRender() {
+        // اطمینان از اینکه wrapper به راحتی قابل کلیک است
+        this.el.style.cursor = 'pointer';
+        this.el.style.minHeight = '60px';
+      },
+    },
+  });
   return e;
 }
 

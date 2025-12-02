@@ -123,7 +123,7 @@ const styleSectors = [
 
           selected.forEach((cmp) => {
             console.log('🎯 اعمال تراز افقی:', value, 'برای:', cmp.get('tagName'));
-            
+
             cmp.setStyle({
               'text-align': value,
               'float': value === 'right' ? 'right' : value === 'left' ? 'left' : 'none',
@@ -215,7 +215,44 @@ const styleSectors = [
         max: 5,
         step: 0.1,
       },
-      { name: 'فاصله حروف', property: 'letter-spacing', type: 'integer', units: ['px', 'em'], defaults: '0', min: -5, max: 20 },
+      {
+        name: 'فاصله حروف',
+        property: 'letter-spacing',
+        type: 'integer',
+        units: ['px', 'em', 'rem'],
+        default: '0px', // ✅ از defaults به default تغییر داد
+        min: -5,
+        max: 20,
+        step: 0.1
+      },
+      {
+        name: 'نوع لیست',
+        property: 'list-style-type',
+        type: 'select',
+        defaults: 'disc',
+        list: [
+          { value: 'none', name: 'بدون' },
+          { value: 'disc', name: '● نقطه' },
+          { value: 'circle', name: '○ دایره خالی' },
+          { value: 'square', name: '■ مربع' },
+          { value: 'decimal', name: '1. شماره' },
+          { value: 'decimal-leading-zero', name: '01. شماره با صفر' },
+          { value: 'lower-alpha', name: 'a. حروف کوچک' },
+          { value: 'upper-alpha', name: 'A. حروف بزرگ' },
+          { value: 'lower-roman', name: 'i. اعداد رومی کوچک' },
+          { value: 'upper-roman', name: 'I. اعداد رومی بزرگ' },
+        ],
+      },
+      {
+        name: 'موقعیت علامت لیست',
+        property: 'list-style-position',
+        type: 'radio',
+        defaults: 'outside',
+        list: [
+          { value: 'outside', title: 'بیرون' },
+          { value: 'inside', title: 'داخل' },
+        ],
+      },
     ],
   },
   {
@@ -229,13 +266,29 @@ const styleSectors = [
     name: '🔲 حاشیه و سایه',
     open: false,
     properties: [
-      { name: 'گردی گوشه‌ها', property: 'border-radius', type: 'integer', units: ['px', '%'], defaults: '0', min: 0, max: 100 },
+      {
+        name: 'گردی گوشه‌ها',
+        property: 'border-radius',
+        type: 'integer',
+        units: ['px', '%'],
+        defaults: '0',
+        min: 0,
+        max: 100
+      },
       {
         name: 'حاشیه',
         property: 'border',
         type: 'composite',
         properties: [
-          { name: 'عرض', property: 'border-width', type: 'integer', units: ['px'], defaults: '0', min: 0, max: 20 },
+          {
+            name: 'عرض',
+            property: 'border-width',
+            type: 'integer',
+            units: ['px'],
+            defaults: '0',
+            min: 0,
+            max: 20
+          },
           {
             name: 'نوع',
             property: 'border-style',
@@ -249,7 +302,71 @@ const styleSectors = [
               { value: 'double', name: 'خط دوتایی' },
             ],
           },
-          { name: 'رنگ', property: 'border-color', type: 'color', defaults: '#000000' },
+          {
+            name: 'رنگ',
+            property: 'border-color',
+            type: 'color',
+            defaults: '#000000'
+          },
+        ],
+      },
+      {
+        name: '🌟 سایه (Box Shadow)',
+        property: 'box-shadow',
+        type: 'stack',
+        properties: [
+          {
+            name: 'افقی (X)',
+            property: 'box-shadow-h',
+            type: 'integer',
+            units: ['px'],
+            defaults: '0',
+            min: -50,
+            max: 50
+          },
+          {
+            name: 'عمودی (Y)',
+            property: 'box-shadow-v',
+            type: 'integer',
+            units: ['px'],
+            defaults: '4',
+            min: -50,
+            max: 50
+          },
+          {
+            name: 'میزان پخش',
+            property: 'box-shadow-blur',
+            type: 'integer',
+            units: ['px'],
+            defaults: '6',
+            min: 0,
+            max: 100
+          },
+          {
+            name: 'گسترش',
+            property: 'box-shadow-spread',
+            type: 'integer',
+            units: ['px'],
+            defaults: '0',
+            min: -50,
+            max: 50
+          },
+          {
+            name: 'رنگ سایه',
+            property: 'box-shadow-color',
+            type: 'color',
+            defaults: 'rgba(0,0,0,0.1)'
+          },
+          {
+            name: 'نوع',
+            property: 'box-shadow-type',
+            type: 'select',
+            defaults: '',
+            list: [
+              { value: '', name: 'بیرونی' },
+              { value: 'inset', name: 'داخلی' },
+            ],
+          },
         ],
       },
     ],
@@ -284,13 +401,13 @@ const styleSectors = [
           { value: 'sticky', name: '📎 چسبنده (ثابت هنگام اسکرول)' },
         ],
       },
-      { 
-        name: 'لایه‌بندی (عدد بالاتر = جلوتر)', 
-        property: 'z-index', 
-        type: 'integer', 
-        defaults: 'auto', 
-        min: -10, 
-        max: 100 
+      {
+        name: 'لایه‌بندی (عدد بالاتر = جلوتر)',
+        property: 'z-index',
+        type: 'integer',
+        defaults: 'auto',
+        min: -10,
+        max: 100
       },
     ],
   },

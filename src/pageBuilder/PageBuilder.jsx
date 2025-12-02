@@ -975,10 +975,11 @@ export default function PageBuilder() {
       html = `
       <div 
         style="
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+          background-color: #ffffff; 
           padding: 24px 32px; 
           border-radius: 16px; 
-          box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+          border: 1px solid #e5e7eb;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
           display: inline-flex; 
           align-items: center; 
           gap: 16px; 
@@ -990,26 +991,30 @@ export default function PageBuilder() {
         <div style="
           width: 48px; 
           height: 48px; 
-          background: rgba(255,255,255,0.2); 
+          background: rgba(37,99,235,0.08); 
           border-radius: 12px; 
           display: flex; 
           align-items: center; 
           justify-content: center; 
           flex-shrink: 0;
         ">
-          <i class="fas fa-file" style="font-size: 24px; color: white;"></i>
+          <i class="fas fa-file" style="font-size: 24px; color: #2563eb;"></i>
         </div>
         <div style="flex: 1;">
-          <h4 style="margin: 0 0 4px 0; color: white; font-size: 16px; font-weight: 600;">${prettyName}</h4>
-          <p style="margin: 0; color: rgba(255,255,255,0.8); font-size: 13px;">${sizeText}</p>
+          <h4 style="margin: 0 0 4px 0; color: #111827; font-size: 16px; font-weight: 600;">
+            ${prettyName}
+          </h4>
+          <p style="margin: 0; color: rgba(55,65,81,0.8); font-size: 13px;">
+            ${sizeText}
+          </p>
         </div>
         <a 
           href="${safeUrl}" 
           download="${prettyName}" 
           style="
             padding: 10px 20px; 
-            background: white; 
-            color: #667eea; 
+            background: #2563eb; 
+            color: #ffffff; 
             text-decoration: none; 
             border-radius: 8px; 
             font-weight: 600; 
@@ -1023,8 +1028,6 @@ export default function PageBuilder() {
     `;
     }
 
-    // 🌐 آیفریم (آپارات / یوتیوب / هر embed دیگری)
-    // 🌐 آیفریم (آپارات / یوتیوب / هر embed دیگری)
     // 🌐 آیفریم (آپارات / یوتیوب / هر embed دیگری)
     else if (type === 'iframe') {
       const finalSrc = extractIframeSrc(safeUrl);
@@ -1075,8 +1078,6 @@ export default function PageBuilder() {
     `;
     }
 
-    
-
     // ✅ جایگزینی placeholder با HTML نهایی
     if (html) {
       const newComponents = component.replaceWith(html);
@@ -1089,6 +1090,7 @@ export default function PageBuilder() {
     setSelectedMediaComponent(null);
     setMediaModalData({ type: null });
   };
+
 
 
 
@@ -2180,6 +2182,20 @@ select.gjs-field,
   display: none !important;
 }
       
+        .gjs-cv-canvas__frames {
+          margin: 40px auto !important;
+          padding: 0 0 200px 0 !important; /* ✅ فضای کافی پایین کانواس */
+        }
+
+        .gjs-frame-wrapper {
+          min-height: calc(100vh - 80px) !important; /* ✅ ارتفاع کافی */
+          padding-bottom: 150px !important; /* ✅ فضای اضافی پایین frame */
+        }
+
+        /* اطمینان از اینکه body داخل iframe هم فضای کافی داره */
+        #gjs iframe[id^="gjs-frame-"] {
+          min-height: 100vh !important;
+        }
 
 
       `}</style>
