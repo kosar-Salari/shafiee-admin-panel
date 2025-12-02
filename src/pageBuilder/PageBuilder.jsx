@@ -367,8 +367,12 @@ export default function PageBuilder() {
         
         if (marginLeft === 'auto' && marginRight === 'auto') {
           alignment = 'center';
-        } else if (marginLeft === 'auto' && marginRight !== 'auto') {
+        } else if (marginRight === 'auto' && marginLeft !== 'auto') {
+          // margin-left: 0, margin-right: auto → چپ‌چین
           alignment = 'left';
+        } else if (marginLeft === 'auto' && marginRight !== 'auto') {
+          // margin-left: auto, margin-right: 0 → راست‌چین
+          alignment = 'right';
         } else if (textAlign === 'center') {
           alignment = 'center';
         } else if (textAlign === 'left') {
@@ -854,16 +858,17 @@ export default function PageBuilder() {
         'display': display || 'block',
       };
     } else if (alignment === 'left') {
-      positionStyles = {
-        'margin-left': 'auto',
-        'margin-right': '0',
-        'display': display || 'block',
-      };
-    } else {
-      // راست (پیش‌فرض)
+      // چپ‌چین: دکمه به سمت چپ
       positionStyles = {
         'margin-left': '0',
         'margin-right': 'auto',
+        'display': display || 'block',
+      };
+    } else {
+      // راست (پیش‌فرض): دکمه به سمت راست
+      positionStyles = {
+        'margin-left': 'auto',
+        'margin-right': '0',
         'display': display || 'inline-block',
       };
     }
