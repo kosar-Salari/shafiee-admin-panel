@@ -510,7 +510,7 @@ export default function AdminMainPage() {
                 />
                 <p className="text-xs text-blue-800">
                   <strong>ابعاد روی سایت (دسکتاپ):</strong> حدوداً{' '}
-                  <strong>۲۶۰×۳۱۰</strong> پیکسل (عرض × ارتفاع)
+                  <strong>۲۶۰در۳۱۰</strong> پیکسل (عرض در ارتفاع)
                 </p>
               </div>
               {bannerSideCards[1] && bannerSideCards[1].image ? (
@@ -627,7 +627,7 @@ export default function AdminMainPage() {
                     </p>
                     <p className="mb-1">
                       بنر اصلی با نسبت تقریبی{' '}
-                      <strong>۶۶۰×۳۱۰</strong> پیکسل (عرض ×
+                      <strong>۶۶۰در۳۱۰</strong> پیکسل (عرض در
                       ارتفاع) نمایش داده می‌شود؛ وجود یا عدم
                       وجود عکس‌های کناری فقط عرض نسبی آن را در
                       ردیف تغییر می‌دهد، نه نسبت تصویر را.
@@ -686,7 +686,7 @@ export default function AdminMainPage() {
                 />
                 <p className="text-xs text-blue-800">
                   <strong>ابعاد روی سایت (دسکتاپ):</strong> حدوداً{' '}
-                  <strong>۲۶۰×۳۱۰</strong> پیکسل (عرض × ارتفاع)
+                  <strong>۲۶۰در۳۱۰</strong> پیکسل (عرض در ارتفاع)
                 </p>
               </div>
               {bannerSideCards[0] && bannerSideCards[0].image ? (
@@ -860,8 +860,8 @@ export default function AdminMainPage() {
                                   دسکتاپ):
                                 </strong>{' '}
                                 حدوداً{' '}
-                                <strong>۱۱۸۰×۲۲۰</strong> پیکسل
-                                (عرض × ارتفاع)
+                                <strong>۱۱۸۰در۲۲۰</strong> پیکسل
+                                (عرض در ارتفاع)
                               </>
                             ) : (
                               <>
@@ -870,14 +870,14 @@ export default function AdminMainPage() {
                                   دسکتاپ):
                                 </strong>{' '}
                                 حدوداً{' '}
-                                <strong>۵۹۰×۲۱۰</strong> پیکسل
-                                (عرض × ارتفاع)
+                                <strong>۵۹۰در۲۱۰</strong> پیکسل
+                                (عرض در ارتفاع)
                               </>
                             )}
                           </p>
                           <p className="mt-1 text-[10px] text-blue-700">
                             در نسخه موبایل، این تصاویر به‌صورت دو
-                            ستون حدوداً ۱۷۲٫۵×۱۴۲ پیکسل نمایش
+                            ستون حدوداً ۱۷۲٫۵در۱۴۲ پیکسل نمایش
                             داده می‌شوند. برای نسخه موبایل
                             می‌توانید <code>imageMobile</code> را
                             جداگانه ست کنید؛ در غیر این صورت،

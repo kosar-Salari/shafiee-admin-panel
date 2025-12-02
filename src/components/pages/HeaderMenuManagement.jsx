@@ -561,7 +561,7 @@ export default function HeaderMenuManagement({
               </p>
               <p className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                سایز پیشنهادی: حداقل ۲۴۰×۷۰ پیکسل
+                سایز پیشنهادی: حداقل ۲۴۰در۷۰ پیکسل
                 <span className="text-xs text-gray-500">
                   (یا بزرگ‌تر با نسبت تقریبی ۱ به ۳٫۵)
                 </span>
