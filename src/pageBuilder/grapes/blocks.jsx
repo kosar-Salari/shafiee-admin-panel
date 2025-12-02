@@ -371,25 +371,102 @@ const blocks = [
     label: '⬜⬜ دو ستون',
     category: 'لایوت',
     content: `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5">
-      <div style="background: white; padding: 30px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div>
-      <div style="background: white; padding: 30px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div>
+    <div 
+      class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5"
+      data-gjs-droppable="false"
+    >
+      <div 
+        data-gjs-droppable="true"
+        style="
+          background: white;
+          padding: 100px;
+          border-radius: 12px;
+          border: 2px dashed #d1d5db;
+          min-height: 150px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+
+      </div>
+
+      <div 
+        data-gjs-droppable="true"
+        style="
+          background: white;
+          padding: 100px;
+          border-radius: 12px;
+          border: 2px dashed #d1d5db;
+          min-height: 150px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+      </div>
     </div>
   `,
   },
-
   {
     id: 'three-column',
     label: '⬜⬜⬜ سه ستون',
     category: 'لایوت',
     content: `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
-      <div style="background: white; padding: 24px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div>
-      <div style="background: white; padding: 24px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div>
-      <div style="background: white; padding: 24px; border-radius: 12px; border: 2px dashed #d1d5db; min-height: 150px;"></div>
+    <div 
+      class="grid grid-cols-1 md:grid-cols-3 gap-5 p-5"
+      data-gjs-droppable="false"
+    >
+      <div 
+        data-gjs-droppable="true"
+        style="
+          background: white;
+          padding: 100px;
+          border-radius: 12px;
+          border: 2px dashed #d1d5db;
+          min-height: 150px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+
+      </div>
+
+      <div 
+        data-gjs-droppable="true"
+        style="
+          background: white;
+          padding: 100px;
+          border-radius: 12px;
+          border: 2px dashed #d1d5db;
+          min-height: 150px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+      </div>
+
+      <div 
+        data-gjs-droppable="true"
+        style="
+          background: white;
+          padding: 100px;
+          border-radius: 12px;
+          border: 2px dashed #d1d5db;
+          min-height: 150px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+
+      </div>
     </div>
   `,
   },
+
 
 
   {
