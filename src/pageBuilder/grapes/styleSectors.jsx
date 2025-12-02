@@ -122,21 +122,43 @@ const styleSectors = [
           if (!selected || !Array.isArray(selected)) return;
 
           selected.forEach((cmp) => {
-            console.log('🎯 اعمال تراز افقی:', value, 'برای:', cmp.get('tagName'));
+            const tag = (cmp.get('tagName') || '').toLowerCase();
+            const isButton = tag === 'a' || cmp.getAttributes()?.['data-button-variant'];
 
-            cmp.setStyle({
-              'text-align': value,
-              'float': value === 'right' ? 'right' : value === 'left' ? 'left' : 'none',
-              'margin': value === 'center' ? '0 auto' : '0'
-            });
+            if (isButton) {
+              // فقط روی خود دکمه inline-block استایل ذخیره کن
+              cmp.addStyle({ display: 'block' });
 
-            if (editor) {
-              setTimeout(() => {
-                editor.refresh();
-              }, 100);
+              if (value === 'center') {
+                cmp.addStyle({
+                  margin: '0 auto',
+                  float: 'none'
+                });
+              } else if (value === 'right') {
+                cmp.addStyle({
+                  margin: '0 0 0 auto',
+                  float: 'none'
+                });
+              } else if (value === 'left') {
+                cmp.addStyle({
+                  margin: '0 auto 0 0',
+                  float: 'none'
+                });
+              }
+            }
+            else {
+              // رفتار معمول برای سایر عناصر
+              cmp.setStyle({
+                'text-align': value,
+                'float': value === 'right' ? 'right' : value === 'left' ? 'left' : 'none',
+                'margin': value === 'center' ? '0 auto' : '0'
+              });
             }
           });
-        },
+
+          if (editor) setTimeout(() => editor.refresh(), 50);
+        }
+
       },
     ],
   },

@@ -604,6 +604,9 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       // ===========================
       // 📐 تراز راست/وسط/چپ (برای همه جز body)
       // ===========================
+      // ===========================
+      // 📐 تراز راست/وسط/چپ (برای همه جز body)
+      // ===========================
       if (tagName !== 'body') {
         // پیدا کردن نزدیک‌ترین دکمه (<a data-button-variant>)
         const findButton = (comp) => {
@@ -620,7 +623,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           return null;
         };
 
-        // 🆕 پیدا کردن نزدیک‌ترین wrapper آیفریم یا صوت
+        // پیدا کردن نزدیک‌ترین wrapper آیفریم یا صوت
         const findMediaWrapper = (comp) => {
           let cur = comp;
           while (cur) {
@@ -694,33 +697,53 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           el.addStyle(style);
         };
 
+        // تراز مخصوص دکمه (خود <a>)
+        const alignButton = (btn, pos) => {
+          if (!btn) return;
+
+          // پاک کردن استایل‌های تراز قبلی
+          btn.removeStyle('float');
+          btn.removeStyle('margin-left');
+          btn.removeStyle('margin-right');
+          btn.removeStyle('text-align');
+          btn.removeStyle('width');
+
+          // دکمه بلوکی ولی به اندازه محتوا
+          const style = {
+            display: 'block',
+            width: 'fit-content',
+            'max-width': '100%',
+          };
+
+          // چون صفحه RTL است:
+          // right = سمت راست، left = سمت چپ
+          if (pos === 'right') {
+            style['margin-left'] = '0';
+            style['margin-right'] = 'auto';   // می‌چسبد به راست
+          } else if (pos === 'center') {
+            style['margin-left'] = 'auto';
+            style['margin-right'] = 'auto';   // وسط
+          } else if (pos === 'left') {
+            style['margin-left'] = 'auto';
+            style['margin-right'] = '0';      // می‌چسبد به چپ
+          }
+
+          btn.addStyle(style);
+        };
+
+        // فرمان تراز، که برای دکمه/مدیا/بقیه فرق می‌کند
         const alignCommand = (pos) => (editor) => {
           const selected = editor.getSelected();
           if (!selected) return;
 
-          // ۱) اگر داخل دکمه‌ایم → والد دکمه را تراز کن
+          // ۱) اگر داخل دکمه‌ایم → خود دکمه را تراز کن
           const btn = findButton(selected);
           if (btn) {
-            const parent = btn.parent && btn.parent();
-            if (parent) {
-              parent.removeStyle('margin-left');
-              parent.removeStyle('margin-right');
-              parent.removeStyle('float');
-
-              parent.addStyle({
-                display: 'block',
-                'text-align':
-                  pos === 'right'
-                    ? 'right'
-                    : pos === 'center'
-                      ? 'center'
-                      : 'left',
-              });
-            }
+            alignButton(btn, pos);
             return;
           }
 
-          // 🆕 ۲) اگر آیفریم، صوت، یا داخل wrapper هستیم → خود wrapper را تراز کن
+          // ۲) اگر آیفریم، صوت، یا داخل wrapper هستیم → خود wrapper را تراز کن
           const mediaWrapper = findMediaWrapper(selected);
           if (mediaWrapper) {
             alignBlock(mediaWrapper, pos);
@@ -732,24 +755,23 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
             alignImage(selected, pos);
             return;
           }
+
           // ۴) اگر خود کامپوننت فایل است → هم خودش تراز شود هم محتوا فلکسی بماند
           if (selected.get('type') === 'file-download-box') {
-            // حذف استایل‌های قدیمی margin/float
             selected.removeStyle('float');
             selected.removeStyle('margin-left');
             selected.removeStyle('margin-right');
 
             const style = {
-              display: 'flex',          // مطمئن شو فلکس می‌ماند
+              display: 'flex',
               'align-items': 'center',
             };
 
             // چون صفحه RTL است:
-            // right = سمت راست، left = سمت چپ
             if (pos === 'right') {
               style['margin-left'] = '0';
               style['margin-right'] = 'auto';
-              style['justify-content'] = 'flex-start';   // آیکون/متن سمت راست
+              style['justify-content'] = 'flex-start';
             } else if (pos === 'center') {
               style['margin-left'] = 'auto';
               style['margin-right'] = 'auto';
@@ -757,17 +779,14 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
             } else if (pos === 'left') {
               style['margin-left'] = 'auto';
               style['margin-right'] = '0';
-              style['justify-content'] = 'flex-end';      // آیکون/متن سمت چپ
+              style['justify-content'] = 'flex-end';
             }
 
             selected.addStyle(style);
-            return; // دیگر alignBlock روی این نوع اجرا نشود
+            return;
           }
 
           // ۵) بقیه‌ی المان‌ها (div, p, ...) → مثل قبل با margin
-          alignBlock(selected, pos);
-
-          // ۴) بقیه‌ی المان‌ها (div, p, ...) → مثل قبل با margin
           alignBlock(selected, pos);
         };
 
@@ -798,6 +817,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           },
         );
       }
+
 
       // ===========================
       // 📋 کپی / حذف
