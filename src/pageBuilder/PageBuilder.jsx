@@ -851,25 +851,28 @@ export default function PageBuilder() {
 
     // محاسبه استایل‌های موقعیت بر اساس همترازی
     let positionStyles = {};
+    // نیاز به display: block برای کار کردن margin: auto
+    const defaultDisplay = display || 'block';
+    
     if (alignment === 'center') {
       positionStyles = {
         'margin-left': 'auto',
         'margin-right': 'auto',
-        'display': display || 'block',
+        'display': defaultDisplay,
       };
     } else if (alignment === 'left') {
       // چپ‌چین: دکمه به سمت چپ
       positionStyles = {
         'margin-left': '0',
         'margin-right': 'auto',
-        'display': display || 'block',
+        'display': defaultDisplay,
       };
     } else {
       // راست (پیش‌فرض): دکمه به سمت راست
       positionStyles = {
         'margin-left': 'auto',
         'margin-right': '0',
-        'display': display || 'inline-block',
+        'display': defaultDisplay,
       };
     }
 
