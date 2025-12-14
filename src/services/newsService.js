@@ -46,6 +46,9 @@ function toUiNews(n = {}) {
       n.featured_image ??
       n.thumbnail ??
       null,
+
+    // 🎯 نام نویسنده
+    authorName: n.authorName ?? n.author_name ?? null,
   };
 }
 
@@ -107,6 +110,11 @@ export async function createNews(payload) {
       content,
     };
 
+    // اضافه کردن authorName اگر وجود دارد
+    if (payload.authorName) {
+      body.authorName = payload.authorName;
+    }
+
     console.log('ارسال به API (createNews):', body);
 
     const { data } = await http.post('/admin/manage-news/', body);
@@ -156,6 +164,11 @@ export async function updateNews(id, payload) {
       categoryId: toNum(payload.categoryId),
       content,
     };
+
+    // اضافه کردن authorName اگر وجود دارد
+    if (payload.authorName) {
+      body.authorName = payload.authorName;
+    }
 
     console.log('به‌روزرسانی خبر:', body);
 

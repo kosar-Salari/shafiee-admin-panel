@@ -48,6 +48,9 @@ function toUiArticle(a = {}) {
       a.featured_image ??
       a.thumbnail ??
       null,
+
+    // 🎯 نام نویسنده
+    authorName: a.authorName ?? a.author_name ?? null,
   };
 }
 
@@ -107,8 +110,13 @@ export async function createArticle(payload) {
       title: payload.title,
       slug: payload.slug,
       categoryId: toNum(payload.categoryId),
-      content, 
+      content,
     };
+
+    // اضافه کردن authorName اگر وجود دارد
+    if (payload.authorName) {
+      body.authorName = payload.authorName;
+    }
 
     console.log('ارسال به API (createArticle):', body);
 
@@ -157,6 +165,11 @@ export async function updateArticle(id, payload) {
       categoryId: toNum(payload.categoryId),
       content,
     };
+
+    // اضافه کردن authorName اگر وجود دارد
+    if (payload.authorName) {
+      body.authorName = payload.authorName;
+    }
 
     console.log('به‌روزرسانی مقاله:', body);
 

@@ -46,6 +46,9 @@ function toUiPage(p = {}) {
 
     // خود محتوا (می‌تواند استرینگ یا آبجکت JSON باشد)
     content,
+
+    // 🎯 نام نویسنده
+    authorName: p.authorName ?? p.author_name ?? null,
   };
 }
 
@@ -117,6 +120,11 @@ export async function createPage(payload) {
       body.parentId = payload.parentId;
     }
 
+    // اضافه کردن authorName اگر وجود دارد
+    if (payload.authorName) {
+      body.authorName = payload.authorName;
+    }
+
     console.log('ارسال به API (createPage):', body);
 
     const { data } = await http.post('/admin/manage-pages/', body);
@@ -173,6 +181,11 @@ export async function updatePage(id, payload) {
       payload.parentId !== ''
     ) {
       body.parentId = payload.parentId;
+    }
+
+    // اضافه کردن authorName اگر وجود دارد
+    if (payload.authorName) {
+      body.authorName = payload.authorName;
     }
 
     console.log('به‌روزرسانی صفحه:', body);

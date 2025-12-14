@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Plus, ChevronDown, ChevronLeft, Search, Calendar,
   FolderTree, Edit2, Trash2, Eye, CheckCircle2, AlertTriangle,
-  Image as ImageIcon,
+  Image as ImageIcon, User,
 } from 'lucide-react';
 
 import {
@@ -499,6 +499,11 @@ export default function Articles() {
                               <span className="flex items-center gap-1">
                                 <Calendar size={16} />
                                 {new Date(item.createdAt).toLocaleDateString('fa-IR')}
+                              </span>
+
+                              <span className="flex items-center gap-1">
+                                <User size={16} />
+                                {item.authorName || 'نامشخص'}
                               </span>
                             </div>
 

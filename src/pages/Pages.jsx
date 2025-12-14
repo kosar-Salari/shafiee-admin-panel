@@ -9,6 +9,7 @@ import {
   Eye,
   CheckCircle2,
   AlertTriangle,
+  User,
 } from 'lucide-react';
 
 import {
@@ -239,6 +240,11 @@ export default function Pages() {
                                     'fa-IR'
                                   )
                                 : '—'}
+                            </span>
+
+                            <span className="flex items-center gap-1">
+                              <User size={16} />
+                              {item.authorName || 'نامشخص'}
                             </span>
 
                             <span className="text-sm text-gray-500">

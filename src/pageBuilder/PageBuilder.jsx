@@ -38,6 +38,7 @@ import { getPageById, createPage, updatePage } from '../services/pagesService';
 import { buildTree, getPathMap } from '../utils/categoryTree';
 import { fetchArticleCategories } from '../services/articleCategoriesService';
 import { fetchNewsCategories } from '../services/newsCategoriesService';
+import { getAdminInfo } from '../utils/auth';
 
 export default function PageBuilder() {
   const [searchParams] = useSearchParams();
@@ -497,6 +498,10 @@ export default function PageBuilder() {
       }
       let didCallApi = false;
 
+      // دریافت نام نویسنده از اطلاعات ادمین لاگین شده
+      const adminInfo = getAdminInfo();
+      const authorName = adminInfo?.username || null;
+
       // --- مقالات ---
       if (origin === 'articles') {
         const contentForBackend = {
@@ -511,6 +516,7 @@ export default function PageBuilder() {
           categoryId: metaCategoryId,
           content: contentForBackend,
           featuredImage: featuredImage || null,
+          authorName,
         };
 
         if (articleId) {
@@ -547,6 +553,7 @@ export default function PageBuilder() {
           categoryId: metaCategoryId,
           content: contentForBackend,
           featuredImage: featuredImage || null,
+          authorName,
         };
 
         if (newsId) {
@@ -580,6 +587,7 @@ export default function PageBuilder() {
           title: metaTitle,
           slug: metaSlug,
           content: contentForBackend,
+          authorName,
         };
 
         console.log('🔍 metaParentId قبل از چک:', metaParentId, typeof metaParentId);

@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Image as ImageIcon,
+  User,
 } from 'lucide-react';
 
 import {
@@ -614,6 +615,11 @@ export default function News() {
                                 {new Date(
                                   item.createdAt
                                 ).toLocaleDateString('fa-IR')}
+                              </span>
+
+                              <span className="flex items-center gap-1">
+                                <User size={16} />
+                                {item.authorName || 'نامشخص'}
                               </span>
                             </div>
 
