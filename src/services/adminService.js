@@ -1,12 +1,6 @@
 // src/services/adminService.js
 import http from './http';
 
-// تبدیل امن به عدد
-const toNum = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
-};
-
 // درآوردن لیست از ساختارهای مختلف ریسپانس
 const unwrapList = (d) =>
   Array.isArray(d?.items) ? d.items :

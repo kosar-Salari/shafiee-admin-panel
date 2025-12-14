@@ -26,7 +26,7 @@ export function getAdminInfo() {
   if (!data) return null;
   try {
     return JSON.parse(data);
-  } catch (e) {
+  } catch {
     return null;
   }
 }

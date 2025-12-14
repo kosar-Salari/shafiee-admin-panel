@@ -13,7 +13,7 @@ const menuItems = [
   { id: 'Admins', label: 'مدیریت ادمینها', icon: Users, path: '/admins', requiresSuperadmin: true },
 ];
 
-const Sidebar = ({ activeTab, setActiveTab, onItemClick, className = '', isMobile = false }) => {
+const Sidebar = ({ setActiveTab, onItemClick, className = '', isMobile = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const adminInfo = getAdminInfo();
