@@ -1504,13 +1504,14 @@ export default function AdminMainPage() {
                     {/* Slider Banners Section (if any) or Banner Row */}
                     {sortedSliderBanners.length > 0 ? (
                       <div className="relative rounded-lg overflow-hidden shadow-lg w-full aspect-[1180/400] bg-gray-200">
-                        {sortedSliderBanners.length > 0 && (
-                          <>
-                            {/* Current Slide */}
-                            <div className="w-full h-full">
-                              {sortedSliderBanners[currentSlide % sortedSliderBanners.length].image ? (
+                        <>
+                          {/* Current Slide */}
+                          <div className="w-full h-full">
+                            {(() => {
+                              const currentBanner = sortedSliderBanners[currentSlide % sortedSliderBanners.length];
+                              return currentBanner.image ? (
                                 <img
-                                  src={sortedSliderBanners[currentSlide % sortedSliderBanners.length].image}
+                                  src={currentBanner.image}
                                   alt={`بنر ${currentSlide + 1}`}
                                   className="w-full h-full object-cover"
                                 />
@@ -1520,82 +1521,82 @@ export default function AdminMainPage() {
                                     بنر {currentSlide + 1} - بدون تصویر
                                   </span>
                                 </div>
-                              )}
-                            </div>
+                              );
+                            })()}
+                          </div>
 
-                            {/* Navigation Buttons */}
-                            {sortedSliderBanners.length > 1 && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    setCurrentSlide(
-                                      (prev) =>
-                                        (prev - 1 + sortedSliderBanners.length) %
-                                        sortedSliderBanners.length
-                                    )
-                                  }
-                                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg"
+                          {/* Navigation Buttons */}
+                          {sortedSliderBanners.length > 1 && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  setCurrentSlide(
+                                    (prev) =>
+                                      (prev - 1 + sortedSliderBanners.length) %
+                                      sortedSliderBanners.length
+                                  )
+                                }
+                                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg"
+                              >
+                                <svg
+                                  className="w-6 h-6"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
                                 >
-                                  <svg
-                                    className="w-6 h-6"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M9 5l7 7-7 7"
-                                    />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    setCurrentSlide(
-                                      (prev) => (prev + 1) % sortedSliderBanners.length
-                                    )
-                                  }
-                                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg"
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 5l7 7-7 7"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setCurrentSlide(
+                                    (prev) => (prev + 1) % sortedSliderBanners.length
+                                  )
+                                }
+                                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg"
+                              >
+                                <svg
+                                  className="w-6 h-6"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
                                 >
-                                  <svg
-                                    className="w-6 h-6"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M15 19l-7-7 7-7"
-                                    />
-                                  </svg>
-                                </button>
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 19l-7-7 7-7"
+                                  />
+                                </svg>
+                              </button>
 
-                                {/* Dots Indicator */}
-                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                                  {sortedSliderBanners.map((_, idx) => (
-                                    <button
-                                      key={idx}
-                                      onClick={() => setCurrentSlide(idx)}
-                                      className={`w-2 h-2 rounded-full transition-all ${
-                                        idx === currentSlide % sortedSliderBanners.length
-                                          ? 'bg-white w-6'
-                                          : 'bg-white/50'
-                                      }`}
-                                    />
-                                  ))}
-                                </div>
-                              </>
-                            )}
+                              {/* Dots Indicator */}
+                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                {sortedSliderBanners.map((_, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => setCurrentSlide(idx)}
+                                    className={`w-2 h-2 rounded-full transition-all ${
+                                      idx === currentSlide
+                                        ? 'bg-white w-6'
+                                        : 'bg-white/50'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
 
-                            {/* Slide Counter */}
-                            <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                              {currentSlide + 1} / {sortedSliderBanners.length}
-                            </div>
-                          </>
-                        )}
+                          {/* Slide Counter */}
+                          <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                            {currentSlide + 1} / {sortedSliderBanners.length}
+                          </div>
+                        </>
                       </div>
                     ) : (
                       <div
