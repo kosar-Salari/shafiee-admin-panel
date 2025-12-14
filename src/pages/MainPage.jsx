@@ -50,6 +50,13 @@ export default function AdminMainPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // Reset slide when preview opens
+  useEffect(() => {
+    if (showPreview) {
+      setCurrentSlide(0);
+    }
+  }, [showPreview]);
+
   /* ────────────────────────────────────────────────────────────
      Init: GET settings → fill UI
      از هر دو آبجکت raw (remote) و local استفاده می‌کنیم
