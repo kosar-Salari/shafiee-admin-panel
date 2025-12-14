@@ -34,6 +34,9 @@ export default function AdminMainPage() {
   // imageLinks1: عکس‌های بالا/پایین بنر
   const [linkCards, setLinkCards] = useState([]); // [{id, image, imageMobile, link, position}]
 
+  // imageLinksMain: بنرهای اسلایدری اصلی
+  const [sliderBanners, setSliderBanners] = useState([]); // [{id, image, imageMobile, link, position}]
+
   // برای Drag & Drop
   const [draggedCard, setDraggedCard] = useState(null);
 
@@ -45,6 +48,7 @@ export default function AdminMainPage() {
 
   // پیش‌نمایش
   const [showPreview, setShowPreview] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   /* ────────────────────────────────────────────────────────────
      Init: GET settings → fill UI
@@ -128,6 +132,29 @@ export default function AdminMainPage() {
 
         setLinkCards(withIds);
 
+        // imageLinksMain (بنرهای اسلایدری)
+        const mainLinksSource =
+          (Array.isArray(local.imageLinksMain) && local.imageLinksMain) ||
+          (Array.isArray(remote.imageLinksMain) && remote.imageLinksMain) ||
+          [];
+
+        const sliderWithIds = mainLinksSource
+          .slice()
+          .sort((a, b) => {
+            const pa = a.position != null ? a.position : 0;
+            const pb = b.position != null ? b.position : 0;
+            return pa - pb;
+          })
+          .map((c, i) => ({
+            id: 's-' + (i + 1),
+            image: c.image || '',
+            imageMobile: c.imageMobile || '',
+            link: c.link || '/',
+            position: c.position != null ? c.position : (i + 1),
+          }));
+
+        setSliderBanners(sliderWithIds);
+
         // سایر تنظیمات
         setNewsActive(
           local.newsActive != null
@@ -179,6 +206,18 @@ export default function AdminMainPage() {
           return pa - pb;
         }),
     [linkCards]
+  );
+
+  const sortedSliderBanners = useMemo(
+    () =>
+      sliderBanners
+        .slice()
+        .sort((a, b) => {
+          const pa = a.position != null ? a.position : 0;
+          const pb = b.position != null ? b.position : 0;
+          return pa - pb;
+        }),
+    [sliderBanners]
   );
 
   /* ────────────────────────────────────────────────────────────
@@ -260,6 +299,113 @@ export default function AdminMainPage() {
         );
       },
     });
+  };
+
+  const handleSliderBannerUpload = (bannerId, e) => {
+    const file = e.target.files && e.target.files[0];
+    handleUpload(file, {
+      folder: 'banners/slider',
+      onDone: (url) => {
+        setSliderBanners((banners) =>
+          banners.map((b) =>
+            b.id === bannerId ? { ...b, image: url } : b
+          )
+        );
+      },
+    });
+  };
+
+  const handleSliderBannerMobileUpload = (bannerId, e) => {
+    const file = e.target.files && e.target.files[0];
+    handleUpload(file, {
+      folder: 'banners/slider/mobile',
+      onDone: (url) => {
+        setSliderBanners((banners) =>
+          banners.map((b) =>
+            b.id === bannerId ? { ...b, imageMobile: url } : b
+          )
+        );
+      },
+    });
+  };
+
+  /* ────────────────────────────────────────────────────────────
+     CRUD + DnD برای بنرهای اسلایدری (imageLinksMain)
+  ──────────────────────────────────────────────────────────── */
+  const [draggedSliderBanner, setDraggedSliderBanner] = useState(null);
+
+  const addNewSliderBanner = () => {
+    const maxPos = sliderBanners.reduce((mx, b) => {
+      const p = b.position != null ? b.position : 0;
+      return p > mx ? p : mx;
+    }, 0);
+    setSliderBanners((prev) => [
+      ...prev,
+      {
+        id: 's-' + Date.now(),
+        image: '',
+        imageMobile: '',
+        link: '/',
+        position: maxPos + 1,
+      },
+    ]);
+  };
+
+  const deleteSliderBanner = (bannerId) => {
+    setSliderBanners((banners) => {
+      const filtered = banners.filter((b) => b.id !== bannerId);
+      return filtered
+        .slice()
+        .sort((a, b) => {
+          const pa = a.position != null ? a.position : 0;
+          const pb = b.position != null ? b.position : 0;
+          return pa - pb;
+        })
+        .map((b, i) => ({ ...b, position: i + 1 }));
+    });
+  };
+
+  const updateSliderBanner = (bannerId, field, value) => {
+    setSliderBanners((banners) =>
+      banners.map((b) =>
+        b.id === bannerId ? { ...b, [field]: value } : b
+      )
+    );
+  };
+
+  const handleSliderBannerDragStart = (e, banner) => {
+    setDraggedSliderBanner(banner);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleSliderBannerDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleSliderBannerDrop = (e, targetBanner) => {
+    e.preventDefault();
+    if (!draggedSliderBanner || draggedSliderBanner.id === targetBanner.id) return;
+
+    const list = sortedSliderBanners;
+    const draggedIdx = list.findIndex(
+      (x) => x.id === draggedSliderBanner.id
+    );
+    const targetIdx = list.findIndex(
+      (x) => x.id === targetBanner.id
+    );
+    if (draggedIdx < 0 || targetIdx < 0) return;
+
+    const next = list.slice();
+    const item = next.splice(draggedIdx, 1)[0];
+    next.splice(targetIdx, 0, item);
+
+    const renumbered = next.map((b, i) => ({
+      ...b,
+      position: i + 1,
+    }));
+    setSliderBanners(renumbered);
+    setDraggedSliderBanner(null);
   };
 
   /* ────────────────────────────────────────────────────────────
@@ -421,6 +567,18 @@ export default function AdminMainPage() {
             position: c.position,
           };
         }),
+
+        // بنرهای اسلایدری (imageLinksMain)
+        imageLinksMain: sortedSliderBanners.map((b) => {
+          const img = b.image || '';
+          const imgMobile = b.imageMobile || img;
+          return {
+            image: img,
+            imageMobile: imgMobile,
+            link: b.link,
+            position: b.position,
+          };
+        }),
       };
 
       console.log('📤 Direct payload:', payload);
@@ -473,6 +631,216 @@ export default function AdminMainPage() {
             {error}
           </div>
         )}
+
+        {/* ── بنرهای اسلایدری اصلی (imageLinksMain) ─────────────────────── */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              بنرهای اسلایدری صفحه اصلی
+            </h2>
+            <button
+              onClick={addNewSliderBanner}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+            >
+              <Plus size={20} />
+              افزودن بنر جدید
+            </button>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-4">
+            <div className="flex items-start gap-2">
+              <Info
+                size={16}
+                className="text-blue-600 mt-0.5 flex-shrink-0"
+              />
+              <div className="text-sm text-blue-800">
+                <p className="font-bold mb-1">
+                  راهنمای بنرهای اسلایدری:
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>بنرها به صورت اسلاید در صفحه اصلی نمایش داده می‌شوند</li>
+                  <li>هر بنر می‌تواند دارای لینک مخصوص به خود باشد</li>
+                  <li>می‌توانید برای هر بنر تصویر جداگانه برای موبایل آپلود کنید</li>
+                  <li>ترتیب نمایش را با کشیدن و رها کردن تغییر دهید</li>
+                  <li><strong>ابعاد پیشنهادی (دسکتاپ):</strong> حدوداً <strong>۱۱۸۰در۴۰۰</strong> پیکسل</li>
+                  <li><strong>ابعاد پیشنهادی (موبایل):</strong> حدوداً <strong>۶۰۰در۴۰۰</strong> پیکسل</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {sortedSliderBanners.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <svg
+                className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <p className="text-lg">هنوز بنری اضافه نشده است</p>
+              <p className="text-sm mt-2">برای شروع روی «افزودن بنر جدید» کلیک کنید</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {sortedSliderBanners.map((banner) => (
+                <div
+                  key={banner.id}
+                  draggable
+                  onDragStart={(e) => handleSliderBannerDragStart(e, banner)}
+                  onDragOver={handleSliderBannerDragOver}
+                  onDrop={(e) => handleSliderBannerDrop(e, banner)}
+                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all cursor-move"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="cursor-grab active:cursor-grabbing mt-2">
+                      <GripVertical
+                        size={24}
+                        className="text-gray-400"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      {/* پیش‌نمایش دسکتاپ */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                          تصویر بنر (دسکتاپ)
+                        </label>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
+                          <div style={{ aspectRatio: '1180 / 400' }}>
+                            {banner.image ? (
+                              <img
+                                src={banner.image}
+                                alt="بنر دسکتاپ"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                                <span className="text-gray-400">
+                                  بدون تصویر (دسکتاپ)
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* پیش‌نمایش موبایل */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                          <Smartphone size={14} />
+                          تصویر بنر (موبایل)
+                        </label>
+                        <div className="border border-dashed border-gray-300 rounded-lg overflow-hidden">
+                          <div style={{ aspectRatio: '600 / 400' }}>
+                            {banner.imageMobile ? (
+                              <img
+                                src={banner.imageMobile}
+                                alt="بنر موبایل"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                                <span className="text-gray-400 text-xs">
+                                  بدون تصویر موبایل
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {/* آپلود دسکتاپ */}
+                        <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                          <Upload size={20} />
+                          <span className="text-sm">
+                            {banner.image
+                              ? 'تغییر تصویر دسکتاپ'
+                              : 'آپلود تصویر دسکتاپ'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              handleSliderBannerUpload(banner.id, e)
+                            }
+                            className="hidden"
+                          />
+                        </label>
+
+                        {/* آپلود موبایل */}
+                        <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer hover:bg-gray-50 text-xs">
+                          <Smartphone size={16} />
+                          <span>
+                            {banner.imageMobile
+                              ? 'تغییر تصویر موبایل'
+                              : 'آپلود تصویر موبایل'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              handleSliderBannerMobileUpload(banner.id, e)
+                            }
+                            className="hidden"
+                          />
+                        </label>
+
+                        {/* لینک */}
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            لینک بنر
+                          </label>
+                          <input
+                            type="text"
+                            value={banner.link}
+                            onChange={(e) =>
+                              updateSliderBanner(banner.id, 'link', e.target.value)
+                            }
+                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                            placeholder="/example"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-xs text-gray-400">
+                          ترتیب: {banner.position}
+                        </div>
+                        <button
+                          onClick={() => deleteSliderBanner(banner.id)}
+                          className="bg-red-100 text-red-700 px-3 py-2 rounded-lg hover:bg-red-200 flex items-center justify-center gap-2"
+                        >
+                          <Trash2 size={18} />
+                          <span>حذف</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* ── Hero (banner + side images) ─────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8 mt-8">
@@ -1133,73 +1501,170 @@ export default function AdminMainPage() {
                       </div>
                     )}
 
-                    {/* Banner Row - بنر اصلی + عکس‌های کناری */}
-                    <div
-                      className="grid gap-3"
-                      style={{
-                        gridTemplateColumns:
-                          hasRightSide && hasLeftSide
-                            ? '21.6% 54.8% 21.6%'
-                            : hasRightSide || hasLeftSide
-                            ? '28.2% 71.8%'
-                            : '1fr',
-                      }}
-                    >
-                      {/* Right Side Card */}
-                      {hasRightSide && (
-                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310]">
-                          {bannerSideCards[1].image ? (
+                    {/* Slider Banners Section (if any) or Banner Row */}
+                    {sortedSliderBanners.length > 0 ? (
+                      <div className="relative rounded-lg overflow-hidden shadow-lg w-full aspect-[1180/400] bg-gray-200">
+                        {sortedSliderBanners.length > 0 && (
+                          <>
+                            {/* Current Slide */}
+                            <div className="w-full h-full">
+                              {sortedSliderBanners[currentSlide % sortedSliderBanners.length].image ? (
+                                <img
+                                  src={sortedSliderBanners[currentSlide % sortedSliderBanners.length].image}
+                                  alt={`بنر ${currentSlide + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                                  <span className="text-gray-500">
+                                    بنر {currentSlide + 1} - بدون تصویر
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Navigation Buttons */}
+                            {sortedSliderBanners.length > 1 && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    setCurrentSlide(
+                                      (prev) =>
+                                        (prev - 1 + sortedSliderBanners.length) %
+                                        sortedSliderBanners.length
+                                    )
+                                  }
+                                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg"
+                                >
+                                  <svg
+                                    className="w-6 h-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 5l7 7-7 7"
+                                    />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    setCurrentSlide(
+                                      (prev) => (prev + 1) % sortedSliderBanners.length
+                                    )
+                                  }
+                                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg"
+                                >
+                                  <svg
+                                    className="w-6 h-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15 19l-7-7 7-7"
+                                    />
+                                  </svg>
+                                </button>
+
+                                {/* Dots Indicator */}
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                  {sortedSliderBanners.map((_, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={() => setCurrentSlide(idx)}
+                                      className={`w-2 h-2 rounded-full transition-all ${
+                                        idx === currentSlide % sortedSliderBanners.length
+                                          ? 'bg-white w-6'
+                                          : 'bg-white/50'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </>
+                            )}
+
+                            {/* Slide Counter */}
+                            <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                              {currentSlide + 1} / {sortedSliderBanners.length}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="grid gap-3"
+                        style={{
+                          gridTemplateColumns:
+                            hasRightSide && hasLeftSide
+                              ? '21.6% 54.8% 21.6%'
+                              : hasRightSide || hasLeftSide
+                              ? '28.2% 71.8%'
+                              : '1fr',
+                        }}
+                      >
+                        {/* Right Side Card */}
+                        {hasRightSide && (
+                          <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310]">
+                            {bannerSideCards[1].image ? (
+                              <img
+                                src={bannerSideCards[1].image}
+                                alt="تصویر کناری راست"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <span className="text-gray-400">
+                                  بدون تصویر
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Center Banner */}
+                        <div className="rounded-lg overflow-hidden shadow-lg w-full aspect-[660/310]">
+                          {bannerImage ? (
                             <img
-                              src={bannerSideCards[1].image}
-                              alt="تصویر کناری راست"
+                              src={bannerImage}
+                              alt="بنر اصلی"
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-gray-400">
-                                بدون تصویر
+                            <div className="w-full h-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center">
+                              <span className="text-white text-2xl font-bold">
+                                بنر اصلی
                               </span>
                             </div>
                           )}
                         </div>
-                      )}
 
-                      {/* Center Banner */}
-                      <div className="rounded-lg overflow-hidden shadow-lg w-full aspect-[660/310]">
-                        {bannerImage ? (
-                          <img
-                            src={bannerImage}
-                            alt="بنر اصلی"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center">
-                            <span className="text-white text-2xl font-bold">
-                              بنر اصلی
-                            </span>
+                        {/* Left Side Card */}
+                        {hasLeftSide && (
+                          <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310]">
+                            {bannerSideCards[0].image ? (
+                              <img
+                                src={bannerSideCards[0].image}
+                                alt="تصویر کناری چپ"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <span className="text-gray-400">
+                                  بدون تصویر
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-
-                      {/* Left Side Card */}
-                      {hasLeftSide && (
-                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310]">
-                          {bannerSideCards[0].image ? (
-                            <img
-                              src={bannerSideCards[0].image}
-                              alt="تصویر کناری چپ"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-gray-400">
-                                بدون تصویر
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    )}
 
                     {/* Bottom Rows */}
                     {bottomCardsPreview.length > 0 && (
