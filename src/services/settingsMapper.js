@@ -41,6 +41,7 @@ export function apiToLocal(api) {
   // لینک‌های بالا/پایین بنر
   const imageLinks1 = Array.isArray(d.imageLinks1) ? d.imageLinks1.slice().sort((a,b)=>(a.position??0)-(b.position??0)) : [];
   const imageLinks2 = Array.isArray(d.imageLinks2) ? d.imageLinks2.slice().sort((a,b)=>(a.position??0)-(b.position??0)) : [];
+  const imageLinksMain = Array.isArray(d.imageLinksMain) ? d.imageLinksMain.slice().sort((a,b)=>(a.position??0)-(b.position??0)) : [];
 
   return {
     logo: d.logo || "",
@@ -55,6 +56,7 @@ export function apiToLocal(api) {
     footerColumns,
     imageLinks1, // [{image, link, position}]
     imageLinks2, // [{image, link, position}]
+    imageLinksMain, // [{image, imageMobile, link, position}] - slider banners
   };
 }
 
@@ -63,7 +65,7 @@ export function localToApi(local) {
   const {
     logo, mainBanner, rightBanner, leftBanner,
     newsActive, articlesActive, newsCount, articlesCount,
-    menuItems = [], footerColumns = [], imageLinks1 = [], imageLinks2 = [],
+    menuItems = [], footerColumns = [], imageLinks1 = [], imageLinks2 = [], imageLinksMain = [],
   } = local || {};
 
   // منو
@@ -101,6 +103,18 @@ export function localToApi(local) {
         position: x.position ?? (i + 1),
       }));
 
+  // برای imageLinksMain که imageMobile هم دارد
+  const normMain = (arr=[]) =>
+    arr
+      .slice()
+      .sort((a,b)=>(a.position??0)-(b.position??0))
+      .map((x, i) => ({
+        image: x.image || "",
+        imageMobile: x.imageMobile || x.image || "",
+        link: x.link || "",
+        position: x.position ?? (i + 1),
+      }));
+
   return {
     logo: logo || "",
     mainBanner: mainBanner || "",
@@ -114,5 +128,6 @@ export function localToApi(local) {
     menuItems: apiMenu,
     imageLinks1: norm(imageLinks1),
     imageLinks2: norm(imageLinks2),
+    imageLinksMain: normMain(imageLinksMain),
   };
 }
