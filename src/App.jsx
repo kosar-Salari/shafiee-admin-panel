@@ -7,6 +7,7 @@ import News from './pages/News';
 import Articles from './pages/Articles';
 import PageBuilder from './pageBuilder/PageBuilder';
 import HeaderFooterPage from "./pages/HeaderFooter";
+import AdminManagement from './pages/AdminManagement';
 
 import Login from './pages/Login';
 import PrivateRoute from './components/PrivateRoute';
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/news" element={<News />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/header-footer" element={<HeaderFooterPage />} />
+          <Route path="/admins" element={<AdminManagement />} />
 
         </Route>
 

@@ -14,6 +14,7 @@ export default function LayoutShell() {
     else if (location.pathname.startsWith('/news')) setActiveTab('News');
     else if (location.pathname.startsWith('/articles')) setActiveTab('Articles');
     else if (location.pathname.startsWith('/header-footer')) setActiveTab('HeaderFooter');
+    else if (location.pathname.startsWith('/admins')) setActiveTab('Admins');
     else setActiveTab('Pages');
   }, [location.pathname]);
 

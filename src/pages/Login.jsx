@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiLogin, extractToken } from '../services/authService';
-import { setToken, clearToken } from '../utils/auth';
+import { setToken, clearToken, setAdminInfo, clearAdminInfo } from '../utils/auth';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -24,9 +24,18 @@ export default function Login() {
         throw new Error('توکن از سرور دریافت نشد.');
       }
       setToken(token);               // ذخیره امن محلی
+      
+      // ذخیره اطلاعات ادمین (username, role)
+      const adminInfo = {
+        username: data.username || username,
+        role: data.role || 'admin' // پیش‌فرض admin اگر role نیامد
+      };
+      setAdminInfo(adminInfo);
+      
       navigate(from, { replace: true });
     } catch (err) {
       clearToken();
+      clearAdminInfo();
       setError(err?.response?.data?.message || err.message || 'خطا در ورود');
     } finally {
       setLoading(false);

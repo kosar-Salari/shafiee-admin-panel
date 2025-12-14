@@ -1,7 +1,7 @@
-
 // src/components/Sidebar.jsx
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, FileText, BookOpen, MessageSquare, Newspaper, BookMarked, LayoutTemplate, } from 'lucide-react';
+import { Home, FileText, BookOpen, MessageSquare, Newspaper, BookMarked, LayoutTemplate, Users } from 'lucide-react';
+import { getAdminInfo } from '../utils/auth';
 
 const menuItems = [
   { id: 'Pages', label: 'مدیریت صفحات', icon: FileText, path: '/pages' },
@@ -10,12 +10,14 @@ const menuItems = [
   { id: 'Articles', label: 'مدیریت مقالات', icon: BookMarked, path: '/articles' },
   { id: 'Comments', label: 'دیدگاه ها', icon: MessageSquare, path: '/comments' },
   { id: 'HeaderFooter', label: 'هدر و فوتر سایت', icon: LayoutTemplate, path: '/header-footer' },
-
+  { id: 'Admins', label: 'مدیریت ادمینها', icon: Users, path: '/admins', requiresSuperadmin: true },
 ];
 
 const Sidebar = ({ activeTab, setActiveTab, onItemClick, className = '', isMobile = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const adminInfo = getAdminInfo();
+  const isSuperadmin = adminInfo?.role === 'superadmin';
 
   const handleClick = (item) => {
     setActiveTab?.(item.id);
@@ -27,6 +29,14 @@ const Sidebar = ({ activeTab, setActiveTab, onItemClick, className = '', isMobil
     location.pathname === item.path ||
     (item.path !== '/' && location.pathname.startsWith(item.path));
 
+  // فیلتر کردن آیتم‌های منو بر اساس نقش کاربر
+  const visibleMenuItems = menuItems.filter(item => {
+    if (item.requiresSuperadmin) {
+      return isSuperadmin;
+    }
+    return true;
+  });
+
   return (
     <aside className={`fixed right-0 top-0 h-screen w-64 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 text-white shadow-2xl ${isMobile ? 'z-50' : 'z-40'} ${className}`}>
       <div className="p-6 border-b border-slate-700">
@@ -35,7 +45,7 @@ const Sidebar = ({ activeTab, setActiveTab, onItemClick, className = '', isMobil
       </div>
 
       <nav className="p-4">
-        {menuItems.map(item => {
+        {visibleMenuItems.map(item => {
           const Icon = item.icon;
           const active = isActive(item);
           return (
