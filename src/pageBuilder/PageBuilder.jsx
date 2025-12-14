@@ -359,6 +359,26 @@ export default function PageBuilder() {
         const attrs = selected.getAttributes() || {};
         const styles = selected.getStyle() || {};
 
+        // تشخیص همترازی از استایل‌ها
+        let alignment = 'right'; // پیش‌فرض راست
+        const marginLeft = styles['margin-left'];
+        const marginRight = styles['margin-right'];
+        const textAlign = styles['text-align'];
+        
+        if (marginLeft === 'auto' && marginRight === 'auto') {
+          alignment = 'center';
+        } else if (marginRight === 'auto' && marginLeft !== 'auto') {
+          // margin-left: 0, margin-right: auto → چپ‌چین
+          alignment = 'left';
+        } else if (marginLeft === 'auto' && marginRight !== 'auto') {
+          // margin-left: auto, margin-right: 0 → راست‌چین
+          alignment = 'right';
+        } else if (textAlign === 'center') {
+          alignment = 'center';
+        } else if (textAlign === 'left') {
+          alignment = 'left';
+        }
+
         setButtonModalData({
           href: attrs.href || '',
           target: attrs.target || '_self',
@@ -370,6 +390,11 @@ export default function PageBuilder() {
           hoverBg: attrs['data-hover-bg'] || '#4338ca',
           hoverColor: attrs['data-hover-color'] || '#ffffff',
           hoverBorderColor: attrs['data-hover-border-color'] || styles['border-color'] || '',
+          // موقعیت و همترازی
+          alignment: attrs['data-alignment'] || alignment,
+          display: styles.display || 'inline-block',
+          marginTop: styles['margin-top'] || '',
+          marginBottom: styles['margin-bottom'] || '',
         });
 
         setShowButtonModal(true);
@@ -790,6 +815,11 @@ export default function PageBuilder() {
       hoverBg,
       hoverColor,
       hoverBorderColor,
+      // موقعیت و همترازی
+      alignment,
+      display,
+      marginTop,
+      marginBottom,
     } = formData;
 
     const btn = selectedComponent;
@@ -802,6 +832,7 @@ export default function PageBuilder() {
       'data-hover-bg': hoverBg,
       'data-hover-color': hoverColor,
       'data-hover-border-color': hoverBorderColor,
+      'data-alignment': alignment || 'right',
     };
 
     if (linkType === 'none') {
@@ -818,6 +849,41 @@ export default function PageBuilder() {
     btn.removeStyle('background');
     btn.removeStyle('background-image');
 
+    // محاسبه استایل‌های موقعیت بر اساس همترازی
+    let positionStyles = {};
+    // نیاز به display: block برای کار کردن margin: auto
+    const defaultDisplay = display || 'block';
+    
+    if (alignment === 'center') {
+      positionStyles = {
+        'margin-left': 'auto',
+        'margin-right': 'auto',
+        'display': defaultDisplay,
+      };
+    } else if (alignment === 'left') {
+      // چپ‌چین: دکمه به سمت چپ
+      positionStyles = {
+        'margin-left': '0',
+        'margin-right': 'auto',
+        'display': defaultDisplay,
+      };
+    } else {
+      // راست (پیش‌فرض): دکمه به سمت راست
+      positionStyles = {
+        'margin-left': 'auto',
+        'margin-right': '0',
+        'display': defaultDisplay,
+      };
+    }
+
+    // اضافه کردن margin بالا و پایین
+    if (marginTop) {
+      positionStyles['margin-top'] = marginTop;
+    }
+    if (marginBottom) {
+      positionStyles['margin-bottom'] = marginBottom;
+    }
+
     // استایل نرمال دکمه
     btn.addStyle({
       'background-color': bg,
@@ -830,6 +896,7 @@ export default function PageBuilder() {
         }
         : {}),
       'transition': 'all 0.2s ease',
+      ...positionStyles,
     });
 
     // استایل هاور (CSS اضافه به ادیتور)
