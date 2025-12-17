@@ -8,6 +8,7 @@ import {
   LayoutTemplate,
   Users,
   ClipboardList,
+  UserCheck,
 } from 'lucide-react';
 import { getAdminInfo } from '../utils/auth';
 
@@ -19,6 +20,7 @@ const menuItems = [
   { id: 'Comments', label: 'دیدگاه ها', icon: MessageSquare, path: '/comments' },
   { id: 'HeaderFooter', label: 'هدر و فوتر سایت', icon: LayoutTemplate, path: '/header-footer' },
   { id: 'Consultations', label: 'فرم مشاوره', icon: ClipboardList, path: '/consultations' },
+  { id: 'RegisteredUsers', label: 'کاربران ثبت نام شده', icon: UserCheck, path: '/registered-users' },
 
   // ⬅️ این فقط باید برای ادمین اصلی بیاد
   { id: 'Admins', label: 'مدیریت ادمینها', icon: Users, path: '/admins', requiresMain: true },

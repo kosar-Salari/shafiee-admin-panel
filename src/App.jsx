@@ -9,6 +9,7 @@ import PageBuilder from './pageBuilder/PageBuilder';
 import HeaderFooterPage from "./pages/HeaderFooter";
 import AdminManagement from './pages/AdminManagement';
 import Consultations from './pages/Consultations';
+import RegisteredUsers from './pages/RegisteredUsers';
 
 import Login from './pages/Login';
 import PrivateRoute from './components/PrivateRoute';
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/header-footer" element={<HeaderFooterPage />} />
           <Route path="/consultations" element={<Consultations />} />
           <Route path="/admins" element={<AdminManagement />} />
+          <Route path="/registered-users" element={<RegisteredUsers />} />
 
         </Route>
 
