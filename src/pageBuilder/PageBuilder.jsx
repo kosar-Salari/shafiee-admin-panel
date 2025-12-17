@@ -23,6 +23,7 @@ import TopBar from './components/TopBar';
 import CodeModal from './components/CodeModal';
 import ButtonModal from './components/ButtonModal';
 import MediaModal from './components/MediaModal';
+import { apiValidate } from '../services/authService';
 
 import {
   getArticleById,
@@ -499,8 +500,25 @@ export default function PageBuilder() {
       let didCallApi = false;
 
       // دریافت نام نویسنده از اطلاعات ادمین لاگین شده
-      const adminInfo = getAdminInfo();
-      const authorName = adminInfo?.username || null;
+      // ✅ دریافت نام نویسنده از بک‌اند (مرجع اصلی)
+      // اگر validate به هر دلیل خطا داد، fallback به localStorage
+      let authorName = null;
+
+      try {
+        const v = await apiValidate();
+        const userData =
+          v?.user?.data ??
+          v?.data?.user?.data ??
+          v?.user ??
+          v?.data?.user ??
+          null;
+
+        authorName = userData?.username || null;
+      } catch (e) {
+        const adminInfo = getAdminInfo();
+        authorName = adminInfo?.username || null;
+      }
+
 
       // --- مقالات ---
       if (origin === 'articles') {

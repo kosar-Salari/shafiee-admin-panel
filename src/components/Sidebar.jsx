@@ -1,6 +1,13 @@
-// src/components/Sidebar.jsx
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, FileText, BookOpen, MessageSquare, Newspaper, BookMarked, LayoutTemplate, Users } from 'lucide-react';
+import {
+  FileText,
+  BookOpen,
+  MessageSquare,
+  Newspaper,
+  BookMarked,
+  LayoutTemplate,
+  Users,
+} from 'lucide-react';
 import { getAdminInfo } from '../utils/auth';
 
 const menuItems = [
@@ -10,14 +17,27 @@ const menuItems = [
   { id: 'Articles', label: 'مدیریت مقالات', icon: BookMarked, path: '/articles' },
   { id: 'Comments', label: 'دیدگاه ها', icon: MessageSquare, path: '/comments' },
   { id: 'HeaderFooter', label: 'هدر و فوتر سایت', icon: LayoutTemplate, path: '/header-footer' },
-  { id: 'Admins', label: 'مدیریت ادمینها', icon: Users, path: '/admins', requiresSuperadmin: true },
+
+  // ⬅️ این فقط باید برای ادمین اصلی بیاد
+  { id: 'Admins', label: 'مدیریت ادمینها', icon: Users, path: '/admins', requiresMain: true },
 ];
 
 const Sidebar = ({ setActiveTab, onItemClick, className = '', isMobile = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
   const adminInfo = getAdminInfo();
-  const isSuperadmin = adminInfo?.role === 'superadmin';
+
+  // ✅ تشخیص مستقیم ادمین اصلی
+  const isMainAdmin =
+    adminInfo?.isMain === true ||
+    adminInfo?.IsMain === true ||
+    adminInfo?.isMain === 'true' ||
+    adminInfo?.IsMain === 'true';
+
+  // 🔴 لاگ تشخیصی (خیلی مهم)
+  console.log('SIDEBAR adminInfo =>', adminInfo);
+  console.log('SIDEBAR isMainAdmin =>', isMainAdmin);
 
   const handleClick = (item) => {
     setActiveTab?.(item.id);
@@ -29,25 +49,27 @@ const Sidebar = ({ setActiveTab, onItemClick, className = '', isMobile = false }
     location.pathname === item.path ||
     (item.path !== '/' && location.pathname.startsWith(item.path));
 
-  // فیلتر کردن آیتم‌های منو بر اساس نقش کاربر
-  const visibleMenuItems = menuItems.filter(item => {
-    if (item.requiresSuperadmin) {
-      return isSuperadmin;
-    }
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (item.requiresMain) return isMainAdmin;
     return true;
   });
 
   return (
-    <aside className={`fixed right-0 top-0 h-screen w-64 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 text-white shadow-2xl ${isMobile ? 'z-50' : 'z-40'} ${className}`}>
+    <aside
+      className={`fixed right-0 top-0 h-screen w-64 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 text-white shadow-2xl ${
+        isMobile ? 'z-50' : 'z-40'
+      } ${className}`}
+    >
       <div className="p-6 border-b border-slate-700">
         <h1 className="text-2xl font-bold">پنل مدیریت</h1>
         <p className="text-sm text-slate-300 mt-1">خوش آمدید</p>
       </div>
 
       <nav className="p-4">
-        {visibleMenuItems.map(item => {
+        {visibleMenuItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
+
           return (
             <button
               key={item.id}
