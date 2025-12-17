@@ -7,16 +7,18 @@ import {
   BookMarked,
   LayoutTemplate,
   Users,
+  ClipboardList,
 } from 'lucide-react';
 import { getAdminInfo } from '../utils/auth';
 
 const menuItems = [
-  { id: 'Pages', label: 'مدیریت صفحات', icon: FileText, path: '/pages' },
   { id: 'MainPage', label: 'صفحه اصلی', icon: BookOpen, path: '/mainPage' },
+  { id: 'Pages', label: 'مدیریت صفحات', icon: FileText, path: '/pages' },
   { id: 'News', label: 'مدیریت اخبار', icon: Newspaper, path: '/news' },
   { id: 'Articles', label: 'مدیریت مقالات', icon: BookMarked, path: '/articles' },
   { id: 'Comments', label: 'دیدگاه ها', icon: MessageSquare, path: '/comments' },
   { id: 'HeaderFooter', label: 'هدر و فوتر سایت', icon: LayoutTemplate, path: '/header-footer' },
+  { id: 'Consultations', label: 'فرم مشاوره', icon: ClipboardList, path: '/consultations' },
 
   // ⬅️ این فقط باید برای ادمین اصلی بیاد
   { id: 'Admins', label: 'مدیریت ادمینها', icon: Users, path: '/admins', requiresMain: true },

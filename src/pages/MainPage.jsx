@@ -24,6 +24,10 @@ export default function AdminMainPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // پیام ساده ذخیره (برای عنوان فرم مشاوره)
+  const [saveMsg, setSaveMsg] = useState('');
+  const [saveMsgType, setSaveMsgType] = useState('success'); // 'success' | 'error'
+
   const [logo, setLogo] = useState('');
   const [mainBanners, setMainBanners] = useState([]);
 
@@ -43,6 +47,7 @@ export default function AdminMainPage() {
 
   const [showPreview, setShowPreview] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [consultationFormTitle, setConsultationFormTitle] = useState('');
 
   useEffect(function () {
     var isMounted = true;
@@ -123,6 +128,7 @@ export default function AdminMainPage() {
         setArticlesActive(data.articlesActive !== undefined ? data.articlesActive : true);
         setNewsCount(Number(data.newsCount || 3));
         setArticlesCount(Number(data.articlesCount || 3));
+        setConsultationFormTitle(data.consultationFormTitle || '');
       } catch (e) {
         console.error(e);
         setError('دریافت تنظیمات با خطا مواجه شد.');
@@ -397,7 +403,7 @@ export default function AdminMainPage() {
     });
   };
 
-  // Save
+  // Save (Hero + banners + ...)
   var saveHeroChanges = async function () {
     try {
       setSaving(true);
@@ -468,6 +474,35 @@ export default function AdminMainPage() {
       setError('ذخیره تنظیمات با خطا مواجه شد.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Save (Only consultationFormTitle) + نتیجه ساده (ذخیره شد/نشد)
+  var saveConsultationTitle = async function () {
+    try {
+      setSaving(true);
+      setError('');
+      setSaveMsg('');
+
+      var currentResponse = await getSettings();
+      var currentSettings = currentResponse && currentResponse.data ? currentResponse.data : currentResponse || {};
+
+      var payload = {
+        ...currentSettings,
+        consultationFormTitle: consultationFormTitle,
+      };
+
+      await updateSettings(payload);
+
+      setSaveMsgType('success');
+      setSaveMsg('ذخیره شد ✅');
+    } catch (e) {
+      console.error('خطا در ذخیره عنوان فرم مشاوره:', e);
+      setSaveMsgType('error');
+      setSaveMsg('ذخیره ناموفق بود ❌');
+    } finally {
+      setSaving(false);
+      setTimeout(function () { setSaveMsg(''); }, 2500);
     }
   };
 
@@ -964,11 +999,53 @@ export default function AdminMainPage() {
           }}
         />
         <LinkedImagesSettings />
+
+        {/* عنوان فرم مشاوره + دکمه ذخیره مخصوص خودش */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4">عنوان فرم مشاوره</h2>
+
+          <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-4">
+            <div className="text-sm text-blue-800">
+              این متن به عنوان عنوان بالای فرم مشاوره در سایت نمایش داده می‌شود.
+            </div>
+          </div>
+
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            consultationFormTitle
+          </label>
+          <input
+            type="text"
+            value={consultationFormTitle}
+            onChange={(e) => setConsultationFormTitle(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg text-sm"
+            placeholder="مثلاً: درخواست مشاوره"
+          />
+
+          <div className="flex items-center justify-between mt-4">
+            <button
+              onClick={saveConsultationTitle}
+              disabled={saving}
+              className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+            </button>
+
+            {saveMsg && (
+              <div
+                className={
+                  'text-sm px-3 py-2 rounded-lg ' +
+                  (saveMsgType === 'success'
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-red-50 text-red-700 border border-red-200')
+                }
+              >
+                {saveMsg}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          Preview Modal
-      ═══════════════════════════════════════════════════════════════ */}
       {/* ═══════════════════════════════════════════════════════════════
           Preview Modal
       ═══════════════════════════════════════════════════════════════ */}
@@ -994,8 +1071,8 @@ export default function AdminMainPage() {
                     {topCardsPreview.length > 0 && (
                       <div
                         className={`grid ${topCardsPreview.length === 1
-                            ? 'grid-cols-1'
-                            : 'grid-cols-2'
+                          ? 'grid-cols-1'
+                          : 'grid-cols-2'
                           } gap-4`}
                       >
                         {topCardsPreview.map(function (card, index) {
@@ -1003,8 +1080,8 @@ export default function AdminMainPage() {
                             <div
                               key={card.id || index}
                               className={`block rounded-lg overflow-hidden shadow-lg w-full ${topCardsPreview.length === 1
-                                  ? ''
-                                  : 'aspect-[590/210]'
+                                ? ''
+                                : 'aspect-[590/210]'
                                 }`}
                               style={
                                 topCardsPreview.length === 1
@@ -1146,14 +1223,14 @@ export default function AdminMainPage() {
                               <div
                                 key={'bottom-' + i}
                                 className={`grid ${card2
-                                    ? 'grid-cols-2'
-                                    : 'grid-cols-1'
+                                  ? 'grid-cols-2'
+                                  : 'grid-cols-1'
                                   } gap-4`}
                               >
                                 <div
                                   className={`block rounded-lg overflow-hidden shadow-lg w-full ${card2
-                                      ? 'aspect-[590/210]'
-                                      : ''
+                                    ? 'aspect-[590/210]'
+                                    : ''
                                     }`}
                                   style={
                                     !card2
