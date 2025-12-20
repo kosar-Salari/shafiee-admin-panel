@@ -117,9 +117,6 @@ export default function RegisteredUsers() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
           <h2 className="text-xl font-bold text-slate-800">کاربران ثبت نام شده</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            لیست: <span className="font-mono">GET /admin/manage-users/getUsersPaged</span> | اکسل: <span className="font-mono">GET /admin/manage-users/getUsers</span>
-          </p>
         </div>
 
         <div className="flex gap-2 w-full md:w-auto">

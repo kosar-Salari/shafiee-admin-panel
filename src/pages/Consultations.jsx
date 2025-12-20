@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import http from '../services/http';
+import * as XLSX from 'xlsx';
 
 const toFaDateTime = (iso) => {
   try {
@@ -12,6 +13,13 @@ const toFaDateTime = (iso) => {
   }
 };
 
+const downloadExcel = (rows, fileName) => {
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Consultations');
+  XLSX.writeFile(wb, fileName);
+};
+
 export default function Consultations() {
   const [items, setItems] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
@@ -21,11 +29,10 @@ export default function Consultations() {
 
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
 
-  // نکته: چون endpoint شما pagination دارد، برای اینکه سرچ کاربردی‌تر باشد:
-  // اگر search پر باشد، با limit بزرگ‌تر (مثلاً 1000) صفحه 1 را می‌گیریم تا کاربر بتواند بین موارد بیشتری سرچ کند.
-  // اگر دیتای شما خیلی بزرگ شد، بهتر است بک‌اند search را پشتیبانی کند (مثلاً ?q=...).
+
   const effectiveLimit = search.trim() ? 1000 : limit;
   const effectivePage = search.trim() ? 1 : page;
 
@@ -41,11 +48,16 @@ export default function Consultations() {
         });
 
         const data = res?.data?.data ?? [];
-        const pag = res?.data?.pagination ?? { page: 1, limit: effectiveLimit, total: data.length, totalPages: 1 };
+        const pag = res?.data?.pagination ?? {
+          page: effectivePage,
+          limit: effectiveLimit,
+          total: Array.isArray(data) ? data.length : 0,
+          totalPages: 1,
+        };
 
         if (!mounted) return;
 
-        setItems(data);
+        setItems(Array.isArray(data) ? data : []);
         setPagination(pag);
       } catch (e) {
         if (!mounted) return;
@@ -85,23 +97,72 @@ export default function Consultations() {
   const canPrev = page > 1;
   const canNext = page < (pagination?.totalPages || 1);
 
+  const handleExportExcel = async () => {
+    setExporting(true);
+    setError('');
+
+    try {
+      const res = await http.get('/admin/manage-consultation/allforexcel');
+
+      const data =
+        res?.data?.data?.consultations ??
+        res?.data?.data?.items ??
+        res?.data?.data ??
+        res?.data?.consultations ??
+        res?.data ??
+        [];
+
+      const list = Array.isArray(data) ? data : [];
+
+      const rows = list.map((x) => ({
+        id: x?.id ?? '',
+        fullName: x?.fullName ?? '',
+        phone: x?.phone ?? '',
+        educationLevel: x?.educationLevel ?? '',
+        major: x?.major ?? '',
+        isViewed: x?.isViewed ? 'دیده‌شده' : 'جدید',
+        createdAt: x?.createdAt ?? '',
+        updatedAt: x?.updatedAt ?? '',
+      }));
+
+      downloadExcel(rows, `consultations-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      setError(e?.response?.data?.message || 'خطا در دریافت اطلاعات برای اکسل');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
-    <div className="font-lahzeh ">
+    <div className="font-lahzeh">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 ">درخواست‌های فرم مشاوره</h2>
+          <h2 className="text-xl font-bold text-slate-800">درخواست‌های فرم مشاوره</h2>
         </div>
 
-        <div className="w-full md:w-96">
+        <div className="flex gap-2 w-full md:w-auto">
           <input
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(1); // اگر سرچ کرد، صفحه را ریست کنیم
+              setPage(1);
             }}
             placeholder="جستجو: نام، شماره، مقطع، رشته..."
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+            className="w-full md:w-80 px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
           />
+
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className={`px-4 py-3 rounded-xl border ${
+              exporting
+                ? 'bg-slate-50 text-slate-400 border-slate-200'
+                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+            }`}
+            title="خروجی اکسل از کل درخواست‌های مشاوره"
+          >
+            {exporting ? 'در حال ساخت...' : 'خروجی اکسل'}
+          </button>
         </div>
       </div>
 
@@ -110,15 +171,13 @@ export default function Consultations() {
           <div className="text-sm text-slate-600">
             {loading ? 'در حال دریافت...' : `تعداد نمایش داده شده: ${filtered.length}`}
           </div>
-          {!search.trim() && (
+
+          {!search.trim() ? (
             <div className="text-sm text-slate-500">
               صفحه {pagination?.page || page} از {pagination?.totalPages || 1} | کل: {pagination?.total || 0}
             </div>
-          )}
-          {search.trim() && (
-            <div className="text-sm text-slate-500">
-              حالت جستجو فعال است (فچ با limit بالا)
-            </div>
+          ) : (
+            <div className="text-sm text-slate-500">حالت جستجو فعال است (فچ با limit بالا)</div>
           )}
         </div>
 
@@ -174,7 +233,6 @@ export default function Consultations() {
           </div>
         )}
 
-        {/* Pagination فقط وقتی سرچ نداریم */}
         {!search.trim() && (
           <div className="px-4 py-4 border-t border-slate-100 flex items-center justify-between">
             <button
