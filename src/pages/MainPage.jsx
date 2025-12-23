@@ -45,6 +45,7 @@ export default function AdminMainPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [consultationFormTitle, setConsultationFormTitle] = useState('');
+  const [smsWelcomeMessage, setSmsWelcomeMessage] = useState('');
 
   useEffect(function () {
     let isMounted = true;
@@ -128,6 +129,8 @@ export default function AdminMainPage() {
         setNewsCount(Number(data.newsCount || 3));
         setArticlesCount(Number(data.articlesCount || 3));
         setConsultationFormTitle(data.consultationFormTitle || '');
+        setSmsWelcomeMessage(data.smsWelcomeMessage || '');
+
       } catch (e) {
         console.error(e);
         setError('دریافت تنظیمات با خطا مواجه شد.');
@@ -464,6 +467,8 @@ export default function AdminMainPage() {
           };
         }),
         disableCommentsForPages: currentSettings.disableCommentsForPages || [],
+        smsWelcomeMessage: smsWelcomeMessage,
+
       };
 
       await updateSettings(payload);
@@ -1092,6 +1097,35 @@ export default function AdminMainPage() {
             )}
           </div>
         </div>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4">متن پیامک خوش‌آمدگویی</h2>
+
+          <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-4">
+            <div className="text-sm text-blue-800">
+              این متن بعد از ورود هر کاربر به عنوان پیامک خوش‌آمدگویی برای او ارسال می‌شود.
+            </div>
+          </div>
+
+          <label className="block text-sm font-medium text-gray-700 mb-2">smsWelcomeMessage</label>
+
+          <textarea
+            value={smsWelcomeMessage}
+            onChange={(e) => setSmsWelcomeMessage(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg text-sm min-h-[120px]"
+            placeholder="مثلاً: سلام! به سایت ما خوش آمدید..."
+          />
+
+          <div className="flex items-center justify-between mt-4">
+            <button
+              onClick={saveHeroChanges}
+              disabled={saving}
+              className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+            </button>
+          </div>
+        </div>
+
       </div>
 
       {showPreview && (
@@ -1121,9 +1155,8 @@ export default function AdminMainPage() {
                           return (
                             <div
                               key={card.id || index}
-                              className={`block rounded-lg overflow-hidden shadow-lg w-full ${
-                                topCardsPreview.length === 1 ? '' : 'aspect-[590/210]'
-                              }`}
+                              className={`block rounded-lg overflow-hidden shadow-lg w-full ${topCardsPreview.length === 1 ? '' : 'aspect-[590/210]'
+                                }`}
                               style={topCardsPreview.length === 1 ? { height: '210px' } : {}}
                             >
                               {card.image ? (
