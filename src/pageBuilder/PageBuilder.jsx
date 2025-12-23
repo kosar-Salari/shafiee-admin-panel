@@ -87,7 +87,8 @@ export default function PageBuilder() {
 
   const [loadingContent, setLoadingContent] = useState(true);
   const [contentData, setContentData] = useState({ html: '', css: '' });
-  const [featuredImage, setFeaturedImage] = useState('');
+  const [featuredImageDesktop, setFeaturedImageDesktop] = useState('');
+  const [featuredImageMobile, setFeaturedImageMobile] = useState('');
 
   const [categoriesTree, setCategoriesTree] = useState([]);
   const [categoriesFlat, setCategoriesFlat] = useState([]);
@@ -156,23 +157,30 @@ export default function PageBuilder() {
 
           // تصویر شاخص (فقط برای articles/news)
           if (origin !== 'pages') {
-            let fi = item.featuredImage || null;
+            let desktop = item.featuredImage || '';
+            let mobile = '';
+
             if (item.content) {
-              if (typeof item.content === 'object' && item.content.featuredImage) {
-                fi = item.content.featuredImage || fi;
+              if (typeof item.content === 'object') {
+                if (item.content.featuredImageDesktop) desktop = item.content.featuredImageDesktop || desktop;
+                if (item.content.featuredImageMobile) mobile = item.content.featuredImageMobile || mobile;
+                if (item.content.featuredImage && !desktop) desktop = item.content.featuredImage;
               } else if (typeof item.content === 'string') {
                 try {
                   const parsed = JSON.parse(item.content);
-                  if (parsed && parsed.featuredImage) {
-                    fi = parsed.featuredImage || fi;
+                  if (parsed) {
+                    if (parsed.featuredImageDesktop) desktop = parsed.featuredImageDesktop || desktop;
+                    if (parsed.featuredImageMobile) mobile = parsed.featuredImageMobile || mobile;
+                    if (parsed.featuredImage && !desktop) desktop = parsed.featuredImage;
                   }
-                } catch (e) {
-                  // نادیده می‌گیریم
-                }
+                } catch (e) { }
               }
             }
-            setFeaturedImage(fi || '');
+
+            setFeaturedImageDesktop(desktop || '');
+            setFeaturedImageMobile(mobile || '');
           }
+
         }
 
         if (item && item.content) {
@@ -525,7 +533,9 @@ export default function PageBuilder() {
         const contentForBackend = {
           html,
           css,
-          featuredImage: featuredImage || null,
+          featuredImageDesktop: featuredImageDesktop || null,
+          featuredImageMobile: featuredImageMobile || null,
+          featuredImage: featuredImageDesktop || null, // سازگاری با قبل
         };
 
         const payload = {
@@ -533,7 +543,7 @@ export default function PageBuilder() {
           slug: metaSlug,
           categoryId: metaCategoryId,
           content: contentForBackend,
-          featuredImage: featuredImage || null,
+          featuredImage: featuredImageDesktop || null, // سازگاری با قبل
           authorName,
         };
 
@@ -562,7 +572,9 @@ export default function PageBuilder() {
         const contentForBackend = {
           html,
           css,
-          featuredImage: featuredImage || null,
+          featuredImageDesktop: featuredImageDesktop || null,
+          featuredImageMobile: featuredImageMobile || null,
+          featuredImage: featuredImageDesktop || null, // سازگاری با قبل
         };
 
         const payload = {
@@ -570,7 +582,7 @@ export default function PageBuilder() {
           slug: metaSlug,
           categoryId: metaCategoryId,
           content: contentForBackend,
-          featuredImage: featuredImage || null,
+          featuredImage: featuredImageDesktop || null, // سازگاری با قبل
           authorName,
         };
 
@@ -1288,8 +1300,11 @@ ${html}
         onChangeSlug={setMetaSlug}
         onChangeCategoryId={setMetaCategoryId}
         onChangeParentId={setMetaParentId} // 🆕
-        featuredImage={featuredImage}
-        onChangeFeaturedImage={setFeaturedImage}
+        featuredImageDesktop={featuredImageDesktop}
+        featuredImageMobile={featuredImageMobile}
+        onChangeFeaturedImageDesktop={setFeaturedImageDesktop}
+        onChangeFeaturedImageMobile={setFeaturedImageMobile}
+
         onBack={handleBack}
         saving={saving}
         onSave={handleSave}

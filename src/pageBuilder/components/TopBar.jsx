@@ -1,10 +1,7 @@
 // src/pageBuilder/components/TopBar.jsx
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { uploadFileToS3 } from '../../services/filesService';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
-import { getPages } from '../../services/pagesService';
-import { getArticles } from '../../services/articlesService';
-import { getNews } from '../../services/newsService';
 
 export default function TopBar({
   title,
@@ -13,12 +10,14 @@ export default function TopBar({
   categoryLabel,
   categoriesTree = [],
   loadingCategories = false,
-  origin, 
-  featuredImage,
+  origin,
   onChangeTitle,
   onChangeSlug,
   onChangeCategoryId,
-  onChangeFeaturedImage,
+  featuredImageDesktop,
+  featuredImageMobile,
+  onChangeFeaturedImageDesktop,
+  onChangeFeaturedImageMobile,
   onBack,
   saving,
   onSave,
@@ -28,41 +27,54 @@ export default function TopBar({
   onDeviceChange,
   Icons,
 }) {
-  const fileInputRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
+  const fileInputDesktopRef = useRef(null);
+  const fileInputMobileRef = useRef(null);
+
+  const [uploadingDesktop, setUploadingDesktop] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
+
   const [catOpen, setCatOpen] = useState(false);
   const [expandedCats, setExpandedCats] = useState({});
 
+  const { ArrowLeft, Save, Eye, Code, Monitor, Tablet, Smartphone } = Icons || {};
 
-  const {
-    ArrowLeft,
-    Save,
-    Eye,
-    Code,
-    Monitor,
-    Tablet,
-    Smartphone,
-  } = Icons || {};
-
-
-
-  const handleChooseFile = () => {
-    if (fileInputRef.current) fileInputRef.current.click();
+  const handleChooseDesktop = () => {
+    if (fileInputDesktopRef.current) fileInputDesktopRef.current.click();
   };
 
-  const handleFileChange = async (e) => {
+  const handleChooseMobile = () => {
+    if (fileInputMobileRef.current) fileInputMobileRef.current.click();
+  };
+
+  const handleDesktopChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      setUploading(true);
+      setUploadingDesktop(true);
       const url = await uploadFileToS3(file);
-      onChangeFeaturedImage && onChangeFeaturedImage(url);
+      onChangeFeaturedImageDesktop && onChangeFeaturedImageDesktop(url);
     } catch (err) {
-      console.error('خطا در آپلود تصویر شاخص:', err);
+      console.error('خطا در آپلود تصویر شاخص دسکتاپ:', err);
       alert('آپلود تصویر ناموفق بود. لطفاً دوباره تلاش کنید.');
     } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setUploadingDesktop(false);
+      if (fileInputDesktopRef.current) fileInputDesktopRef.current.value = '';
+    }
+  };
+
+  const handleMobileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingMobile(true);
+      const url = await uploadFileToS3(file);
+      onChangeFeaturedImageMobile && onChangeFeaturedImageMobile(url);
+    } catch (err) {
+      console.error('خطا در آپلود تصویر شاخص موبایل:', err);
+      alert('آپلود تصویر ناموفق بود. لطفاً دوباره تلاش کنید.');
+    } finally {
+      setUploadingMobile(false);
+      if (fileInputMobileRef.current) fileInputMobileRef.current.value = '';
     }
   };
 
@@ -74,17 +86,14 @@ export default function TopBar({
     cats.map((cat) => {
       const hasChildren = cat.children && cat.children.length > 0;
       const isExpanded = !!expandedCats[cat.id];
-      const isSelected =
-        categoryId != null && Number(categoryId) === Number(cat.id);
+      const isSelected = categoryId != null && Number(categoryId) === Number(cat.id);
 
       return (
         <div key={cat.id} style={{ marginRight: level * 16 }}>
           <div
             className={
               'flex items-center justify-between px-2 py-1 rounded cursor-pointer transition ' +
-              (isSelected
-                ? 'bg-indigo-50 text-indigo-700'
-                : 'hover:bg-gray-50 text-gray-700')
+              (isSelected ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-gray-50 text-gray-700')
             }
             onClick={() => {
               onChangeCategoryId && onChangeCategoryId(Number(cat.id));
@@ -118,20 +127,14 @@ export default function TopBar({
           </div>
 
           {hasChildren && isExpanded && (
-            <div className="mt-1">
-              {renderCategoryTree(cat.children, level + 1)}
-            </div>
+            <div className="mt-1">{renderCategoryTree(cat.children, level + 1)}</div>
           )}
         </div>
       );
     });
 
   return (
-    <div
-      className="w-full border-b border-gray-200 bg-white px-4 py-3 flex items-center gap-4 shadow-sm"
-      dir="rtl"
-    >
-      {/* دکمه بازگشت */}
+    <div className="w-full border-b border-gray-200 bg-white px-4 py-3 flex items-center gap-4 shadow-sm" dir="rtl">
       <button
         onClick={onBack}
         className="flex items-center gap-1 text-gray-700 hover:text-gray-900 px-2 py-1 rounded-lg hover:bg-gray-100"
@@ -141,9 +144,7 @@ export default function TopBar({
         <span className="text-sm font-medium">بازگشت</span>
       </button>
 
-      {/* عنوان / اسلاگ / دسته یا والد / تصویر شاخص */}
       <div className="flex-1 flex flex-wrap items-center gap-3">
-        {/* عنوان */}
         <div className="flex flex-col">
           <span className="text-xs text-gray-500 mb-1">عنوان</span>
           <input
@@ -155,7 +156,6 @@ export default function TopBar({
           />
         </div>
 
-        {/* اسلاگ */}
         <div className="flex flex-col">
           <span className="text-xs text-gray-500 mb-1">آدرس (Slug)</span>
           <input
@@ -167,7 +167,6 @@ export default function TopBar({
           />
         </div>
 
-        {/* 🔹 برای Articles/News: دسته‌بندی */}
         {origin !== 'pages' && (
           <div className="flex flex-col relative">
             <span className="text-xs text-gray-500 mb-1">دسته‌بندی</span>
@@ -183,8 +182,7 @@ export default function TopBar({
               <span className={categoryLabel ? 'text-gray-800' : 'text-gray-400'}>
                 {loadingCategories
                   ? 'در حال بارگذاری دسته‌ها...'
-                  : categoryLabel ||
-                    (categoryId ? `شناسه دسته: ${categoryId}` : 'انتخاب دسته‌بندی')}
+                  : categoryLabel || (categoryId ? `شناسه دسته: ${categoryId}` : 'انتخاب دسته‌بندی')}
               </span>
               <ChevronDown size={16} className="text-gray-500" />
             </button>
@@ -192,13 +190,9 @@ export default function TopBar({
             {catOpen && (
               <div className="absolute z-50 mt-1 right-0 w-72 bg-white border border-gray-200 rounded-lg shadow-lg max-h-72 overflow-y-auto p-2">
                 {loadingCategories ? (
-                  <p className="text-xs text-gray-500 px-1 py-2">
-                    در حال دریافت دسته‌بندی‌ها…
-                  </p>
+                  <p className="text-xs text-gray-500 px-1 py-2">در حال دریافت دسته‌بندی‌ها…</p>
                 ) : categoriesTree.length === 0 ? (
-                  <p className="text-xs text-gray-500 px-1 py-2">
-                    دسته‌بندی‌ای ثبت نشده است.
-                  </p>
+                  <p className="text-xs text-gray-500 px-1 py-2">دسته‌بندی‌ای ثبت نشده است.</p>
                 ) : (
                   renderCategoryTree(categoriesTree)
                 )}
@@ -207,47 +201,72 @@ export default function TopBar({
           </div>
         )}
 
-
-        {/* تصویر شاخص (فقط برای Articles/News) */}
         {origin !== 'pages' && (
           <div className="flex items-center gap-3">
             <div className="flex flex-col">
               <span className="text-xs text-gray-500 mb-1">تصویر شاخص</span>
-              <div className="flex items-center gap-2">
+
+              <div className="text-[11px] text-gray-500 mb-2 leading-5">
+                ابعاد پیشنهادی:
+                <span className="font-semibold text-gray-700"> دسکتاپ ۱۲۰۰در۴۵۰ </span>
+                و
+                <span className="font-semibold text-gray-700"> موبایل ۹۰۰ در ۶۰۰ </span>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={handleChooseFile}
+                  onClick={handleChooseDesktop}
                   className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-800"
-                  disabled={uploading}
+                  disabled={uploadingDesktop}
                 >
-                  {uploading ? 'در حال آپلود...' : 'انتخاب تصویر'}
+                  {uploadingDesktop ? 'آپلود دسکتاپ...' : 'تصویر دسکتاپ'}
                 </button>
                 <input
                   type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
+                  ref={fileInputDesktopRef}
+                  onChange={handleDesktopChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleChooseMobile}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-800"
+                  disabled={uploadingMobile}
+                >
+                  {uploadingMobile ? 'آپلود موبایل...' : 'تصویر موبایل'}
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputMobileRef}
+                  onChange={handleMobileChange}
                   accept="image/*"
                   className="hidden"
                 />
               </div>
             </div>
 
-            {featuredImage && (
-              <div className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                <img
-                  src={featuredImage}
-                  alt="تصویر شاخص"
-                  className="w-full h-full object-cover"
-                />
+            {(featuredImageDesktop || featuredImageMobile) && (
+              <div className="flex items-center gap-2">
+                {featuredImageDesktop && (
+                  <div className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                    <img src={featuredImageDesktop} alt="Desktop" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                {featuredImageMobile && (
+                  <div className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                    <img src={featuredImageMobile} alt="Mobile" className="w-full h-full object-cover" />
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* انتخاب دیوایس + اکشن‌ها */}
       <div className="flex items-center gap-3">
-        {/* انتخاب دیوایس */}
         <div className="hidden md:flex items-center gap-1 border-x border-gray-200 px-3">
           <button
             type="button"
@@ -275,7 +294,6 @@ export default function TopBar({
           </button>
         </div>
 
-        {/* اکشن‌ها */}
         <div className="flex items-center gap-2">
           <button
             type="button"
