@@ -9,7 +9,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { uploadFile } from "../../services/uploadService"; // 👈 همین سرویس که فرستادی
+import { uploadFile } from "../../services/uploadService"; // 👈 سرویس آپلود
 
 export default function FooterManagement({ footerColumns, setFooterColumns }) {
   const [showFooterModal, setShowFooterModal] = useState(false);
@@ -22,6 +22,9 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
   const [footerLinkText, setFooterLinkText] = useState("");
   const [footerLinkUrl, setFooterLinkUrl] = useState("");
   const [footerLinkIcon, setFooterLinkIcon] = useState("");
+
+  // ✅ جدید: لینک اختیاری
+  const [footerLinkHasUrl, setFooterLinkHasUrl] = useState(true);
 
   // وضعیت آپلود آیکن
   const [iconUploading, setIconUploading] = useState(false);
@@ -53,7 +56,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
       });
 
       console.log("[FooterManagement] uploaded icon url:", url);
-      setFooterLinkIcon(url); // 👈 اینجا URL داخل state می‌نشیند
+      setFooterLinkIcon(url);
     } catch (err) {
       console.error("خطا در آپلود آیکن:", err);
       setIconUploadError("خطا در آپلود آیکن، دوباره تلاش کنید");
@@ -73,6 +76,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
   const resetLinkModalState = () => {
     setFooterLinkText("");
     setFooterLinkUrl("");
+    setFooterLinkHasUrl(true); // ✅ جدید
     setFooterLinkIcon("");
     setIconUploading(false);
     setIconUploadProgress(0);
@@ -97,6 +101,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
 
   const handleSaveColumn = () => {
     if (!footerColumnTitle.trim()) return alert("عنوان ستون را وارد کنید");
+
     if (editingColumn) {
       setFooterColumns((prev) =>
         prev.map((col) =>
@@ -114,6 +119,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
       };
       setFooterColumns((prev) => [...prev, newColumn]);
     }
+
     setShowFooterModal(false);
     setFooterColumnTitle("");
     setEditingColumn(null);
@@ -131,6 +137,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
       if (idx === -1) return prev;
       if (direction === "up" && idx === 0) return prev;
       if (direction === "down" && idx === prev.length - 1) return prev;
+
       const newArr = [...prev];
       const targetIdx = direction === "up" ? idx - 1 : idx + 1;
       [newArr[idx], newArr[targetIdx]] = [newArr[targetIdx], newArr[idx]];
@@ -144,6 +151,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
     setEditingLink(null);
     setFooterLinkText("");
     setFooterLinkUrl("");
+    setFooterLinkHasUrl(true); // ✅ جدید (اگر می‌خواهی پیش‌فرض بدون لینک باشد false بگذار)
     setFooterLinkIcon("");
     setIconUploading(false);
     setIconUploadProgress(0);
@@ -154,9 +162,12 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
   const handleEditLink = (columnId, link) => {
     setCurrentColumnId(columnId);
     setEditingLink(link);
-    setFooterLinkText(link.text);
-    setFooterLinkUrl(link.url);
-    setFooterLinkIcon(link.icon || ""); // 👈 اگر آیکن دارد اینجا لود می‌شود
+
+    setFooterLinkText(link.text || "");
+    setFooterLinkUrl(link.url || "");
+    setFooterLinkHasUrl(!!(link.url && link.url.trim())); // ✅ جدید
+    setFooterLinkIcon(link.icon || "");
+
     setIconUploading(false);
     setIconUploadProgress(0);
     setIconUploadError(null);
@@ -164,14 +175,17 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
   };
 
   const handleSaveLink = () => {
-    if (!footerLinkText.trim()) return alert("متن لینک را وارد کنید");
-    if (!footerLinkUrl.trim()) return alert("آدرس لینک را وارد کنید");
+    if (!footerLinkText.trim()) return alert("متن را وارد کنید");
+
+    // ✅ فقط اگر کاربر گفته لینک دارد، URL اجباری شود
+    if (footerLinkHasUrl && !footerLinkUrl.trim())
+      return alert("آدرس لینک را وارد کنید");
 
     const newLink = {
       id: editingLink?.id || `l-${Date.now()}`,
       text: footerLinkText.trim(),
-      url: footerLinkUrl.trim(),
-      icon: footerLinkIcon || "", // 👈 این مقدار می‌رود داخل footerColumns
+      url: footerLinkHasUrl ? footerLinkUrl.trim() : "", // ✅ اگر لینک نمی‌خواهد => رشته خالی
+      icon: footerLinkIcon || "",
     };
 
     console.log("[FooterManagement] saving link:", newLink);
@@ -268,6 +282,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                   بدون لینک
                 </p>
               )}
+
               {column.links.map((link) => (
                 <div
                   key={link.id}
@@ -291,6 +306,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                     )}
                     <span className="text-sm truncate">{link.text}</span>
                   </div>
+
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleEditLink(column.id, link)}
@@ -316,12 +332,14 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
               >
                 افزودن لینک
               </button>
+
               <button
                 onClick={() => handleEditColumn(column)}
                 className="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
               >
                 <Pencil className="w-3 h-3" />
               </button>
+
               <button
                 onClick={() => handleDeleteColumn(column.id)}
                 className="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700"
@@ -344,6 +362,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
             <h3 className="text-lg font-bold mb-4">
               {editingColumn ? "ویرایش ستون" : "افزودن ستون"}
             </h3>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm mb-1 text-gray-700">
@@ -357,6 +376,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                 />
               </div>
             </div>
+
             <div className="mt-5 flex items-center justify-end gap-2">
               <button
                 onClick={() => setShowFooterModal(false)}
@@ -389,6 +409,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
             <h3 className="text-lg font-bold mb-4">
               {editingLink ? "ویرایش لینک" : "افزودن لینک"}
             </h3>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm mb-1 text-gray-700">
@@ -401,6 +422,24 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                   placeholder="مثال: درباره ما"
                 />
               </div>
+
+              {/* ✅ جدید: سوییچ لینک داشتن */}
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-gray-700">
+                  این آیتم لینک دارد
+                </label>
+                <input
+                  type="checkbox"
+                  checked={footerLinkHasUrl}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFooterLinkHasUrl(checked);
+                    if (!checked) setFooterLinkUrl(""); // ✅ وقتی لینک نمی‌خواهد، url خالی شود
+                  }}
+                  className="w-4 h-4"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm mb-1 text-gray-700">
                   آدرس (URL)
@@ -408,17 +447,20 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                 <input
                   value={footerLinkUrl}
                   onChange={(e) => setFooterLinkUrl(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                  disabled={!footerLinkHasUrl}
+                  className={`w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    !footerLinkHasUrl ? "bg-gray-100 cursor-not-allowed" : ""
+                  }`}
                   placeholder="مثال: /about یا https://example.com"
                   dir="ltr"
                 />
               </div>
+
               <div>
                 <label className="block text-sm mb-1 text-gray-700">
                   آیکن (اختیاری)
                 </label>
 
-                {/* پیش‌نمایش آیکن (در ادیت هم اگر آیکن داشته باشد دیده می‌شود) */}
                 {footerLinkIcon && (
                   <div className="mb-3 relative group inline-block">
                     <div className="w-16 h-16 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
@@ -443,13 +485,10 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                   </div>
                 )}
 
-                {/* انتخاب فایل + آپلود خودکار */}
                 <div className="space-y-2">
                   <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer text-sm">
                     <Upload className="w-4 h-4" />
-                    <span>
-                      {footerLinkIcon ? "تغییر آیکن" : "آپلود آیکن"}
-                    </span>
+                    <span>{footerLinkIcon ? "تغییر آیکن" : "آپلود آیکن"}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -465,9 +504,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                   )}
 
                   {iconUploadError && (
-                    <p className="text-xs text-red-600">
-                      {iconUploadError}
-                    </p>
+                    <p className="text-xs text-red-600">{iconUploadError}</p>
                   )}
 
                   <p className="text-xs text-gray-500">
@@ -476,6 +513,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                 </div>
               </div>
             </div>
+
             <div className="mt-5 flex items-center justify-end gap-2">
               <button
                 onClick={() => {
