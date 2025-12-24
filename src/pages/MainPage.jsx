@@ -46,6 +46,8 @@ export default function AdminMainPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [consultationFormTitle, setConsultationFormTitle] = useState('');
   const [smsWelcomeMessage, setSmsWelcomeMessage] = useState('');
+  const [smsConsultationMessage, setSmsConsultationMessage] = useState('');
+
 
   useEffect(function () {
     let isMounted = true;
@@ -130,6 +132,8 @@ export default function AdminMainPage() {
         setArticlesCount(Number(data.articlesCount || 3));
         setConsultationFormTitle(data.consultationFormTitle || '');
         setSmsWelcomeMessage(data.smsWelcomeMessage || '');
+        setSmsConsultationMessage(data.smsConsultationMessage || '');
+
 
       } catch (e) {
         console.error(e);
@@ -468,6 +472,8 @@ export default function AdminMainPage() {
         }),
         disableCommentsForPages: currentSettings.disableCommentsForPages || [],
         smsWelcomeMessage: smsWelcomeMessage,
+        smsConsultationMessage: smsConsultationMessage,
+
 
       };
 
@@ -1125,6 +1131,37 @@ export default function AdminMainPage() {
             </button>
           </div>
         </div>
+
+
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4">متن پیامک فرم مشاوره</h2>
+
+          <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-4">
+            <div className="text-sm text-blue-800">
+              این متن بعد از ثبت فرم مشاوره توسط کاربر، به عنوان پیامک برای او ارسال می‌شود.
+            </div>
+          </div>
+
+          <label className="block text-sm font-medium text-gray-700 mb-2">smsConsultationMessage</label>
+
+          <textarea
+            value={smsConsultationMessage}
+            onChange={(e) => setSmsConsultationMessage(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg text-sm min-h-[120px]"
+            placeholder="مثلاً: درخواست مشاوره شما ثبت شد. کارشناسان ما به‌زودی با شما تماس می‌گیرند..."
+          />
+
+          <div className="flex items-center justify-between mt-4">
+            <button
+              onClick={saveHeroChanges}
+              disabled={saving}
+              className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+            </button>
+          </div>
+        </div>
+
 
       </div>
 
