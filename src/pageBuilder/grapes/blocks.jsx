@@ -340,31 +340,112 @@ const blocks = [
     label: '🎴 3 کارت کنار هم',
     category: 'کارت‌ها',
     content: `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
-      <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
-        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-          <i class="fas fa-rocket" style="font-size: 24px; color: white;"></i>
-        </div>
-        <h3 style="font-size: 18px; font-weight: bold; color: #1f2937; margin: 0 0 10px 0;">ویژگی اول</h3>
-        <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin: 0;">توضیحات ویژگی اول</p>
-      </div>
-      <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
-        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-          <i class="fas fa-star" style="font-size: 24px; color: white;"></i>
-        </div>
-        <h3 style="font-size: 18px; font-weight: bold; color: #1f2937; margin: 0 0 10px 0;">ویژگی دوم</h3>
-        <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin: 0;">توضیحات ویژگی دوم</p>
-      </div>
-      <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
-        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-          <i class="fas fa-heart" style="font-size: 24px; color: white;"></i>
-        </div>
-        <h3 style="font-size: 18px; font-weight: bold; color: #1f2937; margin: 0 0 10px 0;">ویژگی سوم</h3>
-        <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin: 0;">توضیحات ویژگی سوم</p>
+  <div style="
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    width: 100%;
+    margin: 20px 0;
+    align-items: stretch;
+  ">
+    <div style="
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.10);
+      border: 1px solid #e5e7eb;
+      height: 100%;
+    ">
+      <img
+        src="https://via.placeholder.com/800x500/667eea/ffffff?text=کارت+1"
+        style="width: 100%; height: 210px; object-fit: cover; display:block;"
+        data-gjs-type="image"
+      />
+      <div style="padding: 20px;">
+        <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 10px;">کارت اول</h3>
+        <p style="font-size: 14px; line-height: 1.7; color: #6b7280; margin: 0 0 16px;">
+          توضیحات کارت اول
+        </p>
+        <a href="#" style="
+          display: inline-block;
+          padding: 10px 18px;
+          background: #4f46e5;
+          color: #fff;
+          text-decoration: none;
+          border-radius: 10px;
+          font-weight: 600;
+          font-size: 14px;
+        ">مشاهده بیشتر</a>
       </div>
     </div>
+
+    <div style="
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.10);
+      border: 1px solid #e5e7eb;
+      height: 100%;
+    ">
+      <img
+        src="https://via.placeholder.com/800x500/764ba2/ffffff?text=کارت+2"
+        style="width: 100%; height: 210px; object-fit: cover; display:block;"
+        data-gjs-type="image"
+      />
+      <div style="padding: 20px;">
+        <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 10px;">کارت دوم</h3>
+        <p style="font-size: 14px; line-height: 1.7; color: #6b7280; margin: 0 0 16px;">
+          توضیحات کارت دوم
+        </p>
+        <a href="#" style="
+          display: inline-block;
+          padding: 10px 18px;
+          background: #4f46e5;
+          color: #fff;
+          text-decoration: none;
+          border-radius: 10px;
+          font-weight: 600;
+          font-size: 14px;
+        ">مشاهده بیشتر</a>
+      </div>
+    </div>
+
+    <div style="
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.10);
+      border: 1px solid #e5e7eb;
+      height: 100%;
+    ">
+      <img
+        src="https://via.placeholder.com/800x500/f093fb/ffffff?text=کارت+3"
+        style="width: 100%; height: 210px; object-fit: cover; display:block;"
+        data-gjs-type="image"
+      />
+      <div style="padding: 20px;">
+        <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 10px;">کارت سوم</h3>
+        <p style="font-size: 14px; line-height: 1.7; color: #6b7280; margin: 0 0 16px;">
+          توضیحات کارت سوم
+        </p>
+        <a href="#" style="
+          display: inline-block;
+          padding: 10px 18px;
+          background: #4f46e5;
+          color: #fff;
+          text-decoration: none;
+          border-radius: 10px;
+          font-weight: 600;
+          font-size: 14px;
+        ">مشاهده بیشتر</a>
+      </div>
+    </div>
+  </div>
   `,
   },
+
+
+
 
   {
     id: 'two-column',
@@ -469,10 +550,174 @@ const blocks = [
 
 
 
-  {
-    id: 'hero-section', label: '🎨 بخش Hero', category: 'تمپلیت‌ها',
-    content: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 80px 40px; text-align: center; border-radius: 20px; margin: 20px 0;"><h1 style="font-size: 48px; font-weight: bold; color: white; margin: 0 0 20px 0;">عنوان اصلی شما</h1><p style="font-size: 20px; color: rgba(255,255,255,0.9); margin: 0 0 30px 0; max-width: 600px; margin-left: auto; margin-right: auto;">توضیحات کوتاه و جذاب درباره محصول یا خدمات شما</p><a href="#" style="display: inline-block; padding: 16px 40px; background: white; color: #667eea; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 18px;">شروع کنید</a></div>'
-  },
+{
+  id: 'hero-section',
+  label: '🎨 بخش Hero',
+  category: 'تمپلیت‌ها',
+  content: `
+  <section class="pb-hero">
+    <div class="pb-hero__inner">
+      <h1 class="pb-hero__title">عنوان اصلی شما اینجا قرار می‌گیرد</h1>
+
+      <p class="pb-hero__text">
+        توضیحات کوتاه و جذاب درباره محصول یا خدمات شما. روی موبایل اندازه متن‌ها کمتر می‌شود
+        و همه چیز وسط و مرتب نمایش داده می‌شود.
+      </p>
+
+      <div class="pb-hero__actions">
+        <a href="#" class="pb-hero__btn pb-hero__btn--primary">شروع کنید</a>
+        <a href="#" class="pb-hero__btn pb-hero__btn--ghost">مشاهده بیشتر</a>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    /* دسکتاپ/تبلت: فیکس، کوچک نمی‌شود */
+    .pb-hero{
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 80px 56px;
+      margin: 20px 0;
+      direction: rtl;
+      box-sizing: border-box;
+      min-height: 360px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .pb-hero__inner{
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .pb-hero__title{
+      margin: 0 0 14px 0;
+      color: #fff;
+      font-weight: 800;
+      font-size: 56px;
+      line-height: 1.15;
+
+      /* هر چی جا نشد بره خط بعد */
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+
+    .pb-hero__text{
+      margin: 0 auto 22px auto;
+      color: rgba(255,255,255,0.92);
+      font-size: 18px;
+      line-height: 1.9;
+      max-width: 70ch;
+      overflow-wrap: anywhere;
+    }
+
+    .pb-hero__actions{
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .pb-hero__btn{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+
+      min-width: 160px;
+      max-width: 260px;
+      flex: 1 1 180px;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    .pb-hero__btn--primary{
+      background: #ffffff;
+      color: #4f46e5;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    }
+
+    .pb-hero__btn--ghost{
+      background: rgba(255,255,255,0.14);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.28);
+      backdrop-filter: blur(6px);
+    }
+
+    .pb-hero__btn:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+    }
+
+    /* موبایل: بهتر و کوچک‌تر + وسط */
+    @media (max-width: 520px){
+      .pb-hero{
+        padding: 44px 18px;    /* موبایل پدینگ کمتر */
+        min-height: 0;         /* ارتفاع فیکس دسکتاپ را بردار */
+        text-align: center;    /* وسط */
+      }
+
+      .pb-hero__inner{
+        max-width: 560px;
+      }
+
+      .pb-hero__title{
+        font-size: 30px;       /* تیتر کوچک‌تر در موبایل */
+        line-height: 1.25;
+        margin-bottom: 10px;
+      }
+
+      .pb-hero__text{
+        font-size: 14px;       /* متن کوچک‌تر در موبایل */
+        line-height: 1.85;
+        margin-bottom: 18px;
+        max-width: 46ch;
+      }
+
+      .pb-hero__actions{
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .pb-hero__btn{
+        width: 100%;
+        max-width: 320px;      /* دکمه‌ها وسط و مرتب */
+        min-width: 0;
+      }
+    }
+
+    /* خیلی کوچک‌تر (گوشی‌های خیلی کوچک) */
+    @media (max-width: 380px){
+      .pb-hero{
+        padding: 38px 14px;
+      }
+      .pb-hero__title{
+        font-size: 26px;
+      }
+      .pb-hero__text{
+        font-size: 13px;
+      }
+    }
+  </style>
+  `
+},
+
+
+
 
 
   { id: 'icon-list', label: '✅ لیست با آیکن', category: 'متن', content: '' },
