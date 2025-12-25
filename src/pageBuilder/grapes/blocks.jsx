@@ -1,3 +1,5 @@
+// src/pageBuilder/grapes/blocks.js
+
 const blocks = [
   {
     id: 'text-with-icon',
@@ -86,9 +88,11 @@ const blocks = [
     </div>
   `
   },
+
+  // (این یکی تکراری بود، id و label رو تغییر دادم تا conflict نده)
   {
-    id: 'unordered-list',
-    label: '🔘 لیست نقطه‌ای',
+    id: 'unordered-list-simple',
+    label: '🔘 لیست نقطه‌ای (ساده)',
     category: 'متن',
     content: `
     <ul style="
@@ -105,6 +109,7 @@ const blocks = [
     </ul>
   `
   },
+
   // ===========================
   // 🎬 بلوک‌های رسانه
   // ===========================
@@ -114,10 +119,6 @@ const blocks = [
     content: '<img src="https://via.placeholder.com/800x400/667eea/ffffff?text=تصویر+شما" style="width: 100%; max-width: 800px; height: auto; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: block; margin: 20px auto;" />'
   },
 
-  // {
-  //   id: 'video-embed', label: '📺 ویدیو یوتیوب', category: 'رسانه',
-  //   content: '<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin: 20px 0;"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe></div>'
-  // },
   {
     id: 'iframe-embed',
     label: '🌐 آیفریم (Embed)',
@@ -125,8 +126,6 @@ const blocks = [
     content: '', // تو initEditor با placeholder پر می‌شه
   },
 
-
-  // ✅ ویدیو با دکمه آپلود
   {
     id: 'video-upload',
     label: '🎬 آپلود ویدیو',
@@ -134,7 +133,6 @@ const blocks = [
     content: '' // این توی initEditor.js پر می‌شه
   },
 
-  // ✅ صوت با دکمه آپلود
   {
     id: 'audio-upload',
     label: '🎵 آپلود صوت',
@@ -142,14 +140,12 @@ const blocks = [
     content: '' // این توی initEditor.js پر می‌شه
   },
 
-  // ✅ فایل با دکمه آپلود
   {
     id: 'file-upload',
     label: '📎 آپلود فایل',
     category: 'رسانه',
     content: '' // این توی initEditor.js پر می‌شه
   },
-
 
   {
     id: 'image-gallery-2',
@@ -195,7 +191,6 @@ const blocks = [
   `,
   },
 
-
   {
     id: 'image-gallery-4',
     label: '🖼️ 4 عکس کنار هم',
@@ -221,8 +216,6 @@ const blocks = [
     </div>
   `,
   },
-
-
 
   {
     id: 'button-primary',
@@ -305,36 +298,124 @@ const blocks = [
   `,
   },
 
+  // ===========================
+  // 🎴 کارت‌ها
+  // ===========================
 
-
+  // ✅ FIX: card-with-image (برای هم‌ترازی دکمه اگر کنار کارت‌های دیگر قرار گرفت)
   {
     id: 'card-with-image', label: '🎴 کارت با عکس', category: 'کارت‌ها',
-    content: '<div style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px;"><img src="https://via.placeholder.com/400x250/667eea/ffffff?text=عکس+کارت" style="width: 100%; height: 250px; object-fit: cover;" /><div style="padding: 24px;"><h3 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 0 0 12px 0;">عنوان کارت</h3><p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin: 0 0 20px 0;">توضیحات کارت در این قسمت قرار می‌گیرد.</p><a href="#" style="display: inline-block; padding: 10px 24px; background: #4f46e5; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">مشاهده بیشتر</a></div></div>'
+    content: `
+    <div style="
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 400px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    ">
+      <img
+        src="https://via.placeholder.com/400x250/667eea/ffffff?text=عکس+کارت"
+        style="width: 100%; height: 250px; object-fit: cover; display:block;"
+        data-gjs-type="image"
+      />
+      <div style="padding: 24px; display:flex; flex-direction:column; flex:1;">
+        <h3 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 0 0 12px 0;">عنوان کارت</h3>
+        <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin: 0 0 20px 0;">توضیحات کارت در این قسمت قرار می‌گیرد.</p>
+        <a href="#" style="
+          display: inline-block;
+          padding: 10px 24px;
+          background: #4f46e5;
+          color: white;
+          text-decoration: none;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 14px;
+          margin-top: auto;
+          align-self: flex-start;
+        ">مشاهده بیشتر</a>
+      </div>
+    </div>
+    `
   },
+
+  // ✅ FIX: cards-row-2 (ساختار کارت‌ها flex-column شد تا اگر دکمه اضافه شد هم‌تراز بماند)
   {
     id: 'cards-row-2',
     label: '🎴 2 کارت کنار هم',
     category: 'کارت‌ها',
     content: `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5">
-      <div style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-        <img src="https://via.placeholder.com/400x250/667eea/ffffff?text=کارت+1" style="width: 100%; height: 200px; object-fit: cover;" />
-        <div style="padding: 20px;">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5" style="align-items: stretch;">
+      <div style="
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      ">
+        <img src="https://via.placeholder.com/400x250/667eea/ffffff?text=کارت+1" style="width: 100%; height: 200px; object-fit: cover; display:block;" data-gjs-type="image" />
+        <div style="padding: 20px; display:flex; flex-direction:column; flex:1;">
           <h3 style="font-size: 20px; font-weight: bold; color: #1f2937; margin: 0 0 10px 0;">کارت اول</h3>
           <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin: 0;">توضیحات کارت اول</p>
+
+          <!-- اگر دکمه اضافه کردی، margin-top:auto بگذار -->
+          <!--
+          <a href="#" style="
+            display:inline-block;
+            padding:10px 18px;
+            background:#4f46e5;
+            color:#fff;
+            text-decoration:none;
+            border-radius:10px;
+            font-weight:600;
+            font-size:14px;
+            margin-top:auto;
+            align-self:flex-start;
+          ">مشاهده بیشتر</a>
+          -->
         </div>
       </div>
-      <div style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-        <img src="https://via.placeholder.com/400x250/764ba2/ffffff?text=کارت+2" style="width: 100%; height: 200px; object-fit: cover;" />
-        <div style="padding: 20px;">
+
+      <div style="
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      ">
+        <img src="https://via.placeholder.com/400x250/764ba2/ffffff?text=کارت+2" style="width: 100%; height: 200px; object-fit: cover; display:block;" data-gjs-type="image" />
+        <div style="padding: 20px; display:flex; flex-direction:column; flex:1;">
           <h3 style="font-size: 20px; font-weight: bold; color: #1f2937; margin: 0 0 10px 0;">کارت دوم</h3>
           <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin: 0;">توضیحات کارت دوم</p>
+
+          <!-- دکمه اختیاری -->
+          <!--
+          <a href="#" style="
+            display:inline-block;
+            padding:10px 18px;
+            background:#4f46e5;
+            color:#fff;
+            text-decoration:none;
+            border-radius:10px;
+            font-weight:600;
+            font-size:14px;
+            margin-top:auto;
+            align-self:flex-start;
+          ">مشاهده بیشتر</a>
+          -->
         </div>
       </div>
     </div>
   `,
   },
 
+  // ✅ FIX: cards-row-3 (هم‌تراز شدن دکمه‌ها با flex-column + margin-top:auto)
   {
     id: 'cards-row-3',
     label: '🎴 3 کارت کنار هم',
@@ -355,13 +436,15 @@ const blocks = [
       box-shadow: 0 10px 25px rgba(0,0,0,0.10);
       border: 1px solid #e5e7eb;
       height: 100%;
+      display: flex;
+      flex-direction: column;
     ">
       <img
         src="https://via.placeholder.com/800x500/667eea/ffffff?text=کارت+1"
         style="width: 100%; height: 210px; object-fit: cover; display:block;"
         data-gjs-type="image"
       />
-      <div style="padding: 20px;">
+      <div style="padding: 20px; display:flex; flex-direction:column; flex:1;">
         <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 10px;">کارت اول</h3>
         <p style="font-size: 14px; line-height: 1.7; color: #6b7280; margin: 0 0 16px;">
           توضیحات کارت اول
@@ -375,6 +458,8 @@ const blocks = [
           border-radius: 10px;
           font-weight: 600;
           font-size: 14px;
+          margin-top: auto;
+          align-self: flex-start;
         ">مشاهده بیشتر</a>
       </div>
     </div>
@@ -386,13 +471,15 @@ const blocks = [
       box-shadow: 0 10px 25px rgba(0,0,0,0.10);
       border: 1px solid #e5e7eb;
       height: 100%;
+      display: flex;
+      flex-direction: column;
     ">
       <img
         src="https://via.placeholder.com/800x500/764ba2/ffffff?text=کارت+2"
         style="width: 100%; height: 210px; object-fit: cover; display:block;"
         data-gjs-type="image"
       />
-      <div style="padding: 20px;">
+      <div style="padding: 20px; display:flex; flex-direction:column; flex:1;">
         <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 10px;">کارت دوم</h3>
         <p style="font-size: 14px; line-height: 1.7; color: #6b7280; margin: 0 0 16px;">
           توضیحات کارت دوم
@@ -406,6 +493,8 @@ const blocks = [
           border-radius: 10px;
           font-weight: 600;
           font-size: 14px;
+          margin-top: auto;
+          align-self: flex-start;
         ">مشاهده بیشتر</a>
       </div>
     </div>
@@ -417,13 +506,15 @@ const blocks = [
       box-shadow: 0 10px 25px rgba(0,0,0,0.10);
       border: 1px solid #e5e7eb;
       height: 100%;
+      display: flex;
+      flex-direction: column;
     ">
       <img
         src="https://via.placeholder.com/800x500/f093fb/ffffff?text=کارت+3"
         style="width: 100%; height: 210px; object-fit: cover; display:block;"
         data-gjs-type="image"
       />
-      <div style="padding: 20px;">
+      <div style="padding: 20px; display:flex; flex-direction:column; flex:1;">
         <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 10px;">کارت سوم</h3>
         <p style="font-size: 14px; line-height: 1.7; color: #6b7280; margin: 0 0 16px;">
           توضیحات کارت سوم
@@ -437,6 +528,8 @@ const blocks = [
           border-radius: 10px;
           font-weight: 600;
           font-size: 14px;
+          margin-top: auto;
+          align-self: flex-start;
         ">مشاهده بیشتر</a>
       </div>
     </div>
@@ -444,8 +537,9 @@ const blocks = [
   `,
   },
 
-
-
+  // ===========================
+  // لایوت‌ها و تمپلیت‌ها (بدون تغییر)
+  // ===========================
 
   {
     id: 'two-column',
@@ -548,13 +642,11 @@ const blocks = [
   `,
   },
 
-
-
-{
-  id: 'hero-section',
-  label: '🎨 بخش Hero',
-  category: 'تمپلیت‌ها',
-  content: `
+  {
+    id: 'hero-section',
+    label: '🎨 بخش Hero',
+    category: 'تمپلیت‌ها',
+    content: `
   <section class="pb-hero">
     <div class="pb-hero__inner">
       <h1 class="pb-hero__title">عنوان اصلی شما اینجا قرار می‌گیرد</h1>
@@ -572,7 +664,6 @@ const blocks = [
   </section>
 
   <style>
-    /* دسکتاپ/تبلت: فیکس، کوچک نمی‌شود */
     .pb-hero{
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 20px;
@@ -602,8 +693,6 @@ const blocks = [
       font-weight: 800;
       font-size: 56px;
       line-height: 1.15;
-
-      /* هر چی جا نشد بره خط بعد */
       white-space: normal;
       overflow-wrap: anywhere;
       word-break: normal;
@@ -662,12 +751,11 @@ const blocks = [
       box-shadow: 0 12px 30px rgba(0,0,0,0.22);
     }
 
-    /* موبایل: بهتر و کوچک‌تر + وسط */
     @media (max-width: 520px){
       .pb-hero{
-        padding: 44px 18px;    /* موبایل پدینگ کمتر */
-        min-height: 0;         /* ارتفاع فیکس دسکتاپ را بردار */
-        text-align: center;    /* وسط */
+        padding: 44px 18px;
+        min-height: 0;
+        text-align: center;
       }
 
       .pb-hero__inner{
@@ -675,13 +763,13 @@ const blocks = [
       }
 
       .pb-hero__title{
-        font-size: 30px;       /* تیتر کوچک‌تر در موبایل */
+        font-size: 30px;
         line-height: 1.25;
         margin-bottom: 10px;
       }
 
       .pb-hero__text{
-        font-size: 14px;       /* متن کوچک‌تر در موبایل */
+        font-size: 14px;
         line-height: 1.85;
         margin-bottom: 18px;
         max-width: 46ch;
@@ -695,12 +783,11 @@ const blocks = [
 
       .pb-hero__btn{
         width: 100%;
-        max-width: 320px;      /* دکمه‌ها وسط و مرتب */
+        max-width: 320px;
         min-width: 0;
       }
     }
 
-    /* خیلی کوچک‌تر (گوشی‌های خیلی کوچک) */
     @media (max-width: 380px){
       .pb-hero{
         padding: 38px 14px;
@@ -714,11 +801,7 @@ const blocks = [
     }
   </style>
   `
-},
-
-
-
-
+  },
 
   { id: 'icon-list', label: '✅ لیست با آیکن', category: 'متن', content: '' },
 
