@@ -26,6 +26,9 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
   // ✅ جدید: لینک اختیاری
   const [footerLinkHasUrl, setFooterLinkHasUrl] = useState(true);
 
+  // ✅ جدید: آیتم فقط آیکن (بدون متن)
+  const [footerLinkIconOnly, setFooterLinkIconOnly] = useState(false);
+
   // وضعیت آپلود آیکن
   const [iconUploading, setIconUploading] = useState(false);
   const [iconUploadProgress, setIconUploadProgress] = useState(0);
@@ -77,6 +80,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
     setFooterLinkText("");
     setFooterLinkUrl("");
     setFooterLinkHasUrl(true); // ✅ جدید
+    setFooterLinkIconOnly(false); // ✅ جدید
     setFooterLinkIcon("");
     setIconUploading(false);
     setIconUploadProgress(0);
@@ -152,6 +156,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
     setFooterLinkText("");
     setFooterLinkUrl("");
     setFooterLinkHasUrl(true); // ✅ جدید (اگر می‌خواهی پیش‌فرض بدون لینک باشد false بگذار)
+    setFooterLinkIconOnly(false); // ✅ جدید
     setFooterLinkIcon("");
     setIconUploading(false);
     setIconUploadProgress(0);
@@ -168,6 +173,9 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
     setFooterLinkHasUrl(!!(link.url && link.url.trim())); // ✅ جدید
     setFooterLinkIcon(link.icon || "");
 
+    // ✅ جدید: اگر متن خالی و آیکن دارد => حالت فقط آیکن
+    setFooterLinkIconOnly(!((link.text || "").trim()) && !!(link.icon || "").trim());
+
     setIconUploading(false);
     setIconUploadProgress(0);
     setIconUploadError(null);
@@ -175,7 +183,12 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
   };
 
   const handleSaveLink = () => {
-    if (!footerLinkText.trim()) return alert("متن را وارد کنید");
+    // ✅ جدید: یا متن لازم است، یا اگر icon-only است باید آیکن داشته باشد
+    if (!footerLinkIconOnly && !footerLinkText.trim())
+      return alert("متن را وارد کنید");
+
+    if (footerLinkIconOnly && !footerLinkIcon)
+      return alert("برای آیتم فقط آیکن، آپلود آیکن الزامی است");
 
     // ✅ فقط اگر کاربر گفته لینک دارد، URL اجباری شود
     if (footerLinkHasUrl && !footerLinkUrl.trim())
@@ -183,7 +196,7 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
 
     const newLink = {
       id: editingLink?.id || `l-${Date.now()}`,
-      text: footerLinkText.trim(),
+      text: footerLinkIconOnly ? "" : footerLinkText.trim(), // ✅ اگر فقط آیکن => متن خالی
       url: footerLinkHasUrl ? footerLinkUrl.trim() : "", // ✅ اگر لینک نمی‌خواهد => رشته خالی
       icon: footerLinkIcon || "",
     };
@@ -411,6 +424,23 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
             </h3>
 
             <div className="space-y-4">
+              {/* ✅ جدید: سوییچ فقط آیکن */}
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-gray-700">
+                  فقط آیکن (بدون متن)
+                </label>
+                <input
+                  type="checkbox"
+                  checked={footerLinkIconOnly}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFooterLinkIconOnly(checked);
+                    if (checked) setFooterLinkText(""); // ✅ وقتی فقط آیکن است، متن خالی شود
+                  }}
+                  className="w-4 h-4"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm mb-1 text-gray-700">
                   متن لینک
@@ -418,7 +448,10 @@ export default function FooterManagement({ footerColumns, setFooterColumns }) {
                 <input
                   value={footerLinkText}
                   onChange={(e) => setFooterLinkText(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                  disabled={footerLinkIconOnly}
+                  className={`w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    footerLinkIconOnly ? "bg-gray-100 cursor-not-allowed" : ""
+                  }`}
                   placeholder="مثال: درباره ما"
                 />
               </div>
