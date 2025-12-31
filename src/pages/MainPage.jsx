@@ -747,6 +747,12 @@ export default function AdminMainPage() {
                 <p>این عکس‌ها در کنار بنر اصلی (راست و چپ) نمایش داده می‌شوند.</p>
                 <p className="mt-1">
                   <strong>ابعاد پیشنهادی:</strong> <strong>۲۶۰ در ۳۱۰</strong> پیکسل
+                  <p>
+                    <strong>در حالت موبایل، ابعاد پیشنهادی:</strong>
+                    <strong>۳۴۳ در ۱۶۰</strong> پیکسل
+
+                  </p>
+
                 </p>
               </div>
             </div>
@@ -906,7 +912,12 @@ export default function AdminMainPage() {
                   <strong>۲تایی:</strong> ۵۹۰در۲۱۰ &nbsp; | &nbsp;
                   <strong>تکی:</strong> ۱۱۸۰در۲۱۰
                 </p>
-                <p className="text-xs text-blue-700 mt-1">اگر نسبت رعایت نشود، در سایت با object-cover از اطراف برش می‌خورد.</p>
+                <p>
+                  <strong>در حالت موبایل، ابعاد پیشنهادی:</strong>
+                  <strong>۳۴۳ در ۱۶۰</strong> پیکسل
+
+                </p>
+                <p className="text-xs text-blue-700 mt-1">اگر نسبت رعایت نشود، در سایت از اطراف برش می‌خورد.</p>
               </div>
             </div>
           </div>
