@@ -11,18 +11,51 @@ const blocks = [
     </div>`
   },
 
+  // ✅ FIX: عنوان‌ها ریپانسیو شدند (بدون تغییر سایر بخش‌ها)
   {
     id: 'heading-h1', label: '🔤 عنوان بزرگ', category: 'متن',
-    content: '<h1 style="font-size: 48px; font-weight: bold; color: #1f2937; margin: 20px 0;">عنوان اصلی</h1>'
+    content: `
+      <h1 style="
+        font-size: clamp(28px, 6vw, 48px);
+        font-weight: bold;
+        color: #1f2937;
+        margin: clamp(14px, 4vw, 20px) 0;
+        line-height: 1.2;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+      ">عنوان اصلی</h1>
+    `.trim()
   },
   {
     id: 'heading-h2', label: '🔡 عنوان متوسط', category: 'متن',
-    content: '<h2 style="font-size: 36px; font-weight: 600; color: #374151; margin: 16px 0;">عنوان فرعی</h2>'
+    content: `
+      <h2 style="
+        font-size: clamp(22px, 5vw, 36px);
+        font-weight: 600;
+        color: #374151;
+        margin: clamp(12px, 3.6vw, 16px) 0;
+        line-height: 1.3;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      ">عنوان فرعی</h2>
+    `.trim()
   },
   {
     id: 'heading-h3', label: '🔠 عنوان کوچک', category: 'متن',
-    content: '<h3 style="font-size: 24px; font-weight: 600; color: #4b5563; margin: 12px 0;">زیرعنوان</h3>'
+    content: `
+      <h3 style="
+        font-size: clamp(18px, 4.5vw, 24px);
+        font-weight: 600;
+        color: #4b5563;
+        margin: clamp(10px, 3vw, 12px) 0;
+        line-height: 1.4;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      ">زیرعنوان</h3>
+    `.trim()
   },
+
   {
     id: 'paragraph', label: '📄 پاراگراف', category: 'متن',
     content: '<p style="font-size: 16px; line-height: 1.8; color: #6b7280; margin: 12px 0;">این یک پاراگراف نمونه است. روی آن کلیک کنید تا ویرایش کنید.</p>'
@@ -764,5 +797,5 @@ const blocks = [
   { id: 'spacer', label: '↕️ فاصله عمودی', category: 'لایوت', content: '<div style="height: 60px;"></div>' },
   { id: 'divider', label: '➖ خط جداکننده', category: 'لایوت', content: '<hr style="border: none; border-top: 2px solid #e5e7eb; margin: 40px 0;" />' },
 ];
-
+  
 export default blocks;
