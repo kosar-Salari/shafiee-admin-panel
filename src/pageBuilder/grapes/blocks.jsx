@@ -32,31 +32,7 @@ const blocks = [
     id: 'ordered-list',
     label: '🔢 لیست شماره‌دار',
     category: 'متن',
-    content: `
-    <div 
-      data-gjs-type="list-wrapper"
-      style="
-        padding: 16px 20px;
-        background: #f9fafb;
-        border-radius: 12px;
-        border: 2px solid #e5e7eb;
-        margin: 16px 0;
-      "
-    >
-      <ol style="
-        font-size: 16px; 
-        line-height: 1.8; 
-        color: #374151; 
-        margin: 0; 
-        padding-right: 24px;
-        list-style-type: decimal;
-      ">
-        <li style="margin-bottom: 8px;">آیتم اول</li>
-        <li style="margin-bottom: 8px;">آیتم دوم</li>
-        <li style="margin-bottom: 8px;">آیتم سوم</li>
-      </ol>
-    </div>
-  `
+    content: ''
   },
   {
     id: 'unordered-list',
@@ -89,26 +65,6 @@ const blocks = [
   `
   },
 
-  // (این یکی تکراری بود، id و label رو تغییر دادم تا conflict نده)
-  {
-    id: 'unordered-list-simple',
-    label: '🔘 لیست نقطه‌ای (ساده)',
-    category: 'متن',
-    content: `
-    <ul style="
-      font-size: 16px; 
-      line-height: 1.8; 
-      color: #374151; 
-      margin: 16px 0; 
-      padding-right: 24px;
-      list-style-type: disc;
-    ">
-      <li style="margin-bottom: 8px;">آیتم اول</li>
-      <li style="margin-bottom: 8px;">آیتم دوم</li>
-      <li style="margin-bottom: 8px;">آیتم سوم</li>
-    </ul>
-  `
-  },
 
   // ===========================
   // 🎬 بلوک‌های رسانه

@@ -992,7 +992,69 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
           }
         },
       });
-    } else {
+    }
+    else if (b.id === 'ordered-list') {
+      blockConfig.activate = true;
+      blockConfig.select = true;
+      blockConfig.content = { type: 'ordered-list-temp' };
+
+      e.DomComponents.addType('ordered-list-temp', {
+        model: {
+          defaults: {
+            droppable: false,
+            content:
+              '<div style="padding: 20px; text-align: center; color: #999; border: 2px dashed #ccc; border-radius: 12px; background: #f9fafb;">در حال بارگذاری...</div>',
+          },
+          init() {
+            setTimeout(() => {
+              askItemCount()
+                .then((count) => {
+                  const n = Math.max(1, Math.min(100, Number(count) || 1)); // حداقل 1، حداکثر 100
+
+                  let itemsHtml = '';
+                  for (let i = 1; i <= n; i++) {
+                    itemsHtml += `<li style="margin-bottom: 8px;">آیتم ${i}</li>`;
+                  }
+
+                  const html = `
+                <div 
+                  data-gjs-type="list-wrapper"
+                  style="
+                    padding: 16px 20px;
+                    background: #f9fafb;
+                    border-radius: 12px;
+                    border: 2px solid #e5e7eb;
+                    margin: 16px 0;
+                  "
+                >
+                  <ol style="
+                    font-size: 16px; 
+                    line-height: 1.8; 
+                    color: #374151; 
+                    margin: 0; 
+                    padding-right: 24px;
+                    list-style-type: decimal;
+                  ">
+                    ${itemsHtml}
+                  </ol>
+                </div>
+              `;
+
+                  this.replaceWith(html);
+                })
+                .catch((err) => {
+                  console.log('❌ Modal cancelled:', err);
+                  this.remove();
+                });
+            }, 100);
+          },
+        },
+      });
+    }
+
+
+
+    else {
       blockConfig.content = b.content;
     }
 
