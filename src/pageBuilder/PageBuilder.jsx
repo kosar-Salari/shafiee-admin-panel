@@ -786,7 +786,7 @@ export default function PageBuilder() {
           const hoverRule = `
 #${componentId}:hover {
   color: ${hoverColor || '#1d4ed8'} !important;
-  ${hoverScale ? 'transform: scale(1.05);' : ''}
+  ${hoverScale ? 'transform: scale(1.02);' : ''}
 }
 `;
 

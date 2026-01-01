@@ -450,6 +450,7 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
               }, 50);
             },
           },
+
           {
             attributes: {
               class: 'fa fa-underline',
@@ -769,34 +770,71 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
       const selected = editor.getSelected();
       if (!selected) return;
 
+      // 1) پیدا کردن خود <a> (اگر روی متن/عکس داخل لینک کلیک شده باشد)
       let linkComponent = selected;
-
-      if (linkComponent.get('tagName') !== 'a') {
-        const parent = linkComponent.parent();
-        if (parent && parent.get('tagName') === 'a') {
-          linkComponent = parent;
-        } else {
-          return;
-        }
+      while (linkComponent && linkComponent.get('tagName') !== 'a') {
+        linkComponent = linkComponent.parent && linkComponent.parent();
       }
+      if (!linkComponent || linkComponent.get('tagName') !== 'a') return;
 
       const parent = linkComponent.parent();
       if (!parent) return;
 
       const index = linkComponent.index();
-      const children = [...linkComponent.components().models];
 
+      // 2) پاک کردن CSS هاور که قبلاً برای این لینک به ادیتور اضافه شده
+      const linkId = linkComponent.getId && linkComponent.getId();
+      if (linkId) {
+        const css = editor.getCss() || '';
+        // حذف بلوک #id:hover { ... }
+        const hoverBlockRegex = new RegExp(
+          `\\s*#${linkId}:hover\\s*\\{[\\s\\S]*?\\}\\s*`,
+          'g'
+        );
+        const nextCss = css.replace(hoverBlockRegex, '\n');
+        if (nextCss !== css) editor.setStyle(nextCss);
+      }
+
+      // 3) گرفتن فرزندان لینک (کپی می‌گیریم تا بعد از remove از بین نروند)
+      const children = (linkComponent.components && linkComponent.components().models)
+        ? linkComponent.components().models.map(m => m.clone())
+        : [];
+
+      // 4) حذف خود لینک
+      linkComponent.remove();
+
+      // 5) پاکسازی کامل هاور/استایل از فرزندان و برگرداندنشان به parent
       children.forEach((child, i) => {
+        // پاک کردن data-* های مربوط به لینک اگر روی فرزند مانده باشد
+        if (child.removeAttributes) {
+          child.removeAttributes([
+            'data-hover-color',
+            'data-hover-scale',
+            'data-color',
+            'data-underline',
+            'href',
+            'target',
+            'rel',
+          ]);
+        }
+
+        // پاک کردن استایل‌هایی که باعث “هاور روح” می‌شوند
+        if (child.removeStyle) {
+          child.removeStyle('color');
+          child.removeStyle('text-decoration');
+          child.removeStyle('transform');
+          child.removeStyle('transition');
+        }
+
         parent.append(child, { at: index + i });
       });
 
-      linkComponent.remove();
-
-      if (children[0]) {
-        editor.select(children[0]);
-      }
+      // 6) انتخاب اولین آیتم بعد از حذف لینک
+      if (children[0]) editor.select(children[0]);
     },
   });
+
+
 
   e.Commands.add('open-link-settings', {
     run(editor) {
@@ -821,34 +859,63 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
     },
   });
 
-  e.Commands.add('remove-link-preserve', {
+  e.Commands.add('remove-link', {
     run(editor) {
       const selected = editor.getSelected();
       if (!selected) return;
 
+      // 1) پیدا کردن نزدیک‌ترین <a>
       let linkComponent = selected;
       while (linkComponent && linkComponent.get('tagName') !== 'a') {
-        linkComponent =
-          linkComponent.parent && linkComponent.parent();
+        linkComponent = linkComponent.parent && linkComponent.parent();
       }
-
       if (!linkComponent || linkComponent.get('tagName') !== 'a') return;
 
       const parent = linkComponent.parent();
+      if (!parent) return;
+
+      // 2) جمع کردن id همه‌ی نودهای داخل لینک (برای حذف hoverRule هایی که با #id:hover ساخته‌ای)
+      const idsToClean = [];
+      const collectIds = (cmp) => {
+        const id = cmp.getId && cmp.getId();
+        if (id) idsToClean.push(id);
+        const children = cmp.components && cmp.components().models;
+        if (children && children.length) children.forEach(collectIds);
+      };
+      collectIds(linkComponent);
+
+      // 3) حذف قوانین hover از CSS ادیتور برای همه‌ی id ها
+      const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const removeHoverRuleById = (css, id) => {
+        const safeId = escapeRegExp(id);
+        // هر چیزی شبیه:  #id:hover { ... }
+        const re = new RegExp(`\\s*#${safeId}:hover\\s*\\{[^}]*\\}\\s*`, 'g');
+        return css.replace(re, '\n');
+      };
+
+      let css = editor.getCss() || '';
+      idsToClean.forEach((id) => {
+        css = removeHoverRuleById(css, id);
+      });
+      editor.setStyle(css);
+
+      // 4) unwrap واقعی لینک: بچه‌ها را به parent منتقل کن
       const index = linkComponent.index();
-      const children = [...linkComponent.components().models];
+      const childrenModels = (linkComponent.components && linkComponent.components().models) || [];
 
-      if (parent && children.length) {
-        children.forEach((child, i) => {
-          parent.append(child, { at: index + i });
-        });
+      // نکته: برای اینکه از داخل link جدا شوند، بهتر است clone کنیم
+      const moved = childrenModels.map((m) => m.clone());
 
-        linkComponent.remove();
+      moved.forEach((child, i) => {
+        parent.append(child, { at: index + i });
+      });
 
-        editor.select(children[0]);
-      }
+      linkComponent.remove();
+
+      if (moved[0]) editor.select(moved[0]);
     },
   });
+
 
   e.Commands.add('open-image-media-modal', {
     run(editor) {

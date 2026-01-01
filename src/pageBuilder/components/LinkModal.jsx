@@ -228,7 +228,7 @@ export default function LinkModal({ open, onClose, onSave, initialData = {} }) {
                                         </div>
                                         <div>
                                             <span className="text-sm font-bold text-gray-700 group-hover:text-purple-600">بزرگ‌نمایی در هاور</span>
-                                            <p className="text-xs text-gray-500">افزایش 5% اندازه در هاور</p>
+                                            <p className="text-xs text-gray-500">افزایش 2% اندازه در هاور</p>
                                         </div>
                                     </div>
                                     <input
