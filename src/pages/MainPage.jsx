@@ -28,14 +28,14 @@ export default function AdminMainPage() {
   const [logo, setLogo] = useState('');
   const [mainBanners, setMainBanners] = useState([]);
 
-  const [bannerSideCards, setBannerSideCards] = useState([
-    { id: 'side-left', position: 'left', image: '', imageMobile: '', link: '/' },
-    { id: 'side-right', position: 'right', image: '', imageMobile: '', link: '/' },
-  ]);
+  const [leftSideBanners, setLeftSideBanners] = useState([]);
+  const [rightSideBanners, setRightSideBanners] = useState([]);
 
   const [linkCards, setLinkCards] = useState([]);
   const [draggedCard, setDraggedCard] = useState(null);
   const [draggedBanner, setDraggedBanner] = useState(null);
+  const [draggedLeftSide, setDraggedLeftSide] = useState(null);
+  const [draggedRightSide, setDraggedRightSide] = useState(null);
 
   const [newsActive, setNewsActive] = useState(true);
   const [articlesActive, setArticlesActive] = useState(true);
@@ -44,6 +44,8 @@ export default function AdminMainPage() {
 
   const [showPreview, setShowPreview] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentLeftSlide, setCurrentLeftSlide] = useState(0);
+  const [currentRightSlide, setCurrentRightSlide] = useState(0);
   const [consultationFormTitle, setConsultationFormTitle] = useState('');
   const [smsWelcomeMessage, setSmsWelcomeMessage] = useState('');
   const [smsConsultationMessage, setSmsConsultationMessage] = useState('');
@@ -62,8 +64,8 @@ export default function AdminMainPage() {
 
         setLogo(data.logo || '');
 
+        // بنرهای اصلی
         const bannersSource = Array.isArray(data.imageLinksMain) ? data.imageLinksMain : [];
-
         if (bannersSource.length === 0 && data.mainBanner) {
           setMainBanners([
             {
@@ -72,6 +74,7 @@ export default function AdminMainPage() {
               imageMobile: data.mainBannerMobile || data.mainBanner,
               link: '/',
               position: 1,
+              modal: data.mainBannerModal === true,
             },
           ]);
         } else {
@@ -87,28 +90,77 @@ export default function AdminMainPage() {
                 imageMobile: b.imageMobile || '',
                 link: b.link || '/',
                 position: b.position || i + 1,
+                modal: b.modal === true,
               };
             });
           setMainBanners(withIds);
         }
 
-        setBannerSideCards([
-          {
-            id: 'side-left',
-            position: 'left',
-            image: data.leftBanner || '',
-            imageMobile: data.leftBannerMobile || '',
-            link: data.leftBannerLink || '/',
-          },
-          {
-            id: 'side-right',
-            position: 'right',
-            image: data.rightBanner || '',
-            imageMobile: data.rightBannerMobile || '',
-            link: data.rightBannerLink || '/',
-          },
-        ]);
+        // بنرهای سمت چپ
+        const leftBannersSource = Array.isArray(data.imageLinksLeft) ? data.imageLinksLeft : [];
+        if (leftBannersSource.length === 0 && data.leftBanner) {
+          setLeftSideBanners([
+            {
+              id: 'left-1',
+              image: data.leftBanner || '',
+              imageMobile: data.leftBannerMobile || '',
+              link: data.leftBannerLink || '/',
+              position: 1,
+              modal: data.leftBannerModal === true,
+            },
+          ]);
+        } else {
+          const withLeftIds = leftBannersSource
+            .slice()
+            .sort(function (a, b) {
+              return (a.position || 0) - (b.position || 0);
+            })
+            .map(function (b, i) {
+              return {
+                id: 'left-' + (i + 1),
+                image: b.image || '',
+                imageMobile: b.imageMobile || '',
+                link: b.link || '/',
+                position: b.position || i + 1,
+                modal: b.modal === true,
+              };
+            });
+          setLeftSideBanners(withLeftIds);
+        }
 
+        // بنرهای سمت راست
+        const rightBannersSource = Array.isArray(data.imageLinksRight) ? data.imageLinksRight : [];
+        if (rightBannersSource.length === 0 && data.rightBanner) {
+          setRightSideBanners([
+            {
+              id: 'right-1',
+              image: data.rightBanner || '',
+              imageMobile: data.rightBannerMobile || '',
+              link: data.rightBannerLink || '/',
+              position: 1,
+              modal: data.rightBannerModal === true,
+            },
+          ]);
+        } else {
+          const withRightIds = rightBannersSource
+            .slice()
+            .sort(function (a, b) {
+              return (a.position || 0) - (b.position || 0);
+            })
+            .map(function (b, i) {
+              return {
+                id: 'right-' + (i + 1),
+                image: b.image || '',
+                imageMobile: b.imageMobile || '',
+                link: b.link || '/',
+                position: b.position || i + 1,
+                modal: b.modal === true,
+              };
+            });
+          setRightSideBanners(withRightIds);
+        }
+
+        // کارت‌های لینک‌دار
         const linksSource = Array.isArray(data.imageLinks1) ? data.imageLinks1 : [];
         const withCardIds = linksSource
           .slice()
@@ -134,7 +186,6 @@ export default function AdminMainPage() {
         setSmsWelcomeMessage(data.smsWelcomeMessage || '');
         setSmsConsultationMessage(data.smsConsultationMessage || '');
 
-
       } catch (e) {
         console.error(e);
         setError('دریافت تنظیمات با خطا مواجه شد.');
@@ -159,14 +210,26 @@ export default function AdminMainPage() {
     });
   }, [mainBanners]);
 
+  const sortedLeftSideBanners = useMemo(function () {
+    return leftSideBanners.slice().sort(function (a, b) {
+      return (a.position || 0) - (b.position || 0);
+    });
+  }, [leftSideBanners]);
+
+  const sortedRightSideBanners = useMemo(function () {
+    return rightSideBanners.slice().sort(function (a, b) {
+      return (a.position || 0) - (b.position || 0);
+    });
+  }, [rightSideBanners]);
+
   const handleUpload = async function (file, options) {
     if (!file) return;
-    const opts = options || {};
-    const folder = opts.folder || 'images';
-    const onDone = opts.onDone;
+    var opts = options || {};
+    var folder = opts.folder || 'images';
+    var onDone = opts.onDone;
 
     try {
-      const url = await uploadFile(file, { folder: folder });
+      var url = await uploadFile(file, { folder: folder });
       if (onDone) onDone(url);
     } catch (e) {
       console.error('Upload error:', e);
@@ -174,8 +237,8 @@ export default function AdminMainPage() {
     }
   };
 
-  const handleMainBannerUpload = function (bannerId, e) {
-    const file = e.target.files && e.target.files[0];
+  var handleMainBannerUpload = function (bannerId, e) {
+    var file = e.target.files && e.target.files[0];
     handleUpload(file, {
       folder: 'banners',
       onDone: function (url) {
@@ -188,8 +251,8 @@ export default function AdminMainPage() {
     });
   };
 
-  const handleMainBannerMobileUpload = function (bannerId, e) {
-    const file = e.target.files && e.target.files[0];
+  var handleMainBannerMobileUpload = function (bannerId, e) {
+    var file = e.target.files && e.target.files[0];
     handleUpload(file, {
       folder: 'banners/mobile',
       onDone: function (url) {
@@ -202,36 +265,64 @@ export default function AdminMainPage() {
     });
   };
 
-  const handleBannerSideCardUpload = function (cardId, e) {
-    const file = e.target.files && e.target.files[0];
+  var handleLeftSideBannerUpload = function (bannerId, e) {
+    var file = e.target.files && e.target.files[0];
     handleUpload(file, {
       folder: 'banners/sides',
       onDone: function (url) {
-        setBannerSideCards(function (cards) {
-          return cards.map(function (c) {
-            return c.id === cardId ? { ...c, image: url } : c;
+        setLeftSideBanners(function (banners) {
+          return banners.map(function (b) {
+            return b.id === bannerId ? { ...b, image: url } : b;
           });
         });
       },
     });
   };
 
-  const handleBannerSideCardMobileUpload = function (cardId, e) {
-    const file = e.target.files && e.target.files[0];
+  var handleLeftSideBannerMobileUpload = function (bannerId, e) {
+    var file = e.target.files && e.target.files[0];
     handleUpload(file, {
       folder: 'banners/sides/mobile',
       onDone: function (url) {
-        setBannerSideCards(function (cards) {
-          return cards.map(function (c) {
-            return c.id === cardId ? { ...c, imageMobile: url } : c;
+        setLeftSideBanners(function (banners) {
+          return banners.map(function (b) {
+            return b.id === bannerId ? { ...b, imageMobile: url } : b;
           });
         });
       },
     });
   };
 
-  const handleCardImageUpload = function (cardId, e) {
-    const file = e.target.files && e.target.files[0];
+  var handleRightSideBannerUpload = function (bannerId, e) {
+    var file = e.target.files && e.target.files[0];
+    handleUpload(file, {
+      folder: 'banners/sides',
+      onDone: function (url) {
+        setRightSideBanners(function (banners) {
+          return banners.map(function (b) {
+            return b.id === bannerId ? { ...b, image: url } : b;
+          });
+        });
+      },
+    });
+  };
+
+  var handleRightSideBannerMobileUpload = function (bannerId, e) {
+    var file = e.target.files && e.target.files[0];
+    handleUpload(file, {
+      folder: 'banners/sides/mobile',
+      onDone: function (url) {
+        setRightSideBanners(function (banners) {
+          return banners.map(function (b) {
+            return b.id === bannerId ? { ...b, imageMobile: url } : b;
+          });
+        });
+      },
+    });
+  };
+
+  var handleCardImageUpload = function (cardId, e) {
+    var file = e.target.files && e.target.files[0];
     handleUpload(file, {
       folder: 'banners/linked',
       onDone: function (url) {
@@ -244,8 +335,8 @@ export default function AdminMainPage() {
     });
   };
 
-  const handleCardImageMobileUpload = function (cardId, e) {
-    const file = e.target.files && e.target.files[0];
+  var handleCardImageMobileUpload = function (cardId, e) {
+    var file = e.target.files && e.target.files[0];
     handleUpload(file, {
       folder: 'banners/linked/mobile',
       onDone: function (url) {
@@ -258,8 +349,8 @@ export default function AdminMainPage() {
     });
   };
 
-  const addNewMainBanner = function () {
-    const maxPos = mainBanners.reduce(function (mx, b) {
+  var addNewMainBanner = function () {
+    var maxPos = mainBanners.reduce(function (mx, b) {
       return Math.max(mx, b.position || 0);
     }, 0);
     setMainBanners(function (prev) {
@@ -270,14 +361,15 @@ export default function AdminMainPage() {
           imageMobile: '',
           link: '/',
           position: maxPos + 1,
+          modal: false,
         },
       ]);
     });
   };
 
-  const deleteMainBanner = function (bannerId) {
+  var deleteMainBanner = function (bannerId) {
     setMainBanners(function (banners) {
-      const filtered = banners.filter(function (b) {
+      var filtered = banners.filter(function (b) {
         return b.id !== bannerId;
       });
       return filtered
@@ -291,7 +383,7 @@ export default function AdminMainPage() {
     });
   };
 
-  const updateMainBanner = function (bannerId, field, value) {
+  var updateMainBanner = function (bannerId, field, value) {
     setMainBanners(function (banners) {
       return banners.map(function (b) {
         return b.id === bannerId ? { ...b, [field]: value } : b;
@@ -299,42 +391,194 @@ export default function AdminMainPage() {
     });
   };
 
-  const handleBannerDragStart = function (e, banner) {
+  var handleBannerDragStart = function (e, banner) {
     setDraggedBanner(banner);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleBannerDragOver = function (e) {
+  var handleBannerDragOver = function (e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleBannerDrop = function (e, targetBanner) {
+  var handleBannerDrop = function (e, targetBanner) {
     e.preventDefault();
     if (!draggedBanner || draggedBanner.id === targetBanner.id) return;
 
-    const list = sortedMainBanners;
-    let draggedIdx = -1;
-    let targetIdx = -1;
-    for (let i = 0; i < list.length; i++) {
+    var list = sortedMainBanners;
+    var draggedIdx = -1;
+    var targetIdx = -1;
+    for (var i = 0; i < list.length; i++) {
       if (list[i].id === draggedBanner.id) draggedIdx = i;
       if (list[i].id === targetBanner.id) targetIdx = i;
     }
     if (draggedIdx < 0 || targetIdx < 0) return;
 
-    const next = list.slice();
-    const item = next.splice(draggedIdx, 1)[0];
+    var next = list.slice();
+    var item = next.splice(draggedIdx, 1)[0];
     next.splice(targetIdx, 0, item);
 
-    const renumbered = next.map(function (b, i) {
+    var renumbered = next.map(function (b, i) {
       return { ...b, position: i + 1 };
     });
     setMainBanners(renumbered);
     setDraggedBanner(null);
   };
 
-  const addNewCard = function () {
-    const maxPos = linkCards.reduce(function (mx, c) {
+  var addNewLeftSideBanner = function () {
+    var maxPos = leftSideBanners.reduce(function (mx, b) {
+      return Math.max(mx, b.position || 0);
+    }, 0);
+    setLeftSideBanners(function (prev) {
+      return prev.concat([
+        {
+          id: 'left-' + Date.now(),
+          image: '',
+          imageMobile: '',
+          link: '/',
+          position: maxPos + 1,
+          modal: false,
+        },
+      ]);
+    });
+  };
+
+  var deleteLeftSideBanner = function (bannerId) {
+    setLeftSideBanners(function (banners) {
+      var filtered = banners.filter(function (b) {
+        return b.id !== bannerId;
+      });
+      return filtered
+        .slice()
+        .sort(function (a, b) {
+          return (a.position || 0) - (b.position || 0);
+        })
+        .map(function (b, i) {
+          return { ...b, position: i + 1 };
+        });
+    });
+  };
+
+  var updateLeftSideBanner = function (bannerId, field, value) {
+    setLeftSideBanners(function (banners) {
+      return banners.map(function (b) {
+        return b.id === bannerId ? { ...b, [field]: value } : b;
+      });
+    });
+  };
+
+  var handleLeftSideDragStart = function (e, banner) {
+    setDraggedLeftSide(banner);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  var handleLeftSideDragOver = function (e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  var handleLeftSideDrop = function (e, targetBanner) {
+    e.preventDefault();
+    if (!draggedLeftSide || draggedLeftSide.id === targetBanner.id) return;
+
+    var list = sortedLeftSideBanners;
+    var draggedIdx = -1;
+    var targetIdx = -1;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === draggedLeftSide.id) draggedIdx = i;
+      if (list[i].id === targetBanner.id) targetIdx = i;
+    }
+    if (draggedIdx < 0 || targetIdx < 0) return;
+
+    var next = list.slice();
+    var item = next.splice(draggedIdx, 1)[0];
+    next.splice(targetIdx, 0, item);
+
+    var renumbered = next.map(function (b, i) {
+      return { ...b, position: i + 1 };
+    });
+    setLeftSideBanners(renumbered);
+    setDraggedLeftSide(null);
+  };
+
+  var addNewRightSideBanner = function () {
+    var maxPos = rightSideBanners.reduce(function (mx, b) {
+      return Math.max(mx, b.position || 0);
+    }, 0);
+    setRightSideBanners(function (prev) {
+      return prev.concat([
+        {
+          id: 'right-' + Date.now(),
+          image: '',
+          imageMobile: '',
+          link: '/',
+          position: maxPos + 1,
+          modal: false,
+        },
+      ]);
+    });
+  };
+
+  var deleteRightSideBanner = function (bannerId) {
+    setRightSideBanners(function (banners) {
+      var filtered = banners.filter(function (b) {
+        return b.id !== bannerId;
+      });
+      return filtered
+        .slice()
+        .sort(function (a, b) {
+          return (a.position || 0) - (b.position || 0);
+        })
+        .map(function (b, i) {
+          return { ...b, position: i + 1 };
+        });
+    });
+  };
+
+  var updateRightSideBanner = function (bannerId, field, value) {
+    setRightSideBanners(function (banners) {
+      return banners.map(function (b) {
+        return b.id === bannerId ? { ...b, [field]: value } : b;
+      });
+    });
+  };
+
+  var handleRightSideDragStart = function (e, banner) {
+    setDraggedRightSide(banner);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  var handleRightSideDragOver = function (e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  var handleRightSideDrop = function (e, targetBanner) {
+    e.preventDefault();
+    if (!draggedRightSide || draggedRightSide.id === targetBanner.id) return;
+
+    var list = sortedRightSideBanners;
+    var draggedIdx = -1;
+    var targetIdx = -1;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === draggedRightSide.id) draggedIdx = i;
+      if (list[i].id === targetBanner.id) targetIdx = i;
+    }
+    if (draggedIdx < 0 || targetIdx < 0) return;
+
+    var next = list.slice();
+    var item = next.splice(draggedIdx, 1)[0];
+    next.splice(targetIdx, 0, item);
+
+    var renumbered = next.map(function (b, i) {
+      return { ...b, position: i + 1 };
+    });
+    setRightSideBanners(renumbered);
+    setDraggedRightSide(null);
+  };
+
+  var addNewCard = function () {
+    var maxPos = linkCards.reduce(function (mx, c) {
       return Math.max(mx, c.position || 0);
     }, 0);
     setLinkCards(function (prev) {
@@ -350,9 +594,9 @@ export default function AdminMainPage() {
     });
   };
 
-  const deleteCard = function (cardId) {
+  var deleteCard = function (cardId) {
     setLinkCards(function (cards) {
-      const filtered = cards.filter(function (c) {
+      var filtered = cards.filter(function (c) {
         return c.id !== cardId;
       });
       return filtered
@@ -366,7 +610,7 @@ export default function AdminMainPage() {
     });
   };
 
-  const updateCard = function (cardId, field, value) {
+  var updateCard = function (cardId, field, value) {
     setLinkCards(function (cards) {
       return cards.map(function (c) {
         return c.id === cardId ? { ...c, [field]: value } : c;
@@ -374,85 +618,94 @@ export default function AdminMainPage() {
     });
   };
 
-  const handleDragStart = function (e, card) {
+  var handleDragStart = function (e, card) {
     setDraggedCard(card);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = function (e) {
+  var handleDragOver = function (e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = function (e, targetCard) {
+  var handleDrop = function (e, targetCard) {
     e.preventDefault();
     if (!draggedCard || draggedCard.id === targetCard.id) return;
 
-    const list = sortedCards;
-    let draggedIdx = -1;
-    let targetIdx = -1;
-    for (let i = 0; i < list.length; i++) {
+    var list = sortedCards;
+    var draggedIdx = -1;
+    var targetIdx = -1;
+    for (var i = 0; i < list.length; i++) {
       if (list[i].id === draggedCard.id) draggedIdx = i;
       if (list[i].id === targetCard.id) targetIdx = i;
     }
     if (draggedIdx < 0 || targetIdx < 0) return;
 
-    const next = list.slice();
-    const item = next.splice(draggedIdx, 1)[0];
+    var next = list.slice();
+    var item = next.splice(draggedIdx, 1)[0];
     next.splice(targetIdx, 0, item);
 
-    const renumbered = next.map(function (c, i) {
+    var renumbered = next.map(function (c, i) {
       return { ...c, position: i + 1 };
     });
     setLinkCards(renumbered);
     setDraggedCard(null);
   };
 
-  const updateBannerSideCard = function (cardId, field, value) {
-    setBannerSideCards(function (cards) {
-      return cards.map(function (c) {
-        return c.id === cardId ? { ...c, [field]: value } : c;
-      });
-    });
-  };
-
-  const removeBannerSideCard = function (cardId) {
-    setBannerSideCards(function (cards) {
-      return cards.map(function (c) {
-        return c.id === cardId ? { ...c, image: '', imageMobile: '', link: '/' } : c;
-      });
-    });
-  };
-
-  const saveHeroChanges = async function () {
+  var saveHeroChanges = async function () {
     try {
       setSaving(true);
       setError('');
 
-      const currentResponse = await getSettings();
-      const currentSettings = currentResponse && currentResponse.data ? currentResponse.data : currentResponse || {};
+      var currentResponse = await getSettings();
+      var currentSettings = currentResponse && currentResponse.data ? currentResponse.data : currentResponse || {};
 
-      const left = bannerSideCards[0] || {};
-      const right = bannerSideCards[1] || {};
+      var firstMainBanner = sortedMainBanners[0] || {};
+      var firstLeftBanner = sortedLeftSideBanners[0] || {};
+      var firstRightBanner = sortedRightSideBanners[0] || {};
 
-      const payload = {
+      var payload = {
         logo: logo,
-        mainBanner: sortedMainBanners[0] ? sortedMainBanners[0].image || '' : '',
-        mainBannerMobile: sortedMainBanners[0]
-          ? sortedMainBanners[0].imageMobile || sortedMainBanners[0].image || ''
-          : '',
-        leftBanner: left.image || '',
-        leftBannerMobile: left.imageMobile || left.image || '',
-        leftBannerLink: left.link || '/',
-        rightBanner: right.image || '',
-        rightBannerMobile: right.imageMobile || right.image || '',
-        rightBannerLink: right.link || '/',
-        newsActive: newsActive,
-        articlesActive: articlesActive,
-        newsCount: newsCount,
-        articlesCount: articlesCount,
-        footerColumns: currentSettings.footerColumns || [],
-        menuItems: currentSettings.menuItems || [],
+        // فیلدهای قدیمی برای سازگاری
+        mainBanner: firstMainBanner.image || '',
+        mainBannerMobile: firstMainBanner.imageMobile || firstMainBanner.image || '',
+        mainBannerModal: firstMainBanner.modal === true,
+        leftBanner: firstLeftBanner.image || '',
+        leftBannerMobile: firstLeftBanner.imageMobile || '',
+        leftBannerLink: firstLeftBanner.link || '/',
+        leftBannerModal: firstLeftBanner.modal === true,
+        rightBanner: firstRightBanner.image || '',
+        rightBannerMobile: firstRightBanner.imageMobile || '',
+        rightBannerLink: firstRightBanner.link || '/',
+        rightBannerModal: firstRightBanner.modal === true,
+        // آرایه‌ها
+        imageLinksMain: sortedMainBanners.map(function (b) {
+          return {
+            image: b.image || '',
+            imageMobile: b.imageMobile || b.image || '',
+            link: b.link || '/',
+            position: b.position,
+            modal: b.modal === true,
+          };
+        }),
+        imageLinksLeft: sortedLeftSideBanners.map(function (b) {
+          return {
+            image: b.image || '',
+            imageMobile: b.imageMobile || b.image || '',
+            link: b.link || '/',
+            position: b.position,
+            modal: b.modal === true,
+          };
+        }),
+        imageLinksRight: sortedRightSideBanners.map(function (b) {
+          return {
+            image: b.image || '',
+            imageMobile: b.imageMobile || b.image || '',
+            link: b.link || '/',
+            position: b.position,
+            modal: b.modal === true,
+          };
+        }),
         imageLinks1: sortedCards.map(function (c) {
           return {
             image: c.image || '',
@@ -461,20 +714,18 @@ export default function AdminMainPage() {
             position: c.position,
           };
         }),
+        // بقیه فیلدها
+        newsActive: newsActive,
+        articlesActive: articlesActive,
+        newsCount: newsCount,
+        articlesCount: articlesCount,
+        footerColumns: currentSettings.footerColumns || [],
+        menuItems: currentSettings.menuItems || [],
         imageLinks2: currentSettings.imageLinks2 || [],
-        imageLinksMain: sortedMainBanners.map(function (b) {
-          return {
-            image: b.image || '',
-            imageMobile: b.imageMobile || b.image || '',
-            link: b.link || '/',
-            position: b.position,
-          };
-        }),
         disableCommentsForPages: currentSettings.disableCommentsForPages || [],
         smsWelcomeMessage: smsWelcomeMessage,
         smsConsultationMessage: smsConsultationMessage,
-
-
+        consultationFormTitle: currentSettings.consultationFormTitle || '',
       };
 
       await updateSettings(payload);
@@ -487,16 +738,16 @@ export default function AdminMainPage() {
     }
   };
 
-  const saveConsultationTitle = async function () {
+  var saveConsultationTitle = async function () {
     try {
       setSaving(true);
       setError('');
       setSaveMsg('');
 
-      const currentResponse = await getSettings();
-      const currentSettings = currentResponse && currentResponse.data ? currentResponse.data : currentResponse || {};
+      var currentResponse = await getSettings();
+      var currentSettings = currentResponse && currentResponse.data ? currentResponse.data : currentResponse || {};
 
-      const payload = {
+      var payload = {
         ...currentSettings,
         consultationFormTitle: consultationFormTitle,
       };
@@ -517,13 +768,13 @@ export default function AdminMainPage() {
     }
   };
 
-  const hasLeftSide = bannerSideCards[0] && bannerSideCards[0].image;
-  const hasRightSide = bannerSideCards[1] && bannerSideCards[1].image;
+  var hasLeftSide = sortedLeftSideBanners.length > 0 && sortedLeftSideBanners.some(function (b) { return b.image; });
+  var hasRightSide = sortedRightSideBanners.length > 0 && sortedRightSideBanners.some(function (b) { return b.image; });
 
-  const topCardsPreview = [];
-  const bottomCardsPreview = sortedCards;
+  var topCardsPreview = [];
+  var bottomCardsPreview = sortedCards;
 
-  const nextSlide = function () {
+  var nextSlide = function () {
     if (sortedMainBanners.length > 0) {
       setCurrentSlide(function (prev) {
         return (prev + 1) % sortedMainBanners.length;
@@ -531,10 +782,42 @@ export default function AdminMainPage() {
     }
   };
 
-  const prevSlide = function () {
+  var prevSlide = function () {
     if (sortedMainBanners.length > 0) {
       setCurrentSlide(function (prev) {
         return (prev - 1 + sortedMainBanners.length) % sortedMainBanners.length;
+      });
+    }
+  };
+
+  var nextLeftSlide = function () {
+    if (sortedLeftSideBanners.length > 0) {
+      setCurrentLeftSlide(function (prev) {
+        return (prev + 1) % sortedLeftSideBanners.length;
+      });
+    }
+  };
+
+  var prevLeftSlide = function () {
+    if (sortedLeftSideBanners.length > 0) {
+      setCurrentLeftSlide(function (prev) {
+        return (prev - 1 + sortedLeftSideBanners.length) % sortedLeftSideBanners.length;
+      });
+    }
+  };
+
+  var nextRightSlide = function () {
+    if (sortedRightSideBanners.length > 0) {
+      setCurrentRightSlide(function (prev) {
+        return (prev + 1) % sortedRightSideBanners.length;
+      });
+    }
+  };
+
+  var prevRightSlide = function () {
+    if (sortedRightSideBanners.length > 0) {
+      setCurrentRightSlide(function (prev) {
+        return (prev - 1 + sortedRightSideBanners.length) % sortedRightSideBanners.length;
       });
     }
   };
@@ -553,33 +836,26 @@ export default function AdminMainPage() {
   return (
     <div className="min-h-screen bg-gray-50 font-lahzeh" dir="rtl">
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg: px-8">
           <h1 className="text-2xl font-bold text-gray-900">مدیریت صفحه اصلی</h1>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg: px-8">
         {error && (
           <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded mb-6">{error}</div>
         )}
 
+        {/* بنرهای اسلایدری اصلی */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               بنرهای اسلایدری (وسط صفحه)
             </h2>
-            <button
-              onClick={addNewMainBanner}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-            >
+            <button onClick={addNewMainBanner} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
               <Plus size={20} />
               افزودن بنر جدید
             </button>
@@ -589,12 +865,10 @@ export default function AdminMainPage() {
             <div className="flex items-start gap-2">
               <Info size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-800">
-                <p className="font-bold mb-1">راهنما:</p>
+                <p className="font-bold mb-1">راهنما: </p>
                 <p>این بنرها در وسط صفحه اصلی به صورت اسلایدر نمایش داده می‌شوند.</p>
-                <p className="mt-1">
-                  <strong>ابعاد پیشنهادی (دسکتاپ):</strong> <strong>۶۶۰ در ۳۱۰</strong> پیکسل
-                </p>
-                <p className="text-xs text-blue-700 mt-1">برای ترتیب‌دهی، کارت‌ها را بکشید و رها کنید.</p>
+                <p className="mt-1"><strong>ابعاد پیشنهادی (دسکتاپ):</strong> <strong>۶۶۰ در ۳۱۰</strong> پیکسل</p>
+                <p className="text-xs text-blue-700 mt-1">برای ترتیب‌دهی، کارت‌ها را بکشید و رها کنید. </p>
               </div>
             </div>
           </div>
@@ -606,48 +880,24 @@ export default function AdminMainPage() {
               <label className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700">
                 <Upload size={18} />
                 <span>آپلود اولین بنر</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={function (e) {
-                    const file = e.target.files && e.target.files[0];
-                    if (file) {
-                      handleUpload(file, {
-                        folder: 'banners',
-                        onDone: function (url) {
-                          setMainBanners([
-                            {
-                              id: 'b-' + Date.now(),
-                              image: url,
-                              imageMobile: '',
-                              link: '/',
-                              position: 1,
-                            },
-                          ]);
-                        },
-                      });
-                    }
-                  }}
-                  className="hidden"
-                />
+                <input type="file" accept="image/*" onChange={function (e) {
+                  var file = e.target.files && e.target.files[0];
+                  if (file) {
+                    handleUpload(file, {
+                      folder: 'banners',
+                      onDone: function (url) {
+                        setMainBanners([{ id: 'b-' + Date.now(), image: url, imageMobile: '', link: '/', position: 1, modal: false }]);
+                      },
+                    });
+                  }
+                }} className="hidden" />
               </label>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedMainBanners.map(function (banner, idx) {
                 return (
-                  <div
-                    key={banner.id}
-                    draggable
-                    onDragStart={function (e) {
-                      handleBannerDragStart(e, banner);
-                    }}
-                    onDragOver={handleBannerDragOver}
-                    onDrop={function (e) {
-                      handleBannerDrop(e, banner);
-                    }}
-                    className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all cursor-move bg-white"
-                  >
+                  <div key={banner.id} draggable onDragStart={function (e) { handleBannerDragStart(e, banner); }} onDragOver={handleBannerDragOver} onDrop={function (e) { handleBannerDrop(e, banner); }} className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all cursor-move bg-white">
                     <div className="flex items-start gap-3">
                       <div className="cursor-grab active:cursor-grabbing mt-1">
                         <GripVertical size={20} className="text-gray-400" />
@@ -655,12 +905,7 @@ export default function AdminMainPage() {
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-gray-700">بنر {idx + 1}</span>
-                          <button
-                            onClick={function () {
-                              deleteMainBanner(banner.id);
-                            }}
-                            className="text-red-500 hover:text-red-700 p-1"
-                          >
+                          <button onClick={function () { deleteMainBanner(banner.id); }} className="text-red-500 hover:text-red-700 p-1">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -678,14 +923,7 @@ export default function AdminMainPage() {
                         <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-2 cursor-pointer hover:bg-gray-50 text-sm">
                           <Upload size={16} />
                           <span>{banner.image ? 'تغییر تصویر دسکتاپ' : 'آپلود تصویر دسکتاپ'}</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={function (e) {
-                              handleMainBannerUpload(banner.id, e);
-                            }}
-                            className="hidden"
-                          />
+                          <input type="file" accept="image/*" onChange={function (e) { handleMainBannerUpload(banner.id, e); }} className="hidden" />
                         </label>
 
                         <div className="flex items-center gap-2">
@@ -693,14 +931,7 @@ export default function AdminMainPage() {
                           <label className="flex-1 flex items-center justify-center gap-2 border border-dashed rounded-lg p-2 cursor-pointer hover:bg-gray-50 text-xs">
                             <Upload size={14} />
                             <span>{banner.imageMobile ? 'تغییر موبایل' : 'آپلود موبایل'}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={function (e) {
-                                handleMainBannerMobileUpload(banner.id, e);
-                              }}
-                              className="hidden"
-                            />
+                            <input type="file" accept="image/*" onChange={function (e) { handleMainBannerMobileUpload(banner.id, e); }} className="hidden" />
                           </label>
                           {banner.imageMobile && (
                             <img src={banner.imageMobile} alt="موبایل" className="w-12 h-10 object-cover rounded border flex-shrink-0" />
@@ -709,18 +940,17 @@ export default function AdminMainPage() {
 
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">لینک بنر</label>
-                          <input
-                            type="text"
-                            value={banner.link}
-                            onChange={function (e) {
-                              updateMainBanner(banner.id, 'link', e.target.value);
-                            }}
-                            className="w-full px-3 py-2 border rounded-lg text-sm"
-                            placeholder="/products"
-                          />
+                          <input type="text" value={banner.link} onChange={function (e) { updateMainBanner(banner.id, 'link', e.target.value); }} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="/products" />
                         </div>
 
-                        <div className="text-xs text-gray-400 text-left">ترتیب: {banner.position}</div>
+                        <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                          <input type="checkbox" id={'modal-main-' + banner.id} checked={banner.modal === true} onChange={function (e) { updateMainBanner(banner.id, 'modal', e.target.checked); }} className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+                          <label htmlFor={'modal-main-' + banner.id} className="text-sm text-purple-800 cursor-pointer">
+                            باز شدن فرم مشاوره بعد از کلیک
+                          </label>
+                        </div>
+
+                        <div className="text-xs text-gray-400 text-left">ترتیب:  {banner.position}</div>
                       </div>
                     </div>
                   </div>
@@ -730,6 +960,7 @@ export default function AdminMainPage() {
           )}
         </div>
 
+        {/* بنرهای کناری */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -737,165 +968,191 @@ export default function AdminMainPage() {
               <circle cx="8.5" cy="8.5" r="1.5"></circle>
               <polyline points="21 15 16 10 5 21"></polyline>
             </svg>
-            عکس‌های کناری بنر (اختیاری)
+            بنرهای کناری (راست و چپ)
           </h2>
 
           <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-4">
             <div className="flex items-start gap-2">
               <Info size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-800">
-                <p>این عکس‌ها در کنار بنر اصلی (راست و چپ) نمایش داده می‌شوند.</p>
-                <p className="mt-1">
-                  <strong>ابعاد پیشنهادی:</strong> <strong>۲۶۰ در ۳۱۰</strong> پیکسل
-                  <p>
-                    <strong>در حالت موبایل، ابعاد پیشنهادی:</strong>
-                    <strong>۳۴۳ در ۱۶۰</strong> پیکسل
-
-                  </p>
-
-                </p>
+                <p>این بنرها در کنار بنر اصلی (راست و چپ) نمایش داده می‌شوند.</p>
+                <p className="mt-1"><strong>ابعاد پیشنهادی: </strong> <strong>۲۶۰ در ۳۱۰</strong> پیکسل</p>
+                <p><strong>در حالت موبایل:</strong> <strong>۳۴۳ در ۱۶۰</strong> پیکسل</p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              <h3 className="text-sm font-bold mb-3 text-center">عکس سمت راست</h3>
-              {bannerSideCards[1] && bannerSideCards[1].image ? (
-                <div className="space-y-3">
-                  <div className="relative aspect-[260/310] rounded-lg overflow-hidden">
-                    <img src={bannerSideCards[1].image} alt="کارت کناری راست" className="w-full h-full object-cover" />
-                    <button
-                      onClick={function () {
-                        removeBannerSideCard('side-right');
-                      }}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Smartphone size={16} className="text-gray-500" />
-                    <label className="flex-1 flex items-center justify-center gap-2 border border-dashed rounded-lg p-2 cursor-pointer hover:bg-gray-50 text-xs">
-                      <Upload size={14} />
-                      <span>{bannerSideCards[1].imageMobile ? 'تغییر موبایل' : 'آپلود موبایل'}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={function (e) {
-                          handleBannerSideCardMobileUpload('side-right', e);
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                    {bannerSideCards[1].imageMobile && (
-                      <img src={bannerSideCards[1].imageMobile} alt="موبایل" className="w-10 h-8 object-cover rounded border" />
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={bannerSideCards[1].link}
-                    onChange={function (e) {
-                      updateBannerSideCard('side-right', 'link', e.target.value);
-                    }}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    placeholder="لینک"
-                  />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* بنرهای سمت راست */}
+            <div className="border-2 border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-center">بنرهای سمت راست</h3>
+                <button onClick={addNewRightSideBanner} className="flex items-center gap-2 bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 text-sm">
+                  <Plus size={16} />
+                  افزودن
+                </button>
+              </div>
+
+              {sortedRightSideBanners.length === 0 ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload size={32} className="mx-auto text-gray-400 mb-2" />
+                  <p className="text-gray-600 text-sm">هنوز بنری اضافه نشده است</p>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center cursor-pointer aspect-[260/310] hover:bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                  <Upload size={40} className="text-gray-400 mb-2" />
-                  <span className="text-gray-600 text-sm">کلیک برای آپلود</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={function (e) {
-                      handleBannerSideCardUpload('side-right', e);
-                    }}
-                    className="hidden"
-                  />
-                </label>
+                <div className="space-y-4">
+                  {sortedRightSideBanners.map(function (banner, idx) {
+                    return (
+                      <div key={banner.id} draggable onDragStart={function (e) { handleRightSideDragStart(e, banner); }} onDragOver={handleRightSideDragOver} onDrop={function (e) { handleRightSideDrop(e, banner); }} className="border border-gray-200 rounded-lg p-3 hover:border-blue-400 transition-all cursor-move bg-gray-50">
+                        <div className="flex items-start gap-2">
+                          <div className="cursor-grab active:cursor-grabbing mt-1">
+                            <GripVertical size={16} className="text-gray-400" />
+                          </div>
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-gray-700">بنر راست {idx + 1}</span>
+                              <button onClick={function () { deleteRightSideBanner(banner.id); }} className="text-red-500 hover:text-red-700 p-1">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+
+                            <div className="aspect-[260/310] bg-gray-100 rounded-lg overflow-hidden border">
+                              {banner.image ? (
+                                <img src={banner.image} alt={'بنر راست ' + (idx + 1)} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                  <span>بدون تصویر</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <label className="flex items-center justify-center gap-2 border border-dashed rounded-lg p-2 cursor-pointer hover:bg-white text-xs">
+                              <Upload size={14} />
+                              <span>{banner.image ? 'تغییر دسکتاپ' : 'آپلود دسکتاپ'}</span>
+                              <input type="file" accept="image/*" onChange={function (e) { handleRightSideBannerUpload(banner.id, e); }} className="hidden" />
+                            </label>
+
+                            <div className="flex items-center gap-2">
+                              <Smartphone size={14} className="text-gray-500" />
+                              <label className="flex-1 flex items-center justify-center gap-1 border border-dashed rounded-lg p-1. 5 cursor-pointer hover:bg-white text-xs">
+                                <Upload size={12} />
+                                <span>{banner.imageMobile ? 'تغییر موبایل' : 'آپلود موبایل'}</span>
+                                <input type="file" accept="image/*" onChange={function (e) { handleRightSideBannerMobileUpload(banner.id, e); }} className="hidden" />
+                              </label>
+                              {banner.imageMobile && (
+                                <img src={banner.imageMobile} alt="موبایل" className="w-8 h-6 object-cover rounded border" />
+                              )}
+                            </div>
+
+                            <input type="text" value={banner.link} onChange={function (e) { updateRightSideBanner(banner.id, 'link', e.target.value); }} className="w-full px-2 py-1.5 border rounded-lg text-xs" placeholder="لینک" />
+
+                            <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-lg p-2">
+                              <input type="checkbox" id={'modal-right-' + banner.id} checked={banner.modal === true} onChange={function (e) { updateRightSideBanner(banner.id, 'modal', e.target.checked); }} className="w-3. 5 h-3.5 text-purple-600 rounded focus:ring-purple-500" />
+                              <label htmlFor={'modal-right-' + banner.id} className="text-xs text-purple-800 cursor-pointer">
+                                باز شدن فرم مشاوره
+                              </label>
+                            </div>
+
+                            <div className="text-xs text-gray-400 text-left">ترتیب: {banner.position}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              <h3 className="text-sm font-bold mb-3 text-center">عکس سمت چپ</h3>
-              {bannerSideCards[0] && bannerSideCards[0].image ? (
-                <div className="space-y-3">
-                  <div className="relative aspect-[260/310] rounded-lg overflow-hidden">
-                    <img src={bannerSideCards[0].image} alt="کارت کناری چپ" className="w-full h-full object-cover" />
-                    <button
-                      onClick={function () {
-                        removeBannerSideCard('side-left');
-                      }}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Smartphone size={16} className="text-gray-500" />
-                    <label className="flex-1 flex items-center justify-center gap-2 border border-dashed rounded-lg p-2 cursor-pointer hover:bg-gray-50 text-xs">
-                      <Upload size={14} />
-                      <span>{bannerSideCards[0].imageMobile ? 'تغییر موبایل' : 'آپلود موبایل'}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={function (e) {
-                          handleBannerSideCardMobileUpload('side-left', e);
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                    {bannerSideCards[0].imageMobile && (
-                      <img src={bannerSideCards[0].imageMobile} alt="موبایل" className="w-10 h-8 object-cover rounded border" />
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={bannerSideCards[0].link}
-                    onChange={function (e) {
-                      updateBannerSideCard('side-left', 'link', e.target.value);
-                    }}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    placeholder="لینک"
-                  />
+            {/* بنرهای سمت چپ */}
+            <div className="border-2 border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-center">بنرهای سمت چپ</h3>
+                <button onClick={addNewLeftSideBanner} className="flex items-center gap-2 bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 text-sm">
+                  <Plus size={16} />
+                  افزودن
+                </button>
+              </div>
+
+              {sortedLeftSideBanners.length === 0 ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload size={32} className="mx-auto text-gray-400 mb-2" />
+                  <p className="text-gray-600 text-sm">هنوز بنری اضافه نشده است</p>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center cursor-pointer aspect-[260/310] hover:bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                  <Upload size={40} className="text-gray-400 mb-2" />
-                  <span className="text-gray-600 text-sm">کلیک برای آپلود</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={function (e) {
-                      handleBannerSideCardUpload('side-left', e);
-                    }}
-                    className="hidden"
-                  />
-                </label>
+                <div className="space-y-4">
+                  {sortedLeftSideBanners.map(function (banner, idx) {
+                    return (
+                      <div key={banner.id} draggable onDragStart={function (e) { handleLeftSideDragStart(e, banner); }} onDragOver={handleLeftSideDragOver} onDrop={function (e) { handleLeftSideDrop(e, banner); }} className="border border-gray-200 rounded-lg p-3 hover:border-blue-400 transition-all cursor-move bg-gray-50">
+                        <div className="flex items-start gap-2">
+                          <div className="cursor-grab active: cursor-grabbing mt-1">
+                            <GripVertical size={16} className="text-gray-400" />
+                          </div>
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-gray-700">بنر چپ {idx + 1}</span>
+                              <button onClick={function () { deleteLeftSideBanner(banner.id); }} className="text-red-500 hover:text-red-700 p-1">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+
+                            <div className="aspect-[260/310] bg-gray-100 rounded-lg overflow-hidden border">
+                              {banner.image ? (
+                                <img src={banner.image} alt={'بنر چپ ' + (idx + 1)} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                  <span>بدون تصویر</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <label className="flex items-center justify-center gap-2 border border-dashed rounded-lg p-2 cursor-pointer hover:bg-white text-xs">
+                              <Upload size={14} />
+                              <span>{banner.image ? 'تغییر دسکتاپ' : 'آپلود دسکتاپ'}</span>
+                              <input type="file" accept="image/*" onChange={function (e) { handleLeftSideBannerUpload(banner.id, e); }} className="hidden" />
+                            </label>
+
+                            <div className="flex items-center gap-2">
+                              <Smartphone size={14} className="text-gray-500" />
+                              <label className="flex-1 flex items-center justify-center gap-1 border border-dashed rounded-lg p-1.5 cursor-pointer hover:bg-white text-xs">
+                                <Upload size={12} />
+                                <span>{banner.imageMobile ? 'تغییر موبایل' : 'آپلود موبایل'}</span>
+                                <input type="file" accept="image/*" onChange={function (e) { handleLeftSideBannerMobileUpload(banner.id, e); }} className="hidden" />
+                              </label>
+                              {banner.imageMobile && (
+                                <img src={banner.imageMobile} alt="موبایل" className="w-8 h-6 object-cover rounded border" />
+                              )}
+                            </div>
+
+                            <input type="text" value={banner.link} onChange={function (e) { updateLeftSideBanner(banner.id, 'link', e.target.value); }} className="w-full px-2 py-1.5 border rounded-lg text-xs" placeholder="لینک" />
+
+                            <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-lg p-2">
+                              <input type="checkbox" id={'modal-left-' + banner.id} checked={banner.modal === true} onChange={function (e) { updateLeftSideBanner(banner.id, 'modal', e.target.checked); }} className="w-3.5 h-3.5 text-purple-600 rounded focus:ring-purple-500" />
+                              <label htmlFor={'modal-left-' + banner.id} className="text-xs text-purple-800 cursor-pointer">
+                                باز شدن فرم مشاوره
+                              </label>
+                            </div>
+
+                            <div className="text-xs text-gray-400 text-left">ترتیب: {banner.position}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
         </div>
 
+        {/* عکس‌های لینک‌دار */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-0.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13. 828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-. 758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
               عکس‌های لینک‌دار (زیر بنر)
             </h2>
-            <button
-              onClick={addNewCard}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-            >
+            <button onClick={addNewCard} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
               <Plus size={20} />
               افزودن عکس جدید
             </button>
@@ -905,65 +1162,42 @@ export default function AdminMainPage() {
             <div className="flex items-start gap-2">
               <Info size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-800">
-                <p className="font-bold mb-1">راهنمای ابعاد برای جلوگیری از دفرمه شدن:</p>
-                <p>نمایش سایت در هر ردیف حداکثر ۳ عکس است. اگر تعداد کمتر باشد، همان تعداد عرض را پر می‌کنند.</p>
-                <p className="mt-1">
-                  <strong>۳تایی:</strong> ۳۸۳در۲۱۰ &nbsp; | &nbsp;
-                  <strong>۲تایی:</strong> ۵۹۰در۲۱۰ &nbsp; | &nbsp;
-                  <strong>تکی:</strong> ۱۱۸۰در۲۱۰
-                </p>
-                <p>
-                  <strong>در حالت موبایل، ابعاد پیشنهادی:</strong>
-                  <strong>۳۴۳ در ۱۶۰</strong> پیکسل
-
-                </p>
-                <p className="text-xs text-blue-700 mt-1">اگر نسبت رعایت نشود، در سایت از اطراف برش می‌خورد.</p>
+                <p className="font-bold mb-1">راهنمای ابعاد:</p>
+                <p><strong>۳تایی:</strong> ۳۸۳×۲۱۰ | <strong>۲تایی:</strong> ۵۹۰×۲۱۰ | <strong>تکی:</strong> ۱۱۸۰×۲۱۰</p>
+                <p><strong>موبایل:</strong> ۳۴۳×۱۶۰ پیکسل</p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedCards.map(function (card, idx) {
-              const total = sortedCards.length;
-              const rowStart = Math.floor(idx / 3) * 3;
-              const remaining = total - rowStart;
-              const countInThisRow = Math.min(3, remaining);
+              var total = sortedCards.length;
+              var rowStart = Math.floor(idx / 3) * 3;
+              var remaining = total - rowStart;
+              var countInThisRow = Math.min(3, remaining);
 
-              let recommendedText = '';
-              let aspect = '590/210';
+              var recommendedText = '';
+              var aspect = '590/210';
               if (countInThisRow === 3) {
-                recommendedText = 'سه‌تایی: ۳۸۳در۲۱۰';
+                recommendedText = 'سه‌تایی:  ۳۸۳×۲۱۰';
                 aspect = '383/210';
               } else if (countInThisRow === 2) {
-                recommendedText = 'دوتایی: ۵۹۰در۲۱۰';
+                recommendedText = 'دوتایی: ۵۹۰×۲۱۰';
                 aspect = '590/210';
               } else {
-                recommendedText = 'تکی: ۱۱۸۰در۲۱۰';
+                recommendedText = 'تکی: ۱۱۸۰×۲۱۰';
                 aspect = '1180/210';
               }
 
               return (
-                <div
-                  key={card.id}
-                  draggable
-                  onDragStart={function (e) {
-                    handleDragStart(e, card);
-                  }}
-                  onDragOver={handleDragOver}
-                  onDrop={function (e) {
-                    handleDrop(e, card);
-                  }}
-                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all cursor-move"
-                >
+                <div key={card.id} draggable onDragStart={function (e) { handleDragStart(e, card); }} onDragOver={handleDragOver} onDrop={function (e) { handleDrop(e, card); }} className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all cursor-move">
                   <div className="flex items-start gap-3">
                     <div className="cursor-grab active:cursor-grabbing mt-1">
                       <GripVertical size={20} className="text-gray-400" />
                     </div>
                     <div className="flex-1 space-y-3">
                       <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2">
-                        <p className="text-xs text-blue-800">
-                          <strong>ابعاد پیشنهادی:</strong> {recommendedText}
-                        </p>
+                        <p className="text-xs text-blue-800"><strong>ابعاد پیشنهادی:</strong> {recommendedText}</p>
                       </div>
 
                       <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
@@ -981,14 +1215,7 @@ export default function AdminMainPage() {
                       <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-2 cursor-pointer hover:bg-gray-50 text-sm">
                         <Upload size={16} />
                         <span>{card.image ? 'تغییر دسکتاپ' : 'آپلود دسکتاپ'}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={function (e) {
-                            handleCardImageUpload(card.id, e);
-                          }}
-                          className="hidden"
-                        />
+                        <input type="file" accept="image/*" onChange={function (e) { handleCardImageUpload(card.id, e); }} className="hidden" />
                       </label>
 
                       <div className="flex items-center gap-2">
@@ -996,38 +1223,18 @@ export default function AdminMainPage() {
                         <label className="flex-1 flex items-center justify-center gap-2 border border-dashed rounded-lg p-2 cursor-pointer hover:bg-gray-50 text-xs">
                           <Upload size={14} />
                           <span>{card.imageMobile ? 'تغییر موبایل' : 'آپلود موبایل'}</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={function (e) {
-                              handleCardImageMobileUpload(card.id, e);
-                            }}
-                            className="hidden"
-                          />
+                          <input type="file" accept="image/*" onChange={function (e) { handleCardImageMobileUpload(card.id, e); }} className="hidden" />
                         </label>
                         {card.imageMobile && (
                           <img src={card.imageMobile} alt="موبایل" className="w-10 h-8 object-cover rounded border" />
                         )}
                       </div>
 
-                      <input
-                        type="text"
-                        value={card.link}
-                        onChange={function (e) {
-                          updateCard(card.id, 'link', e.target.value);
-                        }}
-                        className="w-full px-3 py-2 border rounded-lg text-sm"
-                        placeholder="لینک"
-                      />
+                      <input type="text" value={card.link} onChange={function (e) { updateCard(card.id, 'link', e.target.value); }} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="لینک" />
 
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-400">ترتیب: {card.position}</span>
-                        <button
-                          onClick={function () {
-                            deleteCard(card.id);
-                          }}
-                          className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 flex items-center gap-1 text-sm"
-                        >
+                        <button onClick={function () { deleteCard(card.id); }} className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 flex items-center gap-1 text-sm">
                           <Trash2 size={14} />
                           <span>حذف</span>
                         </button>
@@ -1040,153 +1247,79 @@ export default function AdminMainPage() {
           </div>
 
           <div className="mt-6 flex items-center justify-between border-t pt-4">
-            <button
-              onClick={function () {
-                setCurrentSlide(0);
-                setShowPreview(true);
-              }}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
-            >
+            <button onClick={function () { setCurrentSlide(0); setCurrentLeftSlide(0); setCurrentRightSlide(0); setShowPreview(true); }} className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
               پیش‌نمایش
             </button>
-            <button
-              onClick={saveHeroChanges}
-              disabled={saving}
-              className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <button onClick={saveHeroChanges} disabled={saving} className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
             </button>
           </div>
         </div>
 
         <NewsArticlesSettings
-          value={{
-            newsActive: newsActive,
-            articlesActive: articlesActive,
-            newsCount: newsCount,
-            articlesCount: articlesCount,
-          }}
-          onChange={function (v) {
-            setNewsActive(!!v.newsActive);
-            setArticlesActive(!!v.articlesActive);
-            setNewsCount(Number(v.newsCount || 3));
-            setArticlesCount(Number(v.articlesCount || 3));
-          }}
+          value={{ newsActive: newsActive, articlesActive: articlesActive, newsCount: newsCount, articlesCount: articlesCount }}
+          onChange={function (v) { setNewsActive(!!v.newsActive); setArticlesActive(!!v.articlesActive); setNewsCount(Number(v.newsCount || 3)); setArticlesCount(Number(v.articlesCount || 3)); }}
         />
         <LinkedImagesSettings />
 
+        {/* عنوان فرم مشاوره */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">عنوان فرم مشاوره</h2>
-
           <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-4">
             <div className="text-sm text-blue-800">این متن به عنوان عنوان بالای فرم مشاوره در سایت نمایش داده می‌شود.</div>
           </div>
-
           <label className="block text-sm font-medium text-gray-700 mb-2">consultationFormTitle</label>
-          <input
-            type="text"
-            value={consultationFormTitle}
-            onChange={(e) => setConsultationFormTitle(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg text-sm"
-            placeholder="مثلاً: درخواست مشاوره"
-          />
-
+          <input type="text" value={consultationFormTitle} onChange={function (e) { setConsultationFormTitle(e.target.value); }} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="مثلاً: درخواست مشاوره" />
           <div className="flex items-center justify-between mt-4">
-            <button
-              onClick={saveConsultationTitle}
-              disabled={saving}
-              className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <button onClick={saveConsultationTitle} disabled={saving} className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
             </button>
-
             {saveMsg && (
-              <div
-                className={
-                  'text-sm px-3 py-2 rounded-lg ' +
-                  (saveMsgType === 'success'
-                    ? 'bg-green-50 text-green-700 border border-green-200'
-                    : 'bg-red-50 text-red-700 border border-red-200')
-                }
-              >
+              <div className={'text-sm px-3 py-2 rounded-lg ' + (saveMsgType === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200')}>
                 {saveMsg}
               </div>
             )}
           </div>
         </div>
+
+        {/* پیامک خوش‌آمدگویی */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">متن پیامک خوش‌آمدگویی</h2>
-
           <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-4">
-            <div className="text-sm text-blue-800">
-              این متن بعد از ورود هر کاربر به عنوان پیامک خوش‌آمدگویی برای او ارسال می‌شود.
-            </div>
+            <div className="text-sm text-blue-800">این متن بعد از ورود هر کاربر به عنوان پیامک خوش‌آمدگویی برای او ارسال می‌شود. </div>
           </div>
-
           <label className="block text-sm font-medium text-gray-700 mb-2">smsWelcomeMessage</label>
-
-          <textarea
-            value={smsWelcomeMessage}
-            onChange={(e) => setSmsWelcomeMessage(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg text-sm min-h-[120px]"
-            placeholder="مثلاً: سلام! به سایت ما خوش آمدید..."
-          />
-
+          <textarea value={smsWelcomeMessage} onChange={function (e) { setSmsWelcomeMessage(e.target.value); }} className="w-full px-3 py-2 border rounded-lg text-sm min-h-[120px]" placeholder="مثلاً: سلام! به سایت ما خوش آمدید..." />
           <div className="flex items-center justify-between mt-4">
-            <button
-              onClick={saveHeroChanges}
-              disabled={saving}
-              className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <button onClick={saveHeroChanges} disabled={saving} className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
             </button>
           </div>
         </div>
 
-
+        {/* پیامک فرم مشاوره */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">متن پیامک فرم مشاوره</h2>
-
           <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-4">
-            <div className="text-sm text-blue-800">
-              این متن بعد از ثبت فرم مشاوره توسط کاربر، به عنوان پیامک برای او ارسال می‌شود.
-            </div>
+            <div className="text-sm text-blue-800">این متن بعد از ثبت فرم مشاوره توسط کاربر، به عنوان پیامک برای او ارسال می‌شود.</div>
           </div>
-
           <label className="block text-sm font-medium text-gray-700 mb-2">smsConsultationMessage</label>
-
-          <textarea
-            value={smsConsultationMessage}
-            onChange={(e) => setSmsConsultationMessage(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg text-sm min-h-[120px]"
-            placeholder="مثلاً: درخواست مشاوره شما ثبت شد. کارشناسان ما به‌زودی با شما تماس می‌گیرند..."
-          />
-
+          <textarea value={smsConsultationMessage} onChange={function (e) { setSmsConsultationMessage(e.target.value); }} className="w-full px-3 py-2 border rounded-lg text-sm min-h-[120px]" placeholder="مثلاً: درخواست مشاوره شما ثبت شد..." />
           <div className="flex items-center justify-between mt-4">
-            <button
-              onClick={saveHeroChanges}
-              disabled={saving}
-              className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <button onClick={saveHeroChanges} disabled={saving} className="bg-blue-600 disabled:opacity-60 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
             </button>
           </div>
         </div>
-
-
       </div>
 
+      {/* پیش‌نمایش */}
       {showPreview && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-4 py-3 border-b sticky top-0 bg-white z-10">
               <h3 className="text-lg font-bold">پیش‌نمایش صفحه اصلی (نمای دسکتاپ)</h3>
-              <button
-                onClick={function () {
-                  setShowPreview(false);
-                }}
-                className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
-              >
+              <button onClick={function () { setShowPreview(false); }} className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
                 <X size={18} />
               </button>
             </div>
@@ -1196,23 +1329,12 @@ export default function AdminMainPage() {
                 <div className="mt-3">
                   <div className="w-full space-y-4">
                     {topCardsPreview.length > 0 && (
-                      <div
-                        className={`grid ${topCardsPreview.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}
-                      >
+                      <div className={'grid ' + (topCardsPreview.length === 1 ? 'grid-cols-1' : 'grid-cols-2') + ' gap-4'}>
                         {topCardsPreview.map(function (card, index) {
                           return (
-                            <div
-                              key={card.id || index}
-                              className={`block rounded-lg overflow-hidden shadow-lg w-full ${topCardsPreview.length === 1 ? '' : 'aspect-[590/210]'
-                                }`}
-                              style={topCardsPreview.length === 1 ? { height: '210px' } : {}}
-                            >
+                            <div key={card.id || index} className={'block rounded-lg overflow-hidden shadow-lg w-full ' + (topCardsPreview.length === 1 ? '' : 'aspect-[590/210]')} style={topCardsPreview.length === 1 ? { height: '210px' } : {}}>
                               {card.image ? (
-                                <img
-                                  src={card.image}
-                                  alt={'تصویر ' + (index + 1)}
-                                  className="w-full h-full object-cover"
-                                />
+                                <img src={card.image} alt={'تصویر ' + (index + 1)} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                                   <span className="text-gray-400">بدون تصویر</span>
@@ -1224,24 +1346,32 @@ export default function AdminMainPage() {
                       </div>
                     )}
 
-                    <div
-                      className="grid gap-3"
-                      style={{
-                        gridTemplateColumns: hasRightSide && hasLeftSide ? '21.6% 54.8% 21.6%' : hasRightSide || hasLeftSide ? '28.2% 71.8%' : '1fr',
-                      }}
-                    >
+                    <div className="grid gap-3" style={{ gridTemplateColumns: hasRightSide && hasLeftSide ? '21. 6% 54.8% 21.6%' : hasRightSide || hasLeftSide ? '28.2% 71.8%' : '1fr' }}>
                       {hasRightSide && (
-                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310]">
-                          {bannerSideCards[1].image ? (
-                            <img
-                              src={bannerSideCards[1].image}
-                              alt="تصویر کناری راست"
-                              className="w-full h-full object-cover"
-                            />
+                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310] relative">
+                          {sortedRightSideBanners.length > 0 && sortedRightSideBanners[currentRightSlide] && sortedRightSideBanners[currentRightSlide].image ? (
+                            <img src={sortedRightSideBanners[currentRightSlide].image} alt="تصویر کناری راست" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                               <span className="text-gray-400">بدون تصویر</span>
                             </div>
+                          )}
+                          {sortedRightSideBanners.length > 1 && (
+                            <>
+                              <button onClick={prevRightSlide} className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-1 rounded-full shadow">
+                                <ChevronRight size={14} />
+                              </button>
+                              <button onClick={nextRightSlide} className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-1 rounded-full shadow">
+                                <ChevronLeft size={14} />
+                              </button>
+                              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                                {sortedRightSideBanners.map(function (_, idx) {
+                                  return (
+                                    <button key={idx} onClick={function () { setCurrentRightSlide(idx); }} className={'w-1. 5 h-1.5 rounded-full ' + (idx === currentRightSlide ? 'bg-white' : 'bg-white/50')} />
+                                  );
+                                })}
+                              </div>
+                            </>
                           )}
                         </div>
                       )}
@@ -1250,41 +1380,24 @@ export default function AdminMainPage() {
                         {sortedMainBanners.length > 0 ? (
                           <>
                             {sortedMainBanners[currentSlide] && sortedMainBanners[currentSlide].image ? (
-                              <img
-                                src={sortedMainBanners[currentSlide].image}
-                                alt="بنر اصلی"
-                                className="w-full h-full object-cover"
-                              />
+                              <img src={sortedMainBanners[currentSlide].image} alt="بنر اصلی" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center">
                                 <span className="text-white text-2xl font-bold">بنر {currentSlide + 1}</span>
                               </div>
                             )}
-
                             {sortedMainBanners.length > 1 && (
                               <>
-                                <button
-                                  onClick={prevSlide}
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow"
-                                >
+                                <button onClick={prevSlide} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow">
                                   <ChevronRight size={20} />
                                 </button>
-                                <button
-                                  onClick={nextSlide}
-                                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow"
-                                >
+                                <button onClick={nextSlide} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow">
                                   <ChevronLeft size={20} />
                                 </button>
-                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1. 5">
                                   {sortedMainBanners.map(function (_, idx) {
                                     return (
-                                      <button
-                                        key={idx}
-                                        onClick={function () {
-                                          setCurrentSlide(idx);
-                                        }}
-                                        className={'w-2 h-2 rounded-full ' + (idx === currentSlide ? 'bg-white' : 'bg-white/50')}
-                                      />
+                                      <button key={idx} onClick={function () { setCurrentSlide(idx); }} className={'w-2 h-2 rounded-full ' + (idx === currentSlide ? 'bg-white' : 'bg-white/50')} />
                                     );
                                   })}
                                 </div>
@@ -1302,17 +1415,30 @@ export default function AdminMainPage() {
                       </div>
 
                       {hasLeftSide && (
-                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310]">
-                          {bannerSideCards[0].image ? (
-                            <img
-                              src={bannerSideCards[0].image}
-                              alt="تصویر کناری چپ"
-                              className="w-full h-full object-cover"
-                            />
+                        <div className="block rounded-lg overflow-hidden shadow-lg w-full aspect-[260/310] relative">
+                          {sortedLeftSideBanners.length > 0 && sortedLeftSideBanners[currentLeftSlide] && sortedLeftSideBanners[currentLeftSlide].image ? (
+                            <img src={sortedLeftSideBanners[currentLeftSlide].image} alt="تصویر کناری چپ" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                               <span className="text-gray-400">بدون تصویر</span>
                             </div>
+                          )}
+                          {sortedLeftSideBanners.length > 1 && (
+                            <>
+                              <button onClick={prevLeftSlide} className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-1 rounded-full shadow">
+                                <ChevronRight size={14} />
+                              </button>
+                              <button onClick={nextLeftSlide} className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-1 rounded-full shadow">
+                                <ChevronLeft size={14} />
+                              </button>
+                              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                                {sortedLeftSideBanners.map(function (_, idx) {
+                                  return (
+                                    <button key={idx} onClick={function () { setCurrentLeftSlide(idx); }} className={'w-1.5 h-1.5 rounded-full ' + (idx === currentLeftSlide ? 'bg-white' : 'bg-white/50')} />
+                                  );
+                                })}
+                              </div>
+                            </>
                           )}
                         </div>
                       )}
@@ -1321,26 +1447,18 @@ export default function AdminMainPage() {
                     {bottomCardsPreview.length > 0 && (
                       <div className="space-y-4">
                         {(function () {
-                          const rows = [];
-                          for (let i = 0; i < bottomCardsPreview.length; i += 3) {
-                            const rowItems = bottomCardsPreview.slice(i, i + 3);
-                            const count = rowItems.length;
-                            const colsClass = count === 3 ? 'grid-cols-3' : count === 2 ? 'grid-cols-2' : 'grid-cols-1';
-
+                          var rows = [];
+                          for (var i = 0; i < bottomCardsPreview.length; i += 3) {
+                            var rowItems = bottomCardsPreview.slice(i, i + 3);
+                            var count = rowItems.length;
+                            var colsClass = count === 3 ? 'grid-cols-3' : count === 2 ? 'grid-cols-2' : 'grid-cols-1';
                             rows.push(
                               <div key={'bottom-' + i} className={'grid ' + colsClass + ' gap-4'}>
                                 {rowItems.map(function (card, idx) {
                                   return (
-                                    <div
-                                      key={(card.id || 'p') + '-' + idx}
-                                      className="block rounded-lg overflow-hidden shadow-lg w-full h-[180px] xl:h-[210px]"
-                                    >
+                                    <div key={(card.id || 'p') + '-' + idx} className="block rounded-lg overflow-hidden shadow-lg w-full h-[180px] xl:h-[210px]">
                                       {card.image ? (
-                                        <img
-                                          src={card.image}
-                                          alt={'تصویر ' + (i + idx + 1)}
-                                          className="w-full h-full object-cover"
-                                        />
+                                        <img src={card.image} alt={'تصویر ' + (i + idx + 1)} className="w-full h-full object-cover" />
                                       ) : (
                                         <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                                           <span className="text-gray-400">بدون تصویر</span>
@@ -1366,4 +1484,3 @@ export default function AdminMainPage() {
     </div>
   );
 }
-
