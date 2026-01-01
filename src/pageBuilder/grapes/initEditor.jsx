@@ -365,7 +365,34 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
               if (lastSelected) editor.select(lastSelected);
             }, 50);
           },
-        }
+        },
+        {
+          attributes: {
+            class: 'fa fa-link',
+            title: 'لینک',
+            style: 'background: #0ea5e9; color: white;',
+          },
+          command(editor) {
+            editor.runCommand('toggle-link');
+            setTimeout(() => {
+              if (lastSelected) editor.select(lastSelected);
+            }, 50);
+          },
+        },
+        {
+          attributes: {
+            class: 'fa fa-unlink',
+            title: 'حذف لینک',
+            style: 'background: #f97316; color: white;',
+          },
+          command(editor) {
+            editor.runCommand('remove-link');
+            setTimeout(() => {
+              if (lastSelected) editor.select(lastSelected);
+            }, 50);
+          },
+        },
+
       );
     } else {
       const textElements = [
@@ -606,7 +633,47 @@ export default function initEditor({ container, panels, initialHtml, initialCss 
         );
       }
 
+      // تشخیص اینکه انتخاب داخل لینک هست یا خود لینک است
+      const isInsideLink =
+        tagName === 'a' ||
+        (component.parent && component.parent() && component.parent().get('tagName') === 'a');
+
       toolbar.push(
+        {
+          attributes: {
+            class: 'fa fa-link',
+            title: isInsideLink ? 'تنظیمات لینک' : 'لینک',
+            style: 'background: #0ea5e9; color: white;',
+          },
+          command(editor) {
+            editor.runCommand('toggle-link');
+            setTimeout(() => {
+              if (lastSelected) editor.select(lastSelected);
+            }, 50);
+          },
+        },
+        ...(isInsideLink
+          ? [
+            {
+              attributes: {
+                class: 'fa fa-unlink',
+                title: 'حذف لینک',
+                style: 'background: #f97316; color: white;',
+              },
+              command(editor) {
+                editor.runCommand('remove-link');
+                setTimeout(() => {
+                  if (lastSelected) editor.select(lastSelected);
+                }, 50);
+              },
+            },
+          ]
+          : [])
+      );
+
+
+      toolbar.push(
+
         {
           attributes: {
             class: 'fa fa-copy',
